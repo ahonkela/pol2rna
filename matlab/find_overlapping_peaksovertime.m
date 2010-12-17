@@ -71,17 +71,28 @@ for t=1:n_timepoints,
     % -mean peak height over time
     % -variance of peak height over time
     
-    % degree of overlap
+    % degree of overlap (ignore time points without peaks)
     max_startpoint=-inf;
     min_endpoint=inf;
     for t2=1:n_timepoints,      
-      peaks2=allpeaks{t2};
-      startpoint=min(peaks{chr_index,index_peakstart}(overlappingpeaks{t2});
-      endpoint=max(peaks{chr_index,index_peakend}(overlappingpeaks{t2});
-      if startpoint>max_startpoint, max_startpoint=startpoint, end;
-      if endpoint<min_endpoint, min_endpoint=endpoint, end;
+      if length(overlappingpeaks{t2})>0,
+        peaks2=allpeaks{t2};    
+	startpoint=min(peaks{chr_index,index_peakstart}(overlappingpeaks{t2});
+	endpoint=max(peaks{chr_index,index_peakend}(overlappingpeaks{t2});
+	if startpoint>max_startpoint, max_startpoint=startpoint, end;
+	if endpoint<min_endpoint, min_endpoint=endpoint, end;
+      end;      
     end;
-    
+
+    % sum of scores (time points without peaks get zero score)
+    scoresum=0;
+    for t2=1:n_timepoints,      
+      if length(overlappingpeaks{t2})>0,
+	peaks2=allpeaks{t2};
+	score=max(peaks{chr_index,index_peakscore}(overlappingpeaks{t2});
+	scoresum=scoresum+score;
+      end;
+    end;
     
   end;
   
