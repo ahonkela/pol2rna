@@ -112,12 +112,30 @@ for t=1:n_timepoints,
       end;
     end;
 
+    % mean and variance of the summit height over time; if there are several
+    % peaks for some time point, use the highest summit.
+    % If some time point does not have a peak, it counts as zero (this could be
+    % done better using the original read data mappings; also, then we could use
+    % something else than just the summit height).
+    summitheights=[];
+    for t2=1:n_timepoints,      
+      if length(overlappingpeak{t2})>0,
+	peaks2=allpeaks{t2};	
+	tempheight=max(peaks2{chr_index,index_summitheight}(overlappingpeak{t2}));
+	summitheights(t2)=tempheight;
+      else
+	summitheights(t2)=0;
+      end;
+    end;
+    summitheight_mean=mean(summitheights);
+    summitheight_variance=var(summitheights);
+    
 
     % compute the other scores too, TODO
 
 
     % store the overlapping peak and its scores
-    peakandscores = {overlappingpeak, peaks_extent, degree_of_overlap, scoresum};
+    peakandscores = {overlappingpeak, peaks_extent, min_startpoint, max_startpoint, min_endpoint, max_endpoint, degree_of_overlap, scoresum, summitheights, summitheight_mean, summitheight_variance};
     overlappingpeaks = {overlappingpeaks{:}, peakandscores};  
     % it's inefficient to expand the array all the time like above,
     % it would be better to expand it with ever larger increments like in read_peak_summit_files.m

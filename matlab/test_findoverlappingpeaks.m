@@ -14,3 +14,7 @@ allpeaks={peaks0,peaks5,peaks10,peaks20,peaks40,peaks80,peaks160,peaks320,peaks6
 chr_index=1;
 peakextentmultiplier=1.2;
 overlaps=find_overlapping_peaksovertime(chr_index,allpeaks,peakextentmultiplier);
+
+% example time series of heights of the overlapping peaks
+plot(overlaps{8997}{9})
+
