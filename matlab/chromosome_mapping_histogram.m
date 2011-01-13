@@ -22,7 +22,8 @@ for i=1:nreads,
   readend=mappings{chr_index,readends_index}(i);
   readscore=mappings{chr_index,readscores_index}(i);
   readstrand=mappings{chr_index,readstrands_index}(i);
-  
+
+  if fragmentlength > 0,  
   if (readstrand>0),
     % shift
     readstart=readstart+fragmentlength/2;
@@ -40,6 +41,7 @@ for i=1:nreads,
     % extend
     readend=readend+fragmentlength/2;  
     readstart=readend-fragmentlength;
+  end;
   end;
   
   firstbin=floor(double((readstart-binsstart))/interval);
