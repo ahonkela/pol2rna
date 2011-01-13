@@ -35,9 +35,9 @@ const char *chromosomenames[]={"chr1","chr2","chr3","chr4","chr5","chr6","chr7",
 #define index_summitstart 3
 #define index_summitend 4
 #define index_summitheight 5
-#define index_linenumber 6
-#define index_npeaks 7
-#define index_maxpeaks 8
+#define index_npeaks 6
+#define index_maxpeaks 7
+#define index_linenumber 8
 
 
 void ***read_peak_summit_files(char *peakfilename, char *summitfilename)
