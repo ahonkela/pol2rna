@@ -86,15 +86,15 @@ subplot(17,1,14);
 plot_pol2data(chr_index,rnaseq160,[],bins160,binsstart160,100,0,3200,0);
 axis tight;
 
-subplot(17,1,8);
+subplot(17,1,15);
 plot_pol2data(chr_index,[],peaks320,[],[],[],0,3200,0);
 axis tight;
 
-subplot(17,1,9);
+subplot(17,1,16);
 plot_pol2data(chr_index,[],peaks640,[],[],[],0,3200,0);
 axis tight;
 
-subplot(17,1,10);
+subplot(17,1,17);
 plot_pol2data(chr_index,[],peaks1280,[],[],[],0,3200,0);
 axis tight;
 
