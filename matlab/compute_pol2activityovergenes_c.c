@@ -53,9 +53,10 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
   int tempstart,tempend;
   signed char readstrand;
   float readscore;
+  double binscoredelta;
   int n_duplicatesfound;
   int i, j, k, k0;
-
+  int verbose=0;
 
   readstart=-1;
   readend=-1;
@@ -63,11 +64,16 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 
   for (i=0;i<n_reads;i++)
   {
-    if ((i%50000)==0)
-      myprintf("Read %d\n", i);
-  
+    verbose=0;
+    if ((i%50000)==0) verbose=1;
+
     tempreadstart=tempreadstarts_data[i];
     tempreadend=tempreadends_data[i];
+
+
+    if (verbose==1)
+      myprintf("Read %d of %d, start %d, end %d\n", i, n_reads, tempreadstart, tempreadend);
+
   
     /*-------------------------------------
       check for a duplicate (assume reads are sorted so duplicates
@@ -76,12 +82,16 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
     if ((tempreadstart==readstart) && (tempreadend==readend))
     {
       n_duplicatesfound=n_duplicatesfound+1;
+      if (verbose==1)
+	myprintf("Found duplicate no. %d of this read\n", n_duplicatesfound);
     }
     else
     {
       n_duplicatesfound=1;
       readstart=tempreadstart;
       readend=tempreadend;
+      if (verbose==1)
+	myprintf("First instance of this read\n", n_duplicatesfound);
     }
   
     if (n_duplicatesfound <= n_allowed_duplicates)
@@ -128,6 +138,9 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	  modified_readstart=readend-fragment_length;
 	}
       }
+
+      if (verbose==1)
+	myprintf("Extended location: %d - %d\n", modified_readstart, modified_readend);
     
 
       /*-------------------------------------
@@ -175,7 +188,12 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	    % Currently, amount added to the bin depends on length of
 	    % overlap and on score of the read.      
 	    -------------------------------------*/
-	  tempbinheights_data[k]=tempbinheights_data[k]+(tempend-tempstart+1)*readscore;
+	  binscoredelta=(tempend-tempstart+1)*readscore;
+	  tempbinheights_data[k]=tempbinheights_data[k]+binscoredelta;
+
+	  if (verbose==1)
+	    myprintf("Read %d (%d - %d) matched bin %d of %d (%d - %d), added %f to bin, new bin height %f\n", 
+		     i, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], binscoredelta, tempbinheights_data[k]);
 	}
       }
     }
@@ -242,9 +260,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempfragmentlength = prhs[5];
   tempnallowedduplicates = prhs[6];
 
-  /* Get chromosome index */
+  /* Get chromosome index, convert to zero-based index */
   tempchrindex_data = (int *)mxGetData(tempchrindex);
   chr_index = tempchrindex_data[0];
+  chr_index=chr_index-1;
 
   /* Get desired fragment length */
   tempfragmentlength_data = (int *)mxGetData(tempfragmentlength);
@@ -288,7 +307,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempindex[1]=index_readscore;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
   tempreadscores=mxGetCell(tempmappings,j);
-  tempreadscores_data = (int *)mxGetData(tempreadscores);
+  tempreadscores_data = (float *)mxGetData(tempreadscores);
 
   /* Get number of bins and vectors of bin starts and bin ends */
   tempnbins_data = (int *)mxGetData(tempnbins);

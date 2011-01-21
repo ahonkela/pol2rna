@@ -3,6 +3,7 @@ n_chromosomes=length(chromosomenames);
 
 genelocs=read_stringfile('~/synergy_data/PolII/Mapping_results/genes.txt',[32 9 10 13]);
 genelocs={genelocs{2:end}};
+n_genes=length(genelocs);
 
 
 %-----------------------------
@@ -29,13 +30,12 @@ for i=1:length(genelocs),
   bininfo(i,4)=i;
 end;
 
-
 %-----------------------------
 % Sort bin array in ascending order of start location. 
 % The activity computation code assumes bins have been sorted like that.
 %-----------------------------
-[y,I]=sort(bininfo(:,2));
-bininfo=bininfo(I,:);
+[y,I1]=sort(bininfo(:,2));
+bininfo=bininfo(I1,:);
 
 
 %-----------------------------
@@ -43,15 +43,72 @@ bininfo=bininfo(I,:);
 % overlap each bin, weighted by scores of the reads.
 %-----------------------------
 
-chr_index=1;
-I=find(bininfo(:,1)==chr_index);
 
-load pol0.mat
-d=190;
-max_duplicates=2;
-(mappings,chr_index,binstarts,binends,fragmentlength,n_allowed_duplicates);
-bins0=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates));
-clear temppol;
+allbins=zeros(n_genes,10);
+filenames={'pol0.mat','pol5.mat','pol10.mat','pol20.mat','pol40.mat','pol80.mat','pol160.mat','pol320.mat','pol640.mat','pol1280.mat'};
+dvalues=[190 190 196 192 185 189 201 205 194 189];
+
+
+for timepoint=1:10,
+  load(filenames{timepoint});
+  d=dvalues(timepoint);
+  max_duplicates=2;  
+  binsthistime=zeros(n_genes,1);
+  
+  for chr_index=1:n_chromosomes,
+    timepoint
+    chr_index
+    I=find(bininfo(:,1)==chr_index);
+    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates));
+    binsthistime(I)=tempbins;
+  end;
+  
+  allbins(:,timepoint)=binsthistime;
+  clear temppol;
+end;
+
+
+
+
+
+
+
+
+
+
+###################### debug code
+
+
+allbins=zeros(n_genes,10);
+filenames={'pol0.mat','pol5.mat','pol10.mat','pol20.mat','pol40.mat','pol80.mat','pol160.mat','pol320.mat','pol640.mat','pol1280.mat'};
+dvalues=[190 190 196 192 185 189 201 205 194 189];
+
+
+for timepoint=1:10,
+  load(filenames{timepoint});
+  d=dvalues(timepoint);
+  max_duplicates=2;  
+  binsthistime=zeros(n_genes,1);
+  
+  for chr_index=2:2,
+    timepoint
+    chr_index
+    I=6602;
+    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates));
+    binsthistime(I)=tempbins;
+  end;
+  
+  allbins(:,timepoint)=binsthistime;
+  clear temppol;
+end;
+
+
+
+
+
+
+######################## old code ########################
+
 
 load pol5.mat
 d=190;
