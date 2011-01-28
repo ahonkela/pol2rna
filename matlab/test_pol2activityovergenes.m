@@ -1,16 +1,42 @@
+addpath ~/mlprojects/pol2rnaseq/matlab
+cd ~/mlprojects/pol2rnaseq/matlab/
+mex compute_pol2activityovergenes_c.c
+cd ~/synergy_data/PolII/Mapping_results
+
 chromosomenames={'chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY','chrMT'};
 n_chromosomes=length(chromosomenames);
 
+% read gene ids and start and end locations
 genelocs=read_stringfile('~/synergy_data/PolII/Mapping_results/genes.txt',[32 9 10 13]);
 genelocs={genelocs{2:end}};
 n_genes=length(genelocs);
+geneids=zeros(n_genes,1);
+for k=1:n_genes,
+  geneids(k)=str2double(genelocs{k}{1}(6:end-1));
+end;
+
+% read gene ids and strand; match them to the previous gene list
+genestrands_temp=read_stringfile('~/synergy_data/PolII/Mapping_results/genestrands_no_lrg_genes.txt',[32 9 10 13]);
+geneids_temp=zeros(length(genestrands_temp),1);
+for k=1:length(genestrands_temp),
+  geneids_temp(k)=str2double(genestrands_temp{k}{3}(6:end-1));
+end;
+genestrands=zeros(n_genes,1);
+for k=1:n_genes,
+  l=find(geneids_temp==geneids(k));
+  if length(l)==0,
+    genestrands(k)=NaN;
+  else    
+    l=l(1);
+    genestrands(k)=str2double(genestrands_temp{l}{2});
+  end;
+end;
 
 
 %-----------------------------
 % Create bin array, one bin for each gene
 %-----------------------------
-
-bininfo=zeros(length(genelocs),4);
+bininfo=zeros(length(genelocs),6);
 for i=1:length(genelocs),
   genetemp=genelocs{i};
 
@@ -28,7 +54,17 @@ for i=1:length(genelocs),
   bininfo(i,2)=str2double(genetemp{3}(2:end-1)); % start location
   bininfo(i,3)=str2double(genetemp{4}(2:end-1)); % end location
   bininfo(i,4)=i;
+  bininfo(i,5)=geneids(i);
+  bininfo(i,6)=genestrands(i);
 end;
+
+
+
+% Omit genes for which we can't find the strand...
+I=find(isnan(bininfo(:,6))==0);
+bininfo=bininfo(I,:);
+
+
 
 %-----------------------------
 % Sort bin array in ascending order of start location. 
@@ -48,18 +84,92 @@ allbins=zeros(n_genes,10);
 filenames={'pol0.mat','pol5.mat','pol10.mat','pol20.mat','pol40.mat','pol80.mat','pol160.mat','pol320.mat','pol640.mat','pol1280.mat'};
 dvalues=[190 190 196 192 185 189 201 205 194 189];
 
+timepoint=4;
+chr_index=2;
+  load(filenames{timepoint});
+  d=dvalues(timepoint);
+  max_duplicates=2;  
+  subbin_length=200;
+  binsthistime=zeros(n_genes,1);
+    I=find(bininfo(:,1)==chr_index);
+    
 
+
+cd ~/mlprojects/pol2rnaseq/matlab/
+mex compute_pol2activityovergenes_c.c
+cd ~/synergy_data/PolII/Mapping_results
+
+    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int8(bininfo(I,6)),int32(d),int32(max_duplicates),int32(subbin_length));
+
+
+%-----------------------------------------------------------------
+% compute a mean normalized gene profile, weighted by sum of bins
+%-----------------------------------------------------------------
+binlengths=zeros(length(tempbins),1);for k=1:length(tempbins),binlengths(k)=length(tempbins{k});end;
+profilelength=100;
+I2=find(binlengths>=profilelength);
+profile=zeros(length(I2),profilelength);
+for k=1:length(I2),
+  profile(k,:)=tempbins{I2(k)}(end:-1:end-profilelength+1);
+end;
+
+normalizedprofile=[];
+profilemean=zeros(1,profilelength);
+normalizer=0;
+nsamples=0;
+for k=1:length(I2),
+  if sum(profile(k,:))>0,
+    tempprofile=profile(k,:)/sum(profile(k,:));
+    normalizedprofile=[normalizedprofile;tempprofile];
+    profilemean=profilemean+tempprofile*sum(profile(k,:));
+    normalizer=normalizer+sum(profile(k,:));
+    nsamples=nsamples+1;
+  end;  
+end;
+profilemean=profilemean/normalizer;
+
+
+profilevar=zeros(1,profilelength);
+for k=1:length(I2),
+  if sum(profile(k,:))>0,
+    profilevar=profilevar+ sum(profile(k,:))*( ( profile(k,:)/sum(profile(k,:)) ) -profilemean).^2;  
+  end;    
+end;
+profilevar=profilevar/normalizer;    
+
+clf;
+boxplot(normalizedprofile); hold on;
+h=plot(profilemean,'g-'); set(h,'LineWidth',2);
+h=plot(profilemean-sqrt(profilevar),'c-'); set(h,'LineWidth',2);
+h=plot(profilemean+sqrt(profilevar),'c-'); set(h,'LineWidth',2);
+title(sprintf('Normalized Pol2-profile from transcription star site\n(Weighted mean and STD over 1177 genes, weighted by their Pol2 activity)'))
+xlabel('Bins from gene start, bins size=200 basepairs');
+ylabel('Normalized Pol2-activity at each bin');
+
+    
+    
+%-----------------------------------------------------------------
+% compute a "spatial correlation matrix with delays" in a really 
+% simplistic way, using simple interpolation for delays that do
+% not fall exactly onto a particular time point
+% assumption: x(end) at time t correlates with 
+%             x(end-k) at time t-delay*k
+%-----------------------------------------------------------------    
+corrmatrix=zeros(profilelength,profilelength);
+
+    
 for timepoint=1:10,
   load(filenames{timepoint});
   d=dvalues(timepoint);
   max_duplicates=2;  
+  subbin_length=200;
   binsthistime=zeros(n_genes,1);
   
   for chr_index=1:n_chromosomes,
     timepoint
     chr_index
     I=find(bininfo(:,1)==chr_index);
-    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates));
+    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates),int32(subbin_length));
     binsthistime(I)=tempbins;
   end;
   

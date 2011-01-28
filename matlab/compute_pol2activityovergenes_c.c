@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 
 
-void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_data,signed char *tempreadstrands_data,float *tempreadscores_data,int fragment_length,int n_allowed_duplicates,int n_bins,int *tempbinstarts_data,int *tempbinends_data,double *tempbinheights_data)
+void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_data,signed char *tempreadstrands_data,float *tempreadscores_data,int fragment_length,int n_allowed_duplicates,int n_bins,int *tempbinstarts_data,int *tempbinends_data,signed char *tempbinstrands_data,int *n_subbins, double **subbins_data, int subbin_length)
 {
   int readstart, readend, tempreadstart, tempreadend, modified_readstart, modified_readend;
   int tempstart,tempend;
@@ -56,6 +56,8 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
   double binscoredelta;
   int n_duplicatesfound;
   int i, j, k, k0;
+  int l, m, firstsubbin, lastsubbin;
+  double firstsubbin_proportion, lastsubbin_proportion;
   int verbose=0;
 
   readstart=-1;
@@ -153,6 +155,9 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 
       /* find latest bin (greatest index) whose start is not after the read */
       k0=n_bins-1; while ((k0>=0) && (tempbinstarts_data[k0]>modified_readend)) k0=k0-1;
+
+      if (verbose==1)
+	myprintf("Extended location: %d - %d\n", modified_readstart, modified_readend);
     
       for (k=k0;k>=0;k--)
       {
@@ -162,8 +167,20 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	  % read has not happened after the bin (i.e. check that the
 	  % whole read is not to the right of the bin).
 	*/
+
+	/*
+        if (verbose==1)
+	    myprintf("Read %d of %d (%d - %d): testing bin %d of %d\n", 
+		     i, n_reads, tempreadstart, tempreadend, k, n_bins);
+	*/
+
+
 	if (modified_readstart <= tempbinends_data[k])
 	{
+	  if (verbose==1)
+	    myprintf("Read %d of %d (%d - %d) matched bin %d of %d (%d - %d)\n", 
+		     i, n_reads, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k]);
+
       
 	  /*-------------------------------------
 	    % Compute overlapping portion between the read and the bin.
@@ -182,18 +199,77 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	    myprintf("problem at read %d, bin %d: bin %d, %d, read %d, %d, overlap %d\n",
 		     i, k, tempbinstarts_data[k],tempbinends_data[k],modified_readstart,
 		modified_readend,tempend-tempstart+1);
-	        
-	  /*-------------------------------------
-	    % Assign the read to the bin.
-	    % Currently, amount added to the bin depends on length of
-	    % overlap and on score of the read.      
-	    -------------------------------------*/
-	  binscoredelta=(tempend-tempstart+1)*readscore;
-	  tempbinheights_data[k]=tempbinheights_data[k]+binscoredelta;
 
-	  if (verbose==1)
-	    myprintf("Read %d (%d - %d) matched bin %d of %d (%d - %d), added %f to bin, new bin height %f\n", 
-		     i, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], binscoredelta, tempbinheights_data[k]);
+	  if (1)
+	  {	        
+	    /*-------------------------------------
+	      % Assign the read to subbins inside the bin.
+	      % Currently, amount added to each subbin depends on length of
+	      % overlap and on score of the read.
+              % Note that orientation of the subbins depends on the strand of
+              % the bin! We especially want to model the *end* of the bin, so 
+              % subbin orientations are reversed: 
+              %     If strand=1, the first subbin is at the end of the bin.
+              %     If strand=-1, the first subbin is at the start of the bin.
+	      -------------------------------------*/
+	    binscoredelta=readscore;
+
+	    if (tempbinstrands_data[k] < 0)
+	    {
+	      /* Count subbins from the start of the bin */
+	      firstsubbin=(tempstart-tempbinstarts_data[k])/subbin_length;
+	      lastsubbin=(tempend-tempbinstarts_data[k])/subbin_length;
+	    }
+	    else if (tempbinstrands_data[k] > 0)
+	    {
+	      /* Count subbins from the end of the bin */
+	      firstsubbin=(tempbinends_data[k]-tempend)/subbin_length;
+	      lastsubbin=(tempbinends_data[k]-tempstart)/subbin_length;
+	    }
+
+	    if ((firstsubbin<0)||(lastsubbin<0)||(firstsubbin>=n_subbins[k])||(lastsubbin>=n_subbins[k]))
+	    {
+	      myprintf("PROBLEM: Read %d of %d (%d - %d) matched bin %d of %d (%d - %d), subbins %d-%d of %d\n", 
+		       i, n_reads, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], firstsubbin, lastsubbin, n_subbins[k]);
+	      return;
+	    }
+
+	    if (verbose==1)
+	      myprintf("Read %d of %d (%d - %d) matched bin %d of %d (%d - %d), subbins %d-%d\n", 
+		       i, n_reads, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], firstsubbin, lastsubbin);
+	  }
+
+	  if (1)
+	  {
+	    if (lastsubbin > firstsubbin)
+	    {
+	      if (tempbinstrands_data[k] < 0)
+	      {
+		/* Count subbins from the start of the bin */
+		firstsubbin_proportion=tempbinstarts_data[k]+(firstsubbin+1)*subbin_length - tempstart;
+		lastsubbin_proportion=tempend - tempbinstarts_data[k] - lastsubbin*subbin_length+1;
+	      }
+	      else if (tempbinstrands_data[k] > 0)
+	      {
+		/* Count subbins from the end of the bin */
+		firstsubbin_proportion=tempend - tempbinends_data[k] + (firstsubbin+1)*subbin_length;
+		lastsubbin_proportion=tempbinends_data[k] - lastsubbin*subbin_length - tempstart+1;
+	      }
+
+	      subbins_data[k][firstsubbin] += firstsubbin_proportion*binscoredelta;
+	      subbins_data[k][lastsubbin] += lastsubbin_proportion*binscoredelta;
+	      for (l=firstsubbin+1;l<lastsubbin;l++)
+		subbins_data[k][l] += subbin_length*binscoredelta;	    
+
+	      if ((firstsubbin<0) || (lastsubbin>n_subbins[k]) || (firstsubbin_proportion<0) || (lastsubbin_proportion<0))
+		myprintf("PROBLEM: Read %d of %d (%d - %d) matched bin %d of %d (%d - %d), subbins %d-%d, firstprop %f, lastprop %f\n", 
+			 i, n_reads, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], firstsubbin, lastsubbin, firstsubbin_proportion, lastsubbin_proportion);
+	    }
+	    else
+	    {
+	      subbins_data[k][firstsubbin] += (tempend-tempstart+1)*binscoredelta;
+	    }
+	  }
 	}
       }
     }
@@ -220,11 +296,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   mxArray *tempreadscores;
   mxArray *tempnreads;
   mxArray *tempmaxreads;
+  mxArray *tempsubbinlength;
 
   mxArray *tempnbins;
   mxArray *tempbinstarts;
   mxArray *tempbinends;
-  mxArray *tempbinheights;
+  mxArray *tempbinstrands;
+  mxArray *tempsubbins;
+  mxArray **tempbinheights;
 
   mxArray *tempchrindex;
   mxArray *tempfragmentlength;
@@ -236,29 +315,32 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   float *tempreadscores_data;
   int *tempnreads_data;
   int *tempmaxreads_data;
+  int *tempsubbinlength_data;
 
   int *tempnbins_data;
   int *tempbinstarts_data;
   int *tempbinends_data;
-  double *tempbinheights_data;
+  signed char *tempbinstrands_data;
+  int *n_subbins;
+  double **subbins_data;
 
   int *tempchrindex_data;
   int *tempfragmentlength_data;
   int *tempnallowedduplicates_data;
-
-  int chr_index, n_reads, fragment_length, n_allowed_duplicates, n_bins;
-  int j, k;
   int tempindex[2];
 
-
+  int chr_index, n_reads, fragment_length, n_allowed_duplicates, n_bins, subbin_length;
+  int j, k;
 
   tempmappings = prhs[0];
   tempchrindex = prhs[1];
   tempnbins = prhs[2];
   tempbinstarts = prhs[3];
   tempbinends = prhs[4];
-  tempfragmentlength = prhs[5];
-  tempnallowedduplicates = prhs[6];
+  tempbinstrands = prhs[5];
+  tempfragmentlength = prhs[6];
+  tempnallowedduplicates = prhs[7];
+  tempsubbinlength = prhs[8];
 
   /* Get chromosome index, convert to zero-based index */
   tempchrindex_data = (int *)mxGetData(tempchrindex);
@@ -309,23 +391,62 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempreadscores=mxGetCell(tempmappings,j);
   tempreadscores_data = (float *)mxGetData(tempreadscores);
 
-  /* Get number of bins and vectors of bin starts and bin ends */
+  /* Get number of bins and vectors of bin starts and bin ends and bin strands */
   tempnbins_data = (int *)mxGetData(tempnbins);
   n_bins=tempnbins_data[0];
   tempbinstarts_data = (int *)mxGetData(tempbinstarts);
   tempbinends_data = (int *)mxGetData(tempbinends);
+  tempbinstrands_data = (signed char *)mxGetData(tempbinstrands);
 
-  /* Create output vector of bin heights */
-  tempbinheights = mxCreateNumericMatrix(n_bins,1,mxDOUBLE_CLASS,0);
-  tempbinheights_data = (double *)mxGetData(tempbinheights);
-  plhs[0] = tempbinheights;
+  if (1)
+  {
+    /* Get desired length of sub-bins */
+    tempsubbinlength_data = (int *)mxGetData(tempsubbinlength);
+    subbin_length=tempsubbinlength_data[0];
 
-
+    /* Create output cell array for subbin heights */
+    tempsubbins = mxCreateCellMatrix(n_bins,1);
+    n_subbins = (int *)mymalloc(n_bins*sizeof(int));
+    subbins_data = (double **)mymalloc(n_bins*sizeof(double *));
+    tempbinheights = (mxArray **)mymalloc(n_bins*sizeof(mxArray *));
+    for (j=0; j<n_bins; j++)
+    {
+      /* Compute number of subbins, rounding up */
+      k = (tempbinends_data[j]-tempbinstarts_data[j]+1)/subbin_length; 
+      if (tempbinends_data[j]-tempbinstarts_data[j]+1 > k*subbin_length)
+	k=k+1;
+      tempbinheights[j] = mxCreateNumericMatrix(k,1,mxDOUBLE_CLASS,0);
+      subbins_data[j] = (double *)mxGetData(tempbinheights[j]);
+      n_subbins[j] = k;
+    }
+  }
   /* Compute overlaps */
-  compute_overlaps(n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,tempbinheights_data);
-
 
   
+  myprintf("%d reads %p %p %p %p, fragmentlength %d, duplicates %d, bins %d %p %p, subbins %p %p length %d\n",
+	   n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,n_subbins,subbins_data,subbin_length);
+
+  compute_overlaps(n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,tempbinstrands_data,n_subbins,subbins_data,subbin_length);
+  
+
+  if (1)
+  {
+    /* Place answers into cell array */
+    for (j=0; j<n_bins; j++)
+    {
+      tempindex[0]=j;
+      tempindex[1]=0;
+      k = mxCalcSingleSubscript(tempsubbins,2,tempindex);
+      mxSetCell(tempsubbins,k,tempbinheights[j]);
+    }
+    plhs[0] = tempsubbins;
+
+    /* Clean up */
+    mxFree(n_subbins);
+    mxFree(subbins_data);  
+    mxFree(tempbinheights);
+  }
+
 }
 
 
