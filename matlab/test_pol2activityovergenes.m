@@ -3,7 +3,7 @@ cd ~/mlprojects/pol2rnaseq/matlab/
 mex compute_pol2activityovergenes_c.c
 cd ~/synergy_data/PolII/Mapping_results
 
-chromosomenames={'chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY','chrMT'};
+chromosomenames={'chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY','chrM'};
 n_chromosomes=length(chromosomenames);
 
 % read gene ids and start and end locations
@@ -60,8 +60,8 @@ end;
 
 
 
-% Omit genes for which we can't find the strand...
-I=find(isnan(bininfo(:,6))==0);
+% Omit genes for which we can't find the strand or the chromosome...
+I=find((isnan(bininfo(:,6))==0) | (bininfo(:,1)==-1));
 bininfo=bininfo(I,:);
 
 
@@ -80,34 +80,62 @@ bininfo=bininfo(I1,:);
 %-----------------------------
 
 
-allbins=zeros(n_genes,10);
+%allbins=zeros(n_genes,10);
 filenames={'pol0.mat','pol5.mat','pol10.mat','pol20.mat','pol40.mat','pol80.mat','pol160.mat','pol320.mat','pol640.mat','pol1280.mat'};
 dvalues=[190 190 196 192 185 189 201 205 194 189];
 
-timepoint=4;
-chr_index=2;
+
+% load up all data
+allgenebins=cell(size(bininfo,1),10);
+for timepoint=1:10,
   load(filenames{timepoint});
   d=dvalues(timepoint);
   max_duplicates=2;  
   subbin_length=200;
-  binsthistime=zeros(n_genes,1);
+  %binsthistime=zeros(n_genes,1);
+  
+  for chr_index=1:n_chromosomes,
+    timepoint
+    chr_index
     I=find(bininfo(:,1)==chr_index);
-    
-
-
-cd ~/mlprojects/pol2rnaseq/matlab/
-mex compute_pol2activityovergenes_c.c
-cd ~/synergy_data/PolII/Mapping_results
-
     tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int8(bininfo(I,6)),int32(d),int32(max_duplicates),int32(subbin_length));
+    for k=1:length(I),
+      allgenebins{I(k),timepoint}=tempbins{k};
+    end;
+  end;
+  clear temppol;
+end;
+
+save all_gene_pol2bins.mat allgenebins bininfo
+
+binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k)=length(allgenebins{k,1});end;
+
+
+
+%timepoint=4;
+%chr_index=2;
+%  load(filenames{timepoint});
+%  d=dvalues(timepoint);
+%  max_duplicates=2;  
+%  subbin_length=200;
+%  binsthistime=zeros(n_genes,1);
+%    I=find(bininfo(:,1)==chr_index);
+%    
+%cd ~/mlprojects/pol2rnaseq/matlab/
+%mex compute_pol2activityovergenes_c.c
+%cd ~/synergy_data/PolII/Mapping_results
+%
+%    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int8(bininfo(I,6)),int32(d),int32(max_duplicates),int32(subbin_length));
 
 
 %-----------------------------------------------------------------
 % compute a mean normalized gene profile, weighted by sum of bins
 %-----------------------------------------------------------------
-binlengths=zeros(length(tempbins),1);for k=1:length(tempbins),binlengths(k)=length(tempbins{k});end;
 profilelength=100;
 I2=find(binlengths>=profilelength);
+
+
+
 profile=zeros(length(I2),profilelength);
 for k=1:length(I2),
   profile(k,:)=tempbins{I2(k)}(end:-1:end-profilelength+1);
@@ -155,27 +183,77 @@ ylabel('Normalized Pol2-activity at each bin');
 % assumption: x(end) at time t correlates with 
 %             x(end-k) at time t-delay*k
 %-----------------------------------------------------------------    
-corrmatrix=zeros(profilelength,profilelength);
 
-    
-for timepoint=1:10,
-  load(filenames{timepoint});
-  d=dvalues(timepoint);
-  max_duplicates=2;  
-  subbin_length=200;
-  binsthistime=zeros(n_genes,1);
-  
-  for chr_index=1:n_chromosomes,
-    timepoint
-    chr_index
-    I=find(bininfo(:,1)==chr_index);
-    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int32(d),int32(max_duplicates),int32(subbin_length));
-    binsthistime(I)=tempbins;
-  end;
-  
-  allbins(:,timepoint)=binsthistime;
-  clear temppol;
+
+% compute correlation matrix
+profilelength=100;
+I2=find(binlengths>=profilelength);
+
+
+
+% compute bin means
+binmeans=zeros(profilelength+1,1);
+binsamples=zeros(profilelength+1,1);
+for i=1:profilelength, % omit RNA for now
+  i
+  for g=1:length(I2),
+    for timeindex=1:10,
+      t=mytimepoints(timeindex);
+      value_t=allgenebins{I2(g),timeindex}(i);
+      binmeans(i)=binmeans(i)+value_t;
+      binsamples(i)=binsamples(i)+1;
+    end;
+  end;  
 end;
+binmeans=binmeans./binsamples;
+
+% compute bin variances
+binvariances=zeros(profilelength+1,1);
+for i=1:profilelength, % omit RNA for now
+  i
+  for g=1:length(I2),
+    for timeindex=1:10,
+      t=mytimepoints(timeindex);
+      value_t=allgenebins{I2(g),timeindex}(i);
+      binvariances(i)=binvariances(i)+(value_t-binmeans(i))^2;
+    end;
+  end;  
+end;
+binvariances=binvariances./binsamples;
+
+% spatial speed of POL2 (with pauses and all) in bins/minute = (basepairs/minute)/binlength
+pol_spatialspeed=(2000/5)/200;
+
+corrmatrix=zeros(profilelength+1,profilelength+1);
+ncorrsamples=zeros(profilelength+1,profilelength+1);
+mytimepoints=[0 5 10 20 40 80 160 320 640 1280];
+for timeindex=1:10,
+  t=mytimepoints(timeindex);
+  for g=1:length(I2),
+    [t g]
+    for i=1:profilelength, % omit RNA for now
+      value_t=allgenebins{I2(g),timeindex}(i);
+            
+      for j=1:profilelength, % omit RNA for now
+	t2=t+(j-i)/pol_spatialspeed;
+	if (t2 >= 0) & (t2 <= 1280),
+
+	  timeindex2=max(find(mytimepoints<=t2));
+	  if (timeindex2<10),
+	    value_t2=allgenebins{I2(g),timeindex2}(j)+(t2-mytimepoints(timeindex2))/(mytimepoints(timeindex2+1)-mytimepoints(timeindex2))*(allgenebins{I2(g),timeindex2+1}(j)-allgenebins{I2(g),timeindex2}(j));
+	  else
+	    value_t2=allgenebins{I2(g),timeindex2}(j);
+	  end;
+	  
+	  corrmatrix(i,j)=corrmatrix(i,j)+value_t*value_t2;
+	  ncorrsamples(i,j)=ncorrsamples(i,j)+1;
+	end;
+      end;      
+    end;
+    
+  end;
+end;
+
 
 
 

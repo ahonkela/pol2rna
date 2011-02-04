@@ -1,3 +1,5 @@
+load all_gene_pol2bins.mat
+
 
 
 %filteredgenes=read_stringfile('filteredgenes.txt',[9 10 13 double(' ')]);
@@ -16,20 +18,24 @@ for i=1:length(filteredgenes),
   end;  
 end;
 
-load allbins.mat
-
-temp_polnames_numeric=zeros(size(allbins,1),1);
-for i=1:length(I1),
-  temp_polnames_numeric(i)=str2double(genelocs{I1(i)}{1}(6:(end-1)));
-end;
-
-filtered_polseries=-1*ones(length(filteredgenes),10);
+allrnabins=nan*ones(size(bininfo,1),10);
 for i=1:length(filteredgenes),    
   i
   % find corresponding gene index in the pol array
-  polindex=find(temp_polnames_numeric==filtered_genenames_numeric(i));
-  filtered_polseries(i,:)=allbins(polindex,:);
+  polindex=find(bininfo(:,5)==filtered_genenames_numeric(i));
+  if size(polindex,1)==1,
+    allrnabins(polindex,:)=filtered_geneseries(i,:);
 end;
+
+
+
+%temp_polnames_numeric=zeros(size(allbins,1),1);
+%for i=1:length(I1),
+%  temp_polnames_numeric(i)=str2double(genelocs{I1(i)}{1}(6:(end-1)));
+%end;
+
+filtered_polseries=-1*ones(length(filteredgenes),10);
+
 
 
 
