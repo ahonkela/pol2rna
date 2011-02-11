@@ -71,7 +71,11 @@ void compute_fakecorrelationmatrix
     binsamples[i]=0;
   }
 
-  for (i=0;i<profilelength;i++) /* omit RNA for now */  
+
+
+
+  /* Bin means, old method
+  for (i=0;i<profilelength;i++)  omit RNA for now
   {
     for (g=0;g<n_genes; g++)
     {
@@ -83,13 +87,14 @@ void compute_fakecorrelationmatrix
       }
     }
   }
-  for (i=0;i<profilelength;i++) /* omit RNA for now */  
+  for (i=0;i<profilelength;i++)  omit RNA for now 
   {
     binmeans[i]=binmeans[i]/binsamples[i];
   }
+  */
 
-  /* compute bin variances */
-  for (i=0;i<profilelength;i++) /* omit RNA for now */  
+  /* compute bin variances, old method
+  for (i=0;i<profilelength;i++)  omit RNA for now 
   {    
     for (g=0;g<n_genes; g++)
     {
@@ -100,14 +105,15 @@ void compute_fakecorrelationmatrix
       }
     }
   }
-  for (i=0;i<profilelength;i++) /* omit RNA for now */  
+  for (i=0;i<profilelength;i++)  omit RNA for now 
   {
     binvariances[i]=binvariances[i]/binsamples[i];
   }
+  */
 
-  /* spatial speed of POL2 (with pauses and all) in bins/minute = (basepairs/minute)/binlength */
+  /* spatial speed of POL2 (with pauses and all) in bins/minute = (basepairs/minute)/binlength
   pol_spatialspeed=(2000.0/5.0)/200.0;
-
+  */
 
 #define ACCESSELEMENT(i,j) ((j)*(profilelength+1)+(i))
   for (i=0;i<profilelength+1;i++)
@@ -125,23 +131,45 @@ void compute_fakecorrelationmatrix
     t=mytimepoints[timeindex];
     for (g=0;g<n_genes; g++)
     {
-      myprintf("Processing timeindex %d (%f) of %d, gene %d of %d\n", timeindex, t, n_timepoints, g, n_genes);
+      if ((g%1000)==0)
+	myprintf("Processing timeindex %d (%f) of %d, gene %d of %d\n", timeindex, t, n_timepoints, g, n_genes);
+
       for (i=0;i<profilelength;i++) /* omit RNA for now */
       {
 	value_t=allgenebins_data[g][timeindex][i];
             
 	for (j=0;j<profilelength;j++) /* omit RNA for now */
         {
-	  t2=t+(j-i)/pol_spatialspeed;
-	  if ((t2 >= mytimepoints[0]) && (t2 <= mytimepoints[n_timepoints-1]))
+	  /* 
+	     Bin 0 is toward the end of the gene. 
+	     The assumption is that Bin 0 receives information from bin 1 and so forth, with delay.
+	     Thus, Bin 0 at time t should be correlated with Bin 1 at time t-delta, and so forth.
+	   */
+	  t2=t-(j-i)*pol_spatialspeed; 
+
+	  /* Truncation, to make sure nonzero delays converge to zero delay */
+	  if (t2<mytimepoints[0]) t2=mytimepoints[0];
+	  if (t2>mytimepoints[n_timepoints-1]) t2=mytimepoints[n_timepoints-1];
+	  
+
+  	  if ((t2 >= mytimepoints[0]) && (t2 <= mytimepoints[n_timepoints-1])) 
 	  {
-	    timeindex2=0;
-	    while((timeindex2<n_timepoints)&&(mytimepoints[timeindex2]<t2)) 
-	      timeindex2++;
-	    if (timeindex2 >= n_timepoints)
+	    timeindex2=n_timepoints-1;
+	    while((timeindex2>=0)&&(mytimepoints[timeindex2]>t2)) 
+	      timeindex2--;
+	    
+	    if (timeindex2 < 0)
 	    {
 	      myprintf("ERROR: interpolated timepoint not found, t2=%f\n", t2);
+	      return;
 	    }
+	    /*
+	    if (timeindex2 != timeindex)
+	    {
+	      myprintf("ERROR: interpolated timepoint error, t=%f, t2=%f, i=%d, j=%d, speed %f\n", t, t2, i, j, pol_spatialspeed);
+	      return;
+	    }
+	    */
 	    
 	    if (timeindex2<n_timepoints-1)
 	    {
@@ -151,14 +179,46 @@ void compute_fakecorrelationmatrix
 	    {
 	      value_t2=allgenebins_data[g][timeindex2][j];
 	    }
+
+
 	    corrmatrix[ACCESSELEMENT(i,j)]=corrmatrix[ACCESSELEMENT(i,j)]+value_t*value_t2;
 	    ncorrsamples[ACCESSELEMENT(i,j)]=ncorrsamples[ACCESSELEMENT(i,j)]+1;
+	    binmeans[i]=binmeans[i]+value_t;
+	    binmeans[j]=binmeans[j]+value_t2;
+	    binsamples[i]=binsamples[i]+1;
+	    binsamples[j]=binsamples[j]+1;
+	    
+	    corrmatrix[ACCESSELEMENT(j,i)]=corrmatrix[ACCESSELEMENT(j,i)]+value_t*value_t2;
+	    ncorrsamples[ACCESSELEMENT(j,i)]=ncorrsamples[ACCESSELEMENT(j,i)]+1;
+	    binmeans[i]=binmeans[i]+value_t;
+	    binmeans[j]=binmeans[j]+value_t2;
+	    binsamples[i]=binsamples[i]+1;
+	    binsamples[j]=binsamples[j]+1;
+
+	    corrmatrix[ACCESSELEMENT(i,i)]=corrmatrix[ACCESSELEMENT(i,i)]+value_t*value_t;
+	    ncorrsamples[ACCESSELEMENT(i,i)]=ncorrsamples[ACCESSELEMENT(i,i)]+1;
+	    binmeans[i]=binmeans[i]+value_t;
+	    binmeans[i]=binmeans[i]+value_t2;
+	    binsamples[i]=binsamples[i]+1;
+	    binsamples[i]=binsamples[i]+1;
+
+	    corrmatrix[ACCESSELEMENT(j,j)]=corrmatrix[ACCESSELEMENT(j,j)]+value_t2*value_t2;
+	    ncorrsamples[ACCESSELEMENT(j,j)]=ncorrsamples[ACCESSELEMENT(j,j)]+1; 
+	    binmeans[j]=binmeans[j]+value_t;
+	    binmeans[j]=binmeans[j]+value_t2;
+	    binsamples[j]=binsamples[j]+1;
+	    binsamples[j]=binsamples[j]+1;
 	  }
 	} /* For all locations j */
       } /* For all locations i */
     } /* For all genes */
   } /* For all time indices */
 
+
+  for (i=0;i<profilelength;i++)  /* omit RNA for now */
+  {
+    binmeans[i]=binmeans[i]/binsamples[i];
+  }
 
   for (i=0;i<profilelength;i++) /* omit RNA for now */
   {
@@ -167,6 +227,99 @@ void compute_fakecorrelationmatrix
       corrmatrix[ACCESSELEMENT(i,j)] /= ncorrsamples[ACCESSELEMENT(i,j)];
     }
   }
+
+
+  for (i=0;i<profilelength;i++)  /* omit RNA for now */
+  {
+    binvariances[i]=corrmatrix[ACCESSELEMENT(i,i)]-binmeans[i]*binmeans[i];
+  }
+
+
+
+#ifdef NOTDEFINED
+  /* Remaining thing: compute bin variances */
+
+  
+  for (timeindex=0;timeindex<n_timepoints;timeindex++)
+  {
+    t=mytimepoints[timeindex];
+    for (g=0;g<n_genes; g++)
+    {
+      if ((g%1000)==0)
+	myprintf("Reprocessing timeindex %d (%f) of %d, gene %d of %d\n", timeindex, t, n_timepoints, g, n_genes);
+
+      for (i=0;i<profilelength;i++) /* omit RNA for now */
+      {
+	value_t=allgenebins_data[g][timeindex][i];
+            
+	for (j=0;j<profilelength;j++) /* omit RNA for now */
+        {
+	  /* 
+	     Bin 0 is toward the end of the gene. 
+	     The assumption is that Bin 0 receives information from bin 1 and so forth, with delay.
+	     Thus, Bin 0 at time t should be correlated with Bin 1 at time t-delta, and so forth.
+	   */
+	  t2=t-(j-i)*pol_spatialspeed; 
+
+	  /* Truncation, to make sure nonzero delays converge to zero delay */
+	  if (t2<mytimepoints[0]) t2=mytimepoints[0];
+	  if (t2>mytimepoints[n_timepoints-1]) t2=mytimepoints[n_timepoints-1];
+
+	  /* if ((t2 >= mytimepoints[0]) && (t2 <= mytimepoints[n_timepoints-1])) */
+	  {
+	    timeindex2=n_timepoints-1;
+	    while((timeindex2>=0)&&(mytimepoints[timeindex2]>t2)) 
+	      timeindex2--;
+	    if (timeindex2 < 0)
+	    {
+	      myprintf("ERROR: interpolated timepoint not found, t2=%f\n", t2);
+	      return;
+	    }
+	    /*
+	    if (timeindex2 != timeindex)
+	    {
+	      myprintf("ERROR: interpolated timepoint error, t=%f, t2=%f, i=%d, j=%d, speed %f\n", t, t2, i, j, pol_spatialspeed);
+	      return;
+	    }
+	    */
+	    
+	    if (timeindex2<n_timepoints-1)
+	    {
+	      value_t2=allgenebins_data[g][timeindex2][j]+(t2-mytimepoints[timeindex2])/(mytimepoints[timeindex2+1]-mytimepoints[timeindex2])*(allgenebins_data[g][timeindex2+1][j]-allgenebins_data[g][timeindex2][j]);
+	    }
+	    else
+	    {
+	      value_t2=allgenebins_data[g][timeindex2][j];
+	    }
+
+	    binvariances[i]=binvariances[i]+(value_t-binmeans[i])*(value_t-binmeans[i]);
+	    binvariances[j]=binvariances[j]+(value_t2-binmeans[j])*(value_t2-binmeans[j]);
+
+	    binvariances[i]=binvariances[i]+(value_t-binmeans[i])*(value_t-binmeans[i]);
+	    binvariances[j]=binvariances[j]+(value_t2-binmeans[j])*(value_t2-binmeans[j]);
+
+	    binvariances[i]=binvariances[i]+(value_t-binmeans[i])*(value_t-binmeans[i]);
+	    binvariances[i]=binvariances[i]+(value_t-binmeans[i])*(value_t-binmeans[i]);
+
+	    binvariances[j]=binvariances[j]+(value_t2-binmeans[j])*(value_t2-binmeans[j]);
+	    binvariances[j]=binvariances[j]+(value_t2-binmeans[j])*(value_t2-binmeans[j]);	    
+	  }
+	} /* For all locations j */
+      } /* For all locations i */
+    } /* For all genes */
+  } /* For all time indices */
+
+  for (i=0;i<profilelength;i++)  /* omit RNA for now */
+  {
+    binvariances[i]=binvariances[i]/binsamples[i];
+  }
+
+#endif
+
+
+
+
+
 }
 
 
@@ -252,7 +405,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   temppol2spatialspeed = prhs[4];
   temppol2spatialspeed_data = (double *)mxGetData(temppol2spatialspeed);
   pol_spatialspeed = temppol2spatialspeed_data[0];
-
+  myprintf("Speed %f\n", pol_spatialspeed);
   
   tempbinmeans = mxCreateNumericMatrix(profilelength+1,1,mxDOUBLE_CLASS,0);
   binmeans_data = (double *)mxGetData(tempbinmeans);

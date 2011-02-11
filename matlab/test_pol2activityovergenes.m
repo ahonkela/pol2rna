@@ -6,6 +6,11 @@ cd ~/synergy_data/PolII/Mapping_results
 chromosomenames={'chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY','chrM'};
 n_chromosomes=length(chromosomenames);
 
+
+%-----------------------------
+% Read in gene information
+%-----------------------------
+
 % read gene ids and start and end locations
 genelocs=read_stringfile('~/synergy_data/PolII/Mapping_results/genes.txt',[32 9 10 13]);
 genelocs={genelocs{2:end}};
@@ -111,6 +116,51 @@ save all_gene_pol2bins.mat allgenebins bininfo
 binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k)=length(allgenebins{k,1});end;
 
 
+%---------------------------------------------------
+% normalize time points by overall read count, 
+% normalize genes by their length
+%---------------------------------------------------
+pol2overall_uniquehits = [101720334 91131727 72832980 93776268 93180719 94068955 87257588 85438329 92506713 94888353];
+pol2filtered_hits = [82716552 76680010 51009272 78425211 74768277 73970821 59797272 56458506 83618025 81174490];
+pol2filtered_multipliers = (pol2filtered_hits/mean(pol2filtered_hits)).^(-1);
+
+allgenebins_normalized=cell(size(allgenebins,1),size(allgenebins,2));
+for k=1:size(allgenebins,1),
+  genelength=bininfo(k,3)-bininfo(k,2)+1;
+  for l=1:size(allgenebins,2),
+    allgenebins_normalized{k,l}=allgenebins{k,l}*pol2filtered_multipliers(l)/genelength;    
+  end;
+end;
+
+
+%---------------------------------------------------
+% Find genes with substantial POL2 activity and variance of
+% activity over time
+%---------------------------------------------------
+
+pol_sumseries=zeros(size(allgenebins_normalized,1),10);
+for k=1:size(allgenebins_normalized,1),
+  if length(allgenebins_normalized{k,1}>0),
+    for l=1:10,
+      pol_sumseries(k,l)=sum(allgenebins_normalized{k,l});
+    end;
+  else
+    pol_sumseries(k,:)=nan;
+  end;  
+end;
+pol_sumseries_means=zeros(size(allgenebins_normalized,1),1);
+for k=1:size(allgenebins_normalized,1),
+  pol_sumseries_means(k)=mean(pol_sumseries(k,:));
+end;
+pol_sumseries_variances=zeros(size(allgenebins_normalized,1),1);
+for k=1:size(allgenebins_normalized,1),
+  pol_sumseries_variances(k)=var(pol_sumseries(k,:));
+end;
+Isubstantialpol2=find((pol_sumseries_means>=10) & (pol_sumseries_variances>=10));
+
+
+
+
 
 %timepoint=4;
 %chr_index=2;
@@ -184,10 +234,60 @@ ylabel('Normalized Pol2-activity at each bin');
 %             x(end-k) at time t-delay*k
 %-----------------------------------------------------------------    
 
+binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k)=length(allgenebins{k,1});end;
 
-% compute correlation matrix
 profilelength=100;
-I2=find(binlengths>=profilelength);
+%I2=find(binlengths>=profilelength);
+I2=find((binlengths>=profilelength) & (pol_sumseries_means>=10) & (pol_sumseries_variances>=10));
+%I2=[6586]; % GREB1
+
+%tempallgenebins=allgenebins_normalized(I2,:);
+tempallgenebins=allgenebins_normalized(I2,:);
+for k=1:size(tempallgenebins,1),
+  for l=1:size(tempallgenebins,2),
+    tempallgenebins{k,l}=tempallgenebins{k,l}(end-profilelength+1:end);
+  end;
+end;
+% aggregate bins, 10 bins in one
+nbinsinone=10;
+aggregatedlength=profilelength/nbinsinone;
+for k=1:size(tempallgenebins,1),
+  for l=1:size(tempallgenebins,2),
+    tempbins=zeros(aggregatedlength,1);
+    for m=1:aggregatedlength,
+      tempbins(m)=sum(tempallgenebins{k,l}((1+(m-1)*nbinsinone):(nbinsinone+(m-1)*nbinsinone)));
+    end;    
+    tempallgenebins{k,l}=tempbins;
+  end;
+end;
+
+
+addpath ~/mlprojects/pol2rnaseq/matlab/
+cd ~/mlprojects/pol2rnaseq/matlab/
+mex compute_fakecorrelationmatrix_c.c
+cd ~/synergy_data/PolII/Mapping_results
+
+speeds=[[-4:0.1:4]];
+entropies=zeros(length(speeds),1);
+sumpearsons=zeros(length(speeds),1);
+for k=1:length(speeds),
+  pol_spatialspeed=speeds(k); %(2000/5)/200;
+
+  % compute correlation matrix
+  [binmeans,binvariances,binsamples,corrmatrix,corrsamples]=compute_fakecorrelationmatrix_c(int32(size(tempallgenebins,1)),int32(10),int32(aggregatedlength),tempallgenebins,double(pol_spatialspeed));
+
+  tempmatrix=corrmatrix-(binmeans*binmeans');
+  entropies(k)=0.5*aggregatedlength*log(2*pi*exp(1))+0.5*(log(det(tempmatrix(1:aggregatedlength,1:aggregatedlength)/tempmatrix(1,1)))+log(tempmatrix(1,1)));
+
+  tempmatrix2=(corrmatrix-(binmeans*binmeans'))./sqrt(binvariances*binvariances');
+  sumpearsons(k)=sum(sum(abs(tempmatrix2(1:aggregatedlength,1:aggregatedlength))));
+  
+%  figure; 
+%  %imagesc((corrmatrix-(binmeans*binmeans'))./sqrt(binvariances*binvariances')); 
+%  imagesc((corrmatrix-(binmeans*binmeans'))); 
+%  colormap(gray);
+%  title(sprintf('lag (min/200bp) %f, entropy %f',pol_spatialspeed, entropies(k)));  
+end;
 
 
 
