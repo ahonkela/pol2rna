@@ -73,10 +73,11 @@ bininfo=bininfo(I,:);
 
 %-----------------------------
 % Sort bin array in ascending order of start location. 
-% The activity computation code assumes bins have been sorted like that.
+% The POL2 activity computation code assumes bins have been sorted like that.
 %-----------------------------
 [y,I1]=sort(bininfo(:,2));
 bininfo=bininfo(I1,:);
+
 
 
 %-----------------------------
@@ -116,9 +117,39 @@ save all_gene_pol2bins.mat allgenebins bininfo
 binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k)=length(allgenebins{k,1});end;
 
 
+
+
+
+%-----------------------------------------------------------------
+% Read in RNA activities (reads per kilobase of exon model)
+%-----------------------------------------------------------------
+
+filteredgenes=read_stringfile('rpkm_fdrfiltered.txt',[9 10 13 double(' ')]);
+% Find POL indices corresponding to the filtered genes
+filtered_genenames=cell(length(filteredgenes),1);
+filtered_genenames_numeric=zeros(length(filteredgenes),1);
+
+rna_summaryseries=nan*ones(size(bininfo,1),10);
+for i=1:length(filteredgenes),
+  gene_ensembleid=str2double(filteredgenes{i}{1}(6:end-1));
+  bininfo_index=find(bininfo(:,5)==gene_ensembleid);
+  if length(bininfo_index==1),
+    for j=1:10,
+      rna_summaryseries(bininfo_index,j)=str2double(filteredgenes{i}{j+1});
+    end;  
+  end;  
+end;
+
+
+
+
+
+
 %---------------------------------------------------
-% normalize time points by overall read count, 
-% normalize genes by their length
+% normalize POL2 time points by overall read count.
+% Do not normalize genes by their length, it does not
+% make sense later when looking at sums over a fixed 
+% number of bins.
 %---------------------------------------------------
 pol2overall_uniquehits = [101720334 91131727 72832980 93776268 93180719 94068955 87257588 85438329 92506713 94888353];
 pol2filtered_hits = [82716552 76680010 51009272 78425211 74768277 73970821 59797272 56458506 83618025 81174490];
@@ -126,37 +157,91 @@ pol2filtered_multipliers = (pol2filtered_hits/mean(pol2filtered_hits)).^(-1);
 
 allgenebins_normalized=cell(size(allgenebins,1),size(allgenebins,2));
 for k=1:size(allgenebins,1),
-  genelength=bininfo(k,3)-bininfo(k,2)+1;
+  %genelength=bininfo(k,3)-bininfo(k,2)+1;
+  genelength=1; % no gene length normalization...
   for l=1:size(allgenebins,2),
     allgenebins_normalized{k,l}=allgenebins{k,l}*pol2filtered_multipliers(l)/genelength;    
   end;
 end;
 
 
+
+
+
+
+%-----------------------------------------------------------------
+% Create POL2 summary: sum of first few bins from the start site onwards
+%-----------------------------------------------------------------
+
+polsummarylength=20;
+polsummaryoffset=5;
+
+pol_summaryseries=nan*ones(size(bininfo,1),10);
+nbinsinone=10;
+for i=1:size(bininfo,1),
+
+  % summarize by last bins 
+  % (note that last bins = bins closest to transcription start)
+  if (binlengths(i)>=polsummarylength+polsummaryoffset),
+    for j=1:10,
+      pol_summaryseries(i,j)=sum(allgenebins_normalized{i,j}((end-polsummarylength+1-polsummaryoffset):(end-polsummaryoffset)));
+    end;
+  end;
+  
+end;
+
+
+%-----------------------------------------------------------------
+% Create simple estimate of RNA derivative, by fitting splines
+%-----------------------------------------------------------------
+
+timepoints=[0 5 10 20 40 80 160 320 640 1280];
+
+rna_summaryseries_derivatives=nan*ones(size(bininfo,1),10);
+for i=1:size(bininfo,1),
+  if sum(isnan(rna_summaryseries(i,:)))==0,
+    interpolatedpoints=[0:0.1:1281];
+    tempspline=spline(timepoints,[0 rna_summaryseries(i,:) (rna_summaryseries(i,end)-rna_summaryseries(i,end-1))/(1280-640)],interpolatedpoints);
+    for j=1:10,
+      tempI=find(timepoints(j)==interpolatedpoints);
+      rna_summaryseries_derivatives(i,j)=(tempspline(tempI(1)+1)-tempspline(tempI(1)))/0.1;
+    end;  
+  end;
+end;
+
+
+
+
 %---------------------------------------------------
-% Find genes with substantial POL2 activity and variance of
-% activity over time
+% Find genes with: 
+% - substantial POL2 activity 
+% - substantial POL2 variance over time
+% - substantial RNA activity 
+% - substantial RNA variance over time
 %---------------------------------------------------
 
-pol_sumseries=zeros(size(allgenebins_normalized,1),10);
+pol_summaryseries_means=zeros(size(allgenebins_normalized,1),1);
 for k=1:size(allgenebins_normalized,1),
-  if length(allgenebins_normalized{k,1}>0),
-    for l=1:10,
-      pol_sumseries(k,l)=sum(allgenebins_normalized{k,l});
-    end;
-  else
-    pol_sumseries(k,:)=nan;
-  end;  
+  pol_summaryseries_means(k)=mean(pol_summaryseries(k,:));
 end;
-pol_sumseries_means=zeros(size(allgenebins_normalized,1),1);
+pol_summaryseries_variances=zeros(size(allgenebins_normalized,1),1);
 for k=1:size(allgenebins_normalized,1),
-  pol_sumseries_means(k)=mean(pol_sumseries(k,:));
+  pol_summaryseries_variances(k)=var(pol_summaryseries(k,:));
 end;
-pol_sumseries_variances=zeros(size(allgenebins_normalized,1),1);
+rna_summaryseries_means=zeros(size(allgenebins_normalized,1),1);
 for k=1:size(allgenebins_normalized,1),
-  pol_sumseries_variances(k)=var(pol_sumseries(k,:));
+  rna_summaryseries_means(k)=mean(rna_summaryseries(k,:));
 end;
-Isubstantialpol2=find((pol_sumseries_means>=10) & (pol_sumseries_variances>=10));
+rna_summaryseries_variances=zeros(size(allgenebins_normalized,1),1);
+for k=1:size(allgenebins_normalized,1),
+  rna_summaryseries_variances(k)=var(rna_summaryseries(k,:));
+end;
+
+
+Isubstantialpol2=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_summaryseries_means>=exp(1.3)) & ...
+		      (rna_summaryseries_variances>=exp(1.7)));
 
 
 
@@ -177,52 +262,6 @@ Isubstantialpol2=find((pol_sumseries_means>=10) & (pol_sumseries_variances>=10))
 %
 %    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int8(bininfo(I,6)),int32(d),int32(max_duplicates),int32(subbin_length));
 
-
-%-----------------------------------------------------------------
-% compute a mean normalized gene profile, weighted by sum of bins
-%-----------------------------------------------------------------
-profilelength=100;
-I2=find(binlengths>=profilelength);
-
-
-
-profile=zeros(length(I2),profilelength);
-for k=1:length(I2),
-  profile(k,:)=tempbins{I2(k)}(end:-1:end-profilelength+1);
-end;
-
-normalizedprofile=[];
-profilemean=zeros(1,profilelength);
-normalizer=0;
-nsamples=0;
-for k=1:length(I2),
-  if sum(profile(k,:))>0,
-    tempprofile=profile(k,:)/sum(profile(k,:));
-    normalizedprofile=[normalizedprofile;tempprofile];
-    profilemean=profilemean+tempprofile*sum(profile(k,:));
-    normalizer=normalizer+sum(profile(k,:));
-    nsamples=nsamples+1;
-  end;  
-end;
-profilemean=profilemean/normalizer;
-
-
-profilevar=zeros(1,profilelength);
-for k=1:length(I2),
-  if sum(profile(k,:))>0,
-    profilevar=profilevar+ sum(profile(k,:))*( ( profile(k,:)/sum(profile(k,:)) ) -profilemean).^2;  
-  end;    
-end;
-profilevar=profilevar/normalizer;    
-
-clf;
-boxplot(normalizedprofile); hold on;
-h=plot(profilemean,'g-'); set(h,'LineWidth',2);
-h=plot(profilemean-sqrt(profilevar),'c-'); set(h,'LineWidth',2);
-h=plot(profilemean+sqrt(profilevar),'c-'); set(h,'LineWidth',2);
-title(sprintf('Normalized Pol2-profile from transcription star site\n(Weighted mean and STD over 1177 genes, weighted by their Pol2 activity)'))
-xlabel('Bins from gene start, bins size=200 basepairs');
-ylabel('Normalized Pol2-activity at each bin');
 
     
     
@@ -290,6 +329,79 @@ for k=1:length(speeds),
 end;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%-----------------------------------------------------------------
+% compute a mean normalized gene profile, weighted by sum of bins
+%-----------------------------------------------------------------
+profilelength=100;
+I2=find(binlengths>=profilelength);
+
+
+
+profile=zeros(length(I2),profilelength);
+for k=1:length(I2),
+  profile(k,:)=tempbins{I2(k)}(end:-1:end-profilelength+1);
+end;
+
+normalizedprofile=[];
+profilemean=zeros(1,profilelength);
+normalizer=0;
+nsamples=0;
+for k=1:length(I2),
+  if sum(profile(k,:))>0,
+    tempprofile=profile(k,:)/sum(profile(k,:));
+    normalizedprofile=[normalizedprofile;tempprofile];
+    profilemean=profilemean+tempprofile*sum(profile(k,:));
+    normalizer=normalizer+sum(profile(k,:));
+    nsamples=nsamples+1;
+  end;  
+end;
+profilemean=profilemean/normalizer;
+
+
+profilevar=zeros(1,profilelength);
+for k=1:length(I2),
+  if sum(profile(k,:))>0,
+    profilevar=profilevar+ sum(profile(k,:))*( ( profile(k,:)/sum(profile(k,:)) ) -profilemean).^2;  
+  end;    
+end;
+profilevar=profilevar/normalizer;    
+
+clf;
+boxplot(normalizedprofile); hold on;
+h=plot(profilemean,'g-'); set(h,'LineWidth',2);
+h=plot(profilemean-sqrt(profilevar),'c-'); set(h,'LineWidth',2);
+h=plot(profilemean+sqrt(profilevar),'c-'); set(h,'LineWidth',2);
+title(sprintf('Normalized Pol2-profile from transcription star site\n(Weighted mean and STD over 1177 genes, weighted by their Pol2 activity)'))
+xlabel('Bins from gene start, bins size=200 basepairs');
+ylabel('Normalized Pol2-activity at each bin');
+
+
+
+
+
+
+
+
+
+################### OLD CODE ########################
 
 % compute bin means
 binmeans=zeros(profilelength+1,1);
