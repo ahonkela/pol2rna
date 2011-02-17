@@ -170,8 +170,10 @@ end;
 
 
 %-----------------------------------------------------------------
-% Create POL2 summary: sum of first few bins from the start site onwards
+% Create POL2 summary
 %-----------------------------------------------------------------
+
+% Version 1: sum of first few bins from the start site onwards
 
 polsummarylength=20;
 polsummaryoffset=5;
@@ -191,23 +193,27 @@ for i=1:size(bininfo,1),
 end;
 
 
-%-----------------------------------------------------------------
-% Create simple estimate of RNA derivative, by fitting splines
-%-----------------------------------------------------------------
+% Version 2: sum of last few bins (towards the end of the gene)
 
-timepoints=[0 5 10 20 40 80 160 320 640 1280];
+polsummarylength=20;
+polsummaryoffset=0;
 
-rna_summaryseries_derivatives=nan*ones(size(bininfo,1),10);
+pol_summaryseries=nan*ones(size(bininfo,1),10);
+nbinsinone=10;
 for i=1:size(bininfo,1),
-  if sum(isnan(rna_summaryseries(i,:)))==0,
-    interpolatedpoints=[0:0.1:1281];
-    tempspline=spline(timepoints,[0 rna_summaryseries(i,:) (rna_summaryseries(i,end)-rna_summaryseries(i,end-1))/(1280-640)],interpolatedpoints);
+
+  % summarize by first bins 
+  % (note that first bins = bins closest to transcription end)
+  if (binlengths(i)>=polsummarylength+polsummaryoffset),
     for j=1:10,
-      tempI=find(timepoints(j)==interpolatedpoints);
-      rna_summaryseries_derivatives(i,j)=(tempspline(tempI(1)+1)-tempspline(tempI(1)))/0.1;
-    end;  
+      pol_summaryseries(i,j)=sum(allgenebins_normalized{i,j}((1+polsummaryoffset):(polsummarylength+polsummaryoffset)));
+    end;
   end;
+  
 end;
+
+
+
 
 
 
@@ -237,11 +243,141 @@ for k=1:size(allgenebins_normalized,1),
   rna_summaryseries_variances(k)=var(rna_summaryseries(k,:));
 end;
 
-
 Isubstantialpol2=find((pol_summaryseries_means>=exp(9)) & ...
 		      (pol_summaryseries_variances>=exp(15)) & ...
 		      (rna_summaryseries_means>=exp(1.3)) & ...
 		      (rna_summaryseries_variances>=exp(1.7)));
+
+
+
+%---------------------------------------------------
+% Create a clustering of the joint POL2-RNA series, restricted to
+% genes with substantial activity
+%---------------------------------------------------
+
+%jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries(Isubstantialpol2,:)];
+
+jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries_derivatives(Isubstantialpol2,:)];
+
+% normalize over time...
+for i=1:size(jointseries,1),
+  jointseries(i,1:10)=jointseries(i,1:10)/sum(jointseries(i,1:10));
+  jointseries(i,11:20)=jointseries(i,11:20)/sum(abs(jointseries(i,11:20)));
+end;
+nclusters=20;
+idx=kmeans(jointseries,nclusters,'EmptyAction','singleton','MaxIter',1000);
+
+nmembers=zeros(nclusters,1);
+for i=1:nclusters,
+  I=find(idx==i);
+  nmembers(i)=length(I);
+end;
+[y,I2]=sort(-nmembers);
+
+for k=1:5,
+  figure;
+  for j0=1:4,
+    subplot(2,2,j0); j=(k-1)*4+j0;
+
+    I=find(idx==I2(j));
+
+    clustmean_pol=mean(jointseries(I,1:10));
+    clustvar_pol=var(jointseries(I,1:10));
+    clustmean_rna=mean(jointseries(I,11:20));
+    clustvar_rna=var(jointseries(I,11:20));
+    
+    boxplot(jointseries(I,1:10),'colors',[1 0.5 0.5]);
+    hold on;
+    boxplot(jointseries(I,11:20),'colors',[0.5 0.5 1]);
+    hold on; 
+    h=plot(clustmean_pol,'r-');
+    set(h,'LineWidth',2);
+    h=plot(clustmean_rna,'b-');
+    set(h,'LineWidth',2);
+    
+    mytitle=sprintf('POL2(red)-RNA(blue) cluster %d (%d members)', j, length(I));
+    title(mytitle);
+  end;
+end;
+
+
+
+
+
+
+delaytries=[0:0.5:40];
+meancorrelations=zeros(length(delaytries),1);
+ncandidates=zeros(length(delaytries),1);
+
+for delayindex=1:length(delaytries),
+
+%-----------------------------------------------------------------
+% Create simple estimate of RNA derivative, by fitting splines.
+% Apply a delay, for computation of the correlations.
+%-----------------------------------------------------------------
+
+timepoints=[0 5 10 20 40 80 160 320 640 1280];
+rna_delay=delaytries(delayindex)
+spline_spacing=0.1;
+
+rna_summaryseries_derivatives=nan*ones(size(bininfo,1),10);
+for i=1:size(bininfo,1),
+  if sum(isnan(rna_summaryseries(i,:)))==0,
+    tempseries=rna_summaryseries(i,:);
+    tempseries=tempseries/sum(tempseries);
+    interpolatedpoints=[0:spline_spacing:(1281+ceil(rna_delay))];
+    firstderivative=0;
+    lastderivative=0;
+    % lastderivative=(tempseries(end)-tempseries(end-1))/(1280-640);
+    tempspline=spline(timepoints,[firstderivative tempseries lastderivative],interpolatedpoints);
+    for j=1:10,
+      tempI=find(round((timepoints(j)+rna_delay)/spline_spacing)*spline_spacing==interpolatedpoints);
+      rna_summaryseries_derivatives(i,j)=(tempspline(tempI(1)+1)-tempspline(tempI(1)))/spline_spacing;
+    end;  
+  end;
+end;
+
+
+
+
+
+
+%---------------------------------------------------
+% Compute correlations between POL2 and (delayed) RNA derivatives
+%---------------------------------------------------
+lengthconsidered=7;
+simpledelay=0;
+
+corrs=zeros(length(Isubstantialpol2),1);
+pvals=zeros(length(Isubstantialpol2),1);
+for i=1:length(corrs),
+  if (var(pol_summaryseries(Isubstantialpol2(i),1:lengthconsidered))>0) && (var(rna_summaryseries_derivatives(Isubstantialpol2(i),(1+simpledelay):(lengthconsidered+simpledelay)))>0),
+    [tempcorr,pval]=corr([pol_summaryseries(Isubstantialpol2(i),1:lengthconsidered)' rna_summaryseries_derivatives(Isubstantialpol2(i),(1+simpledelay):(lengthconsidered+simpledelay))']);
+  else
+    tempcorr=[0 0;0 0];
+    pval=[1 1;1 1];
+  end;  
+  corrs(i)=tempcorr(1,2);
+  pvals(i)=pval(1,2);
+end;
+
+[y,I3]=sort(-corrs);
+candidates=find((corrs>0).*(pvals <= 0.01));
+
+meancorrelations(delayindex)=mean(corrs);
+ncandidates(delayindex)=length(candidates);
+
+
+end;
+
+
+
+figure; 
+subplot(2,1,1); plot(delaytries,meancorrelations); 
+xlabel('RNA delay (min)'); ylabel('Mean POL-RNA corr'); 
+title('RNAderivative-POL correlations, POL=sum of [0bp-4000bp] from gene end')
+subplot(2,1,2); plot(delaytries,ncandidates); 
+xlabel('RNA delay (min)'); ylabel('N.of significant pos.corrs.');
 
 
 
