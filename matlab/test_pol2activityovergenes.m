@@ -255,9 +255,9 @@ Isubstantialpol2=find((pol_summaryseries_means>=exp(9)) & ...
 % genes with substantial activity
 %---------------------------------------------------
 
-%jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries(Isubstantialpol2,:)];
+jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries(Isubstantialpol2,:)];
 
-jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries_derivatives(Isubstantialpol2,:)];
+%jointseries=[pol_summaryseries(Isubstantialpol2,:) rna_summaryseries_derivatives(Isubstantialpol2,:)];
 
 % normalize over time...
 for i=1:size(jointseries,1),
@@ -285,14 +285,22 @@ for k=1:5,
     clustvar_pol=var(jointseries(I,1:10));
     clustmean_rna=mean(jointseries(I,11:20));
     clustvar_rna=var(jointseries(I,11:20));
+
+    clustmean_rnad=mean(rna_summaryseries_derivatives(Isubstantialpol2(I),:));
+    clustvar_rnad=var(rna_summaryseries_derivatives(Isubstantialpol2(I),:));    
     
     boxplot(jointseries(I,1:10),'colors',[1 0.5 0.5]);
     hold on;
     boxplot(jointseries(I,11:20),'colors',[0.5 0.5 1]);
     hold on; 
+    %boxplot(rna_summaryseries_derivatives(Isubstantialpol2(I),:),'colors',[0.5 1 0.5]);
+    %hold on; 
+    
     h=plot(clustmean_pol,'r-');
     set(h,'LineWidth',2);
     h=plot(clustmean_rna,'b-');
+    set(h,'LineWidth',2);
+    h=plot(clustmean_rnad*50,'g-');
     set(h,'LineWidth',2);
     
     mytitle=sprintf('POL2(red)-RNA(blue) cluster %d (%d members)', j, length(I));
@@ -345,7 +353,7 @@ end;
 %---------------------------------------------------
 % Compute correlations between POL2 and (delayed) RNA derivatives
 %---------------------------------------------------
-lengthconsidered=7;
+lengthconsidered=4;
 simpledelay=0;
 
 corrs=zeros(length(Isubstantialpol2),1);

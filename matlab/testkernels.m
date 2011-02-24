@@ -1,10 +1,10 @@
 A=1;
-L=2;
+L=8;
 Sj=1;
 Sk=1;
 Dj=1;
 Dk=1;
-sigma2=0.1;
+sigma2=0.5;
 temppoints=[0:5:1280];
 kap=zeros(length(temppoints),length(temppoints));
 kim=zeros(length(temppoints),length(temppoints));
