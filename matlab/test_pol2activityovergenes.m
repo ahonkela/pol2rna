@@ -66,8 +66,8 @@ end;
 
 
 % Omit genes for which we can't find the strand or the chromosome...
-I=find((isnan(bininfo(:,6))==0) | (bininfo(:,1)==-1));
-bininfo=bininfo(I,:);
+% I=find((isnan(bininfo(:,6))==0) | (bininfo(:,1)==-1));
+% bininfo=bininfo(I,:);
 
 
 
@@ -121,10 +121,26 @@ binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k
 
 
 %-----------------------------------------------------------------
-% Read in RNA activities (reads per kilobase of exon model)
+% Read in RNA activities (raw counts normalized in a way involving
+% gene-wise geometric means over time and medians over genes)
 %-----------------------------------------------------------------
 
-filteredgenes=read_stringfile('rpkm_fdrfiltered.txt',[9 10 13 double(' ')]);
+load('~/synergy_data/RNA/DE/counts_normalized.mat');
+rna_summaryseries=nan*ones(size(bininfo,1),10);
+for i=1:length(geneNames),
+  gene_ensembleid=str2double(geneNames{i}(5:end));
+  bininfo_index=find(bininfo(:,5)==gene_ensembleid);
+  if length(bininfo_index==1),
+    for j=1:10,
+      rna_summaryseries(bininfo_index,j)=normrpk(i,j);
+    end;  
+  end;  
+end;
+
+
+if 0,
+% OLD VERSION  
+filteredgenes=read_stringfile('rawcounts_fdrfiltered.txt',[9 10 13 double(' ')]);
 % Find POL indices corresponding to the filtered genes
 filtered_genenames=cell(length(filteredgenes),1);
 filtered_genenames_numeric=zeros(length(filteredgenes),1);
@@ -139,34 +155,7 @@ for i=1:length(filteredgenes),
     end;  
   end;  
 end;
-
-
-
-
-
-
-%---------------------------------------------------
-% normalize POL2 time points by overall read count.
-% Do not normalize genes by their length, it does not
-% make sense later when looking at sums over a fixed 
-% number of bins.
-%---------------------------------------------------
-pol2overall_uniquehits = [101720334 91131727 72832980 93776268 93180719 94068955 87257588 85438329 92506713 94888353];
-pol2filtered_hits = [82716552 76680010 51009272 78425211 74768277 73970821 59797272 56458506 83618025 81174490];
-pol2filtered_multipliers = (pol2filtered_hits/mean(pol2filtered_hits)).^(-1);
-
-allgenebins_normalized=cell(size(allgenebins,1),size(allgenebins,2));
-for k=1:size(allgenebins,1),
-  %genelength=bininfo(k,3)-bininfo(k,2)+1;
-  genelength=1; % no gene length normalization...
-  for l=1:size(allgenebins,2),
-    allgenebins_normalized{k,l}=allgenebins{k,l}*pol2filtered_multipliers(l)/genelength;    
-  end;
 end;
-
-
-
-
 
 
 %-----------------------------------------------------------------
@@ -186,7 +175,7 @@ for i=1:size(bininfo,1),
   % (note that last bins = bins closest to transcription start)
   if (binlengths(i)>=polsummarylength+polsummaryoffset),
     for j=1:10,
-      pol_summaryseries(i,j)=sum(allgenebins_normalized{i,j}((end-polsummarylength+1-polsummaryoffset):(end-polsummaryoffset)));
+      pol_summaryseries(i,j)=sum(allgenebins{i,j}((end-polsummarylength+1-polsummaryoffset):(end-polsummaryoffset)));
     end;
   end;
   
@@ -197,22 +186,86 @@ end;
 
 polsummarylength=20;
 polsummaryoffset=0;
-
+startpeaklength=20;
 pol_summaryseries=nan*ones(size(bininfo,1),10);
 nbinsinone=10;
 for i=1:size(bininfo,1),
 
   % summarize by first bins 
   % (note that first bins = bins closest to transcription end)
-  if (binlengths(i)>=polsummarylength+polsummaryoffset),
-    for j=1:10,
-      pol_summaryseries(i,j)=sum(allgenebins_normalized{i,j}((1+polsummaryoffset):(polsummarylength+polsummaryoffset)));
+
+  %  if (binlengths(i)>=polsummarylength+polsummaryoffset),
+
+  % make sure we are not taking the peak at the transcription start...
+  if (binlengths(i)>=polsummarylength+startpeaklength+polsummaryoffset), 
+  for j=1:10,
+      pol_summaryseries(i,j)=sum(allgenebins{i,j}((1+polsummaryoffset):(polsummarylength+polsummaryoffset)));
     end;
   end;
   
 end;
 
 
+
+
+%---------------------------------------------------
+% normalize POL2 time points by a strategy involving
+% geometric means over time for each gene, and median
+% of geometric mean-normalized genes at each time.
+%---------------------------------------------------
+tempgeommeans=zeros(size(bininfo,1),1);
+for i=1:size(bininfo,1),
+  Igeommean=find(pol_summaryseries(i,:)>0);
+  if length(Igeommean>0),
+    tempgeommeans(i)=exp(mean(log(pol_summaryseries(i,Igeommean))));  
+  end;
+end;
+Imedians=find(tempgeommeans>0);
+tempmedians=zeros(1,10);
+for j=1:10,
+  tempmedians(j)=median(pol_summaryseries(Imedians,j)./tempgeommeans(Imedians));
+end;
+for j=1:10,
+  pol_summaryseries(:,j)=pol_summaryseries(:,j)/tempmedians(j);
+end;
+
+
+if 0,
+pol2overall_uniquehits = [101720334 91131727 72832980 93776268 93180719 94068955 87257588 85438329 92506713 94888353];
+pol2filtered_hits = [82716552 76680010 51009272 78425211 74768277 73970821 59797272 56458506 83618025 81174490];
+pol2filtered_multipliers = (pol2filtered_hits/mean(pol2filtered_hits)).^(-1);
+
+allgenebins_normalized=cell(size(allgenebins,1),size(allgenebins,2));
+for k=1:size(allgenebins,1),
+  %genelength=bininfo(k,3)-bininfo(k,2)+1;
+  genelength=1; % no gene length normalization...
+  for l=1:size(allgenebins,2),
+    allgenebins_normalized{k,l}=allgenebins{k,l}*pol2filtered_multipliers(l)/genelength;    
+  end;
+end;
+end;
+
+
+
+%---------------------------------------------------
+% normalize RNA time points by a strategy involving
+% geometric means over time for each gene, and median
+% of geometric mean-normalized genes at each time.
+%---------------------------------------------------
+if 0,
+tempgeommeans=zeros(size(bininfo,1),1);
+for i=1:size(bininfo,1),
+  tempgeommeans(i)=exp(mean(log(rna_summaryseries(i,:))));
+end;
+Igeommeans=find(tempgeommeans>0);
+tempmedians=zeros(1,10);
+for j=1:10,
+  tempmedians(j)=median(rna_summaryseries(Igeommeans,j)./Igeommeans);
+end;
+for j=1:10,
+  rna_summaryseries(:,j)=rna_summaryseries(:,j)/tempmedians(j);
+end;
+end;
 
 
 
@@ -226,25 +279,36 @@ end;
 % - substantial RNA variance over time
 %---------------------------------------------------
 
-pol_summaryseries_means=zeros(size(allgenebins_normalized,1),1);
-for k=1:size(allgenebins_normalized,1),
+pol_summaryseries_means=zeros(size(allgenebins,1),1);
+for k=1:size(allgenebins,1),
   pol_summaryseries_means(k)=mean(pol_summaryseries(k,:));
 end;
-pol_summaryseries_variances=zeros(size(allgenebins_normalized,1),1);
-for k=1:size(allgenebins_normalized,1),
+pol_summaryseries_variances=zeros(size(allgenebins,1),1);
+for k=1:size(allgenebins,1),
   pol_summaryseries_variances(k)=var(pol_summaryseries(k,:));
 end;
-rna_summaryseries_means=zeros(size(allgenebins_normalized,1),1);
-for k=1:size(allgenebins_normalized,1),
+rna_summaryseries_means=zeros(size(allgenebins,1),1);
+for k=1:size(allgenebins,1),
   rna_summaryseries_means(k)=mean(rna_summaryseries(k,:));
 end;
-rna_summaryseries_variances=zeros(size(allgenebins_normalized,1),1);
-for k=1:size(allgenebins_normalized,1),
+rna_summaryseries_variances=zeros(size(allgenebins,1),1);
+for k=1:size(allgenebins,1),
   rna_summaryseries_variances(k)=var(rna_summaryseries(k,:));
 end;
 
 Isubstantialpol2=find((pol_summaryseries_means>=exp(9)) & ...
 		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_summaryseries_means>=exp(1.3)) & ...
+		      (rna_summaryseries_variances>=exp(1.7)));
+
+Isubstantialpol2=find((pol_summaryseries_means>=exp(12)) & ...
+		      (pol_summaryseries_variances>=exp(18)));
+
+Isubstantialpol2=find((rna_summaryseries_means>=exp(1.3)) & ...
+		      (rna_summaryseries_variances>=exp(1.7)));
+
+Isubstantialpol2=find((pol_summaryseries_means>=exp(12)) & ...
+		      (pol_summaryseries_variances>=exp(18)) & ...
 		      (rna_summaryseries_means>=exp(1.3)) & ...
 		      (rna_summaryseries_variances>=exp(1.7)));
 
@@ -265,8 +329,16 @@ for i=1:size(jointseries,1),
   jointseries(i,11:20)=jointseries(i,11:20)/sum(abs(jointseries(i,11:20)));
 end;
 nclusters=20;
-idx=kmeans(jointseries,nclusters,'EmptyAction','singleton','MaxIter',1000);
-
+nrepetitions=10;
+bestval=inf;
+for myrep=1:nrepetitions,
+  [tempidx,centroids,sumd]=kmeans(jointseries,nclusters,'EmptyAction','singleton','MaxIter',1000);
+  if (sum(sumd)<bestval),
+    bestval=sum(sumd);
+    idx=tempidx;
+  end;  
+end;
+  
 nmembers=zeros(nclusters,1);
 for i=1:nclusters,
   I=find(idx==i);
@@ -286,22 +358,26 @@ for k=1:5,
     clustmean_rna=mean(jointseries(I,11:20));
     clustvar_rna=var(jointseries(I,11:20));
 
-    clustmean_rnad=mean(rna_summaryseries_derivatives(Isubstantialpol2(I),:));
-    clustvar_rnad=var(rna_summaryseries_derivatives(Isubstantialpol2(I),:));    
+%    clustmean_rnad=mean(rna_summaryseries_derivatives(Isubstantialpol2(I),:));
+%    clustvar_rnad=var(rna_summaryseries_derivatives(Isubstantialpol2(I),:));    
     
-    boxplot(jointseries(I,1:10),'colors',[1 0.5 0.5]);
+    boxplot(jointseries(I,1:10),'colors',[1 0.5 0.5],'symbol','r+');
     hold on;
-    boxplot(jointseries(I,11:20),'colors',[0.5 0.5 1]);
+
+    boxplot(jointseries(I,11:20),'colors',[0.5 0.5 1],'symbol','b+');
     hold on; 
-    %boxplot(rna_summaryseries_derivatives(Isubstantialpol2(I),:),'colors',[0.5 1 0.5]);
-    %hold on; 
+
+%    boxplot(rna_summaryseries_derivatives(Isubstantialpol2(I),:),'colors',[0.5 1 0.5]);
+%    hold on; 
     
     h=plot(clustmean_pol,'r-');
     set(h,'LineWidth',2);
+
     h=plot(clustmean_rna,'b-');
     set(h,'LineWidth',2);
-    h=plot(clustmean_rnad*50,'g-');
-    set(h,'LineWidth',2);
+
+%    h=plot(clustmean_rnad*50,'g-');
+%    set(h,'LineWidth',2);
     
     mytitle=sprintf('POL2(red)-RNA(blue) cluster %d (%d members)', j, length(I));
     title(mytitle);
