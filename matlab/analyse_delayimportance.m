@@ -95,7 +95,7 @@ end;
 
 
 significantgenes=find(longdelayprobs>0.99);
-significantgenes=interestinggenes(significantgenes);
+%significantgenes=interestinggenes(significantgenes);
 
 
 %---------------------------------------------------
