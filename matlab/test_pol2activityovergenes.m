@@ -1,6 +1,6 @@
-codedir='~/mlprojects/pol2rnaseq/matlab'
-pol2dir='~/synergy_data/PolII/Mapping_results'
-rnadir='~/synergy_data/RNA/DE/'
+codedir='~/jaakkos_files/synergy/mlprojects/pol2rnaseq/matlab'
+pol2dir='~/jaakkos_files/synergy/synergy_data/PolII/Mapping_results'
+rnadir='~/jaakkos_files/synergy/synergy_data/RNA/DE/'
 
 addpath(codedir)
 % cd(codedir)
@@ -50,6 +50,34 @@ if apply_noisethreshold,
     end;
   end;
 end;
+
+% find genes that have a sufficient level above noise in all time points
+genemeans=zeros(size(allgenebins,1),10);
+for k=1:size(allgenebins,1),
+  for l=1:10,
+    genemeans(k,l)=mean(allgenebins{k,l});
+  end;
+end;
+readthreshold=5*200;
+enoughdata=genemeans>readthreshold;
+
+% compute geommeanmedian normalization from those, using sum over whole gene
+tempgeommeans=zeros(size(bininfo,1),1);
+for i=1:size(bininfo,1),
+  Igeommean=find(enoughdata(i,2:10)==1)+1;
+  if length(Igeommean>0),
+    tempgeommeans(i)=exp(mean(log(genemeans(i,Igeommean))));  
+  end;
+end;
+Imedians=find(tempgeommeans>0);
+tempmedians=zeros(1,10);
+tempmedians(1)=1;
+for j=2:10,
+  tempmedians(j)=median(genemeans(Imedians,j)./tempgeommeans(Imedians));
+end;
+
+
+
 
 apply_binwise_noisenormalization=0;
 if apply_binwise_noisenormalization,
@@ -270,7 +298,39 @@ for i=1:size(bininfo,1),
   
 end;
 
+                    
+% Version 3: sum of last few bins (fixed fraction of gene length, 
+% towards the end of the gene), normalized by total length of those bins                    
+polsummaryfraction=0.2;
+polsummaryoffsetfraction=0;
+pol_summaryseries=nan*ones(size(bininfo,1),10);
+for i=1:size(bininfo,1),
+  % summarize by first bins 
+  % (note that first bins = bins closest to transcription end)
+  polsummarylength=ceil(binlengths(i)*polsummaryfraction);
+  polsummaryoffset=ceil(binlengths(i)*polsummaryoffsetfraction);
 
+
+  % make sure we are not taking the peak at the transcription start...
+  if (binlengths(i)>=polsummarylength+polsummaryoffset),
+    for j=1:10,
+      pol_summaryseries(i,j)=...
+        sum(allgenebins{i,j}((1+polsummaryoffset):(polsummarylength+polsummaryoffset))) ...
+          / polsummarylength*200;   % normalize by total length of the chosen bins
+    end;
+  end; 
+end;
+
+%---------------------------------------------------
+% normalize POL2 time points by noise levels estimated
+% from geommean procedure earlier.
+%---------------------------------------------------
+for j=1:10,
+  pol_summaryseries(:,j)=pol_summaryseries(:,j)/tempmedians(j);
+end;
+                    
+
+                    
 
 if 0,
 %---------------------------------------------------
@@ -366,9 +426,10 @@ var20='normalizedbytotalreadcount_pol_summaryseries_meanovergene';
 var21='normalizedbygeommeanmedian_pol_summaryseries_meanovergene';
 var22='normalizedbynoiselevel_pol_summaryseries_meanovergene';
 var23='rna_filteringresults';
+var24='unnormalized_pol2series_last20percent';
+var25='normalizedbygeommeanmedian_pol2series_last20percent';
 
-
-save('pol2_for_matti_ver2.mat',var0,var1,var2,var3,var4,var5,var6,var8,var9,var10,var11,var12,var13,var14,var15,var16,var17,var18,var19,var20,var21,var22,var23,'-v7')
+save('pol2_for_matti_ver3.mat',var0,var1,var2,var3,var4,var5,var6,var8,var9,var10,var11,var12,var13,var14,var15,var16,var17,var18,var19,var20,var21,var22,var23,var24,var25,'-v7')
 
 
 
