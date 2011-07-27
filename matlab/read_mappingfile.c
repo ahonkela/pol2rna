@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <malloc.h>
+/* #include <malloc.h> */
 #include <string.h>
 #include <stdlib.h>
 
@@ -12,7 +12,7 @@
 
 
 #include "mex.h"
-#include "matrix.h"
+/* #include "matrix.h" */
 
 #define mymalloc mxMalloc
 #define myrealloc mxRealloc
@@ -22,10 +22,10 @@
 
 
 #define MAX_LINELENGTH 1024
-#define n_linestoskip 4
+/* #define n_linestoskip 4 */
 
-#define n_chromosomes 25
-const char *chromosomenames[]={"chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT"};
+#define n_chromosomes 26
+const char *chromosomenames[]={"chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT","rRNA"};
 
 
 #define index_readstart 0
@@ -36,6 +36,7 @@ const char *chromosomenames[]={"chr1","chr2","chr3","chr4","chr5","chr6","chr7",
 #define index_maxreads 5
 #define index_linenumber 6
 
+int n_linestoskip = 0;
 
 void ***read_mappingfile(char *filename)
 {
@@ -55,14 +56,14 @@ void ***read_mappingfile(char *filename)
   int *readstarts;
   int *readends;
   signed char *readstrands;
-  float *readscores;
+  double *readscores;
   int *linenumbers;
 
   int line_chrindex;
   int line_readstart;
   int line_readend;
   signed char line_readstrand;
-  float line_readscore;
+  double line_readscore;
 
 
   /*------------------------------
@@ -115,7 +116,7 @@ void ***read_mappingfile(char *filename)
   readstarts=(int *)(mappings[chr_index][index_readstart]);
   readends=(int *)(mappings[chr_index][index_readend]);
   readstrands=(signed char *)(mappings[chr_index][index_readstrand]);
-  readscores=(float *)(mappings[chr_index][index_readscore]);
+  readscores=(double *)(mappings[chr_index][index_readscore]);
   linenumbers=(int *)(mappings[chr_index][index_linenumber]);
   nreads=*((int *)(mappings[chr_index][index_nreads]));
   maxreads=*((int *)(mappings[chr_index][index_maxreads]));
@@ -232,7 +233,7 @@ void ***read_mappingfile(char *filename)
       readstarts=(int *)(mappings[chr_index][index_readstart]);
       readends=(int *)(mappings[chr_index][index_readend]);
       readstrands=(signed char *)(mappings[chr_index][index_readstrand]);
-      readscores=(float *)(mappings[chr_index][index_readscore]);
+      readscores=(double *)(mappings[chr_index][index_readscore]);
       linenumbers=(int *)(mappings[chr_index][index_linenumber]);
       nreads=*((int *)(mappings[chr_index][index_nreads]));
       maxreads=*((int *)(mappings[chr_index][index_maxreads]));
@@ -249,7 +250,7 @@ void ***read_mappingfile(char *filename)
       readstarts=(int *)myrealloc(readstarts, sizeof(int)*maxreads);
       readends=(int *)myrealloc(readends, sizeof(int)*maxreads);
       readstrands=(signed char *)myrealloc(readstrands, sizeof(signed char)*maxreads);
-      readscores=(float *)myrealloc(readscores, sizeof(float)*maxreads);
+      readscores=(double *)myrealloc(readscores, sizeof(double)*maxreads);
       linenumbers=(int *)myrealloc(linenumbers, sizeof(int)*maxreads);
     }
   
@@ -297,7 +298,7 @@ void ***read_mappingfile(char *filename)
     readstarts=(int *)myrealloc(readstarts, sizeof(int)*maxreads);
     readends=(int *)myrealloc(readends, sizeof(int)*maxreads);
     readstrands=(signed char *)realloc(readstrands, sizeof(signed char)*maxreads);
-    readscores=(float *)myrealloc(readscores, sizeof(float)*maxreads);
+    readscores=(double *)myrealloc(readscores, sizeof(double)*maxreads);
     linenumbers=(int *)myrealloc(linenumbers, sizeof(int)*maxreads);
 
     mappings[chr_index][index_readstart] = readstarts;
@@ -344,11 +345,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int *tempreadstarts_data;
   int *tempreadends_data;
   signed char *tempreadstrands_data;
-  float *tempreadscores_data;
+  double *tempreadscores_data;
   int *templinenumbers_data;
   int *tempnreads_data;
   int *tempmaxreads_data;
 
+  int *tempnlinestoskip_data;
 
   void ***mappings;
   int nreads;
@@ -356,7 +358,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int *readstarts;
   int *readends;
   signed char *readstrands;
-  float *readscores;
+  double *readscores;
   int *linenumbers;
 
   int chr_index, j, k;
@@ -365,7 +367,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempfilename = prhs[0];
   mxGetString(tempfilename, filename, MAX_LINELENGTH);
 
-  myprintf("Trying to read from file [%s]\n",filename);
+  tempnlinestoskip_data = (int *)mxGetData(prhs[1]);
+  n_linestoskip = tempnlinestoskip_data[0];
+
+  myprintf("Trying to read from file [%s], skipping %d lines\n",filename,n_linestoskip);
   mappings = read_mappingfile(filename);
 
   tempmappings = mxCreateCellMatrix(n_chromosomes,7);
@@ -389,8 +394,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     tempreadstrands = mxCreateNumericMatrix(nreads,1,mxINT8_CLASS,0);
     tempreadstrands_data = (signed char *)mxGetData(tempreadstrands);
 
-    tempreadscores = mxCreateNumericMatrix(nreads,1,mxSINGLE_CLASS,0);
-    tempreadscores_data = (float *)mxGetData(tempreadscores);
+    tempreadscores = mxCreateNumericMatrix(nreads,1,mxDOUBLE_CLASS,0);
+    tempreadscores_data = (double *)mxGetData(tempreadscores);
 
     templinenumbers = mxCreateNumericMatrix(nreads,1,mxINT32_CLASS,0);
     templinenumbers_data = (int *)mxGetData(templinenumbers);
