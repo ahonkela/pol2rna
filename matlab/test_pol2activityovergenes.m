@@ -1,141 +1,170 @@
-addpath ~/mlprojects/pol2rnaseq/matlab
-cd ~/mlprojects/pol2rnaseq/matlab/
-mex compute_pol2activityovergenes_c.c
-cd ~/synergy_data/PolII/Mapping_results
+codedir='~/mlprojects/pol2rnaseq/matlab'
+pol2dir='~/synergy_data/PolII/Mapping_results'
+rnadir='~/synergy_data/RNA/DE/'
+
+addpath(codedir)
+% cd(codedir)
+% mex compute_pol2activityovergenes_c.c
+% cd(pol2dir)
 
 chromosomenames={'chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY','chrM'};
 n_chromosomes=length(chromosomenames);
 
 
-%-----------------------------
-% Read in gene information
-%-----------------------------
-
-% read gene ids and start and end locations
-genelocs=read_stringfile('~/synergy_data/PolII/Mapping_results/genes.txt',[32 9 10 13]);
-genelocs={genelocs{2:end}};
-n_genes=length(genelocs);
-geneids=zeros(n_genes,1);
-for k=1:n_genes,
-  geneids(k)=str2double(genelocs{k}{1}(6:end-1));
-end;
-
-% read gene ids and strand; match them to the previous gene list
-genestrands_temp=read_stringfile('~/synergy_data/PolII/Mapping_results/genestrands_no_lrg_genes.txt',[32 9 10 13]);
-geneids_temp=zeros(length(genestrands_temp),1);
-for k=1:length(genestrands_temp),
-  geneids_temp(k)=str2double(genestrands_temp{k}{3}(6:end-1));
-end;
-genestrands=zeros(n_genes,1);
-for k=1:n_genes,
-  l=find(geneids_temp==geneids(k));
-  if length(l)==0,
-    genestrands(k)=NaN;
-  else    
-    l=l(1);
-    genestrands(k)=str2double(genestrands_temp{l}{2});
-  end;
-end;
+cd(pol2dir)
+load all_gene_pol2bins.mat  % allgenebins bininfo
+load all_empty_pol2bins.mat % allemptybins emptybininfo
 
 
-%-----------------------------
-% Create bin array, one bin for each gene
-%-----------------------------
-bininfo=zeros(length(genelocs),6);
-for i=1:length(genelocs),
-  genetemp=genelocs{i};
+%  bininfo(i,1)=line_chrindex;                    % chromosome index
+%  bininfo(i,2)=str2double(genetemp{3}(2:end-1)); % start location
+%  bininfo(i,3)=str2double(genetemp{4}(2:end-1)); % end location
+%  bininfo(i,4)=i;                                % file line number
+%  bininfo(i,5)=geneids(i);                       % ensembl id
+%  bininfo(i,6)=genestrands(i);                   % strand sign (+1 or -1)
 
-  % get chromosome index in chromosome list
-  genechromosome=genetemp{2}(2:end-1);
-  line_chrindex=-1;
-  for k=1:n_chromosomes,
-    if strcmp(genechromosome,chromosomenames{k})==1,
-      line_chrindex=k;
-      break;
-    end;
-  end;
-
-  bininfo(i,1)=line_chrindex; % chromosome index
-  bininfo(i,2)=str2double(genetemp{3}(2:end-1)); % start location
-  bininfo(i,3)=str2double(genetemp{4}(2:end-1)); % end location
-  bininfo(i,4)=i;
-  bininfo(i,5)=geneids(i);
-  bininfo(i,6)=genestrands(i);
-end;
-
-
-
-% Omit genes for which we can't find the strand or the chromosome...
-% I=find((isnan(bininfo(:,6))==0) | (bininfo(:,1)==-1));
-% bininfo=bininfo(I,:);
-
-
-
-%-----------------------------
-% Sort bin array in ascending order of start location. 
-% The POL2 activity computation code assumes bins have been sorted like that.
-%-----------------------------
-[y,I1]=sort(bininfo(:,2));
-bininfo=bininfo(I1,:);
-
-
-
-%-----------------------------
-% For each time point, count amount of POL2-read-basepairs that 
-% overlap each bin, weighted by scores of the reads.
-%-----------------------------
-
-
-%allbins=zeros(n_genes,10);
-filenames={'pol0.mat','pol5.mat','pol10.mat','pol20.mat','pol40.mat','pol80.mat','pol160.mat','pol320.mat','pol640.mat','pol1280.mat'};
-dvalues=[190 190 196 192 185 189 201 205 194 189];
-
-
-% load up all data
-allgenebins=cell(size(bininfo,1),10);
-for timepoint=1:10,
-  load(filenames{timepoint});
-  d=dvalues(timepoint);
-  max_duplicates=2;  
-  subbin_length=200;
-  %binsthistime=zeros(n_genes,1);
-  
-  for chr_index=1:n_chromosomes,
-    timepoint
-    chr_index
-    I=find(bininfo(:,1)==chr_index);
-    tempbins=compute_pol2activityovergenes_c(temppol,int32(chr_index),int32(length(I)),int32(bininfo(I,2)),int32(bininfo(I,3)),int8(bininfo(I,6)),int32(d),int32(max_duplicates),int32(subbin_length));
-    for k=1:length(I),
-      allgenebins{I(k),timepoint}=tempbins{k};
-    end;
-  end;
-  clear temppol;
-end;
-
-save all_gene_pol2bins.mat allgenebins bininfo
 
 binlengths=zeros(size(allgenebins,1),1);for k=1:size(allgenebins,1),binlengths(k)=length(allgenebins{k,1});end;
 
+emptysums=zeros(10,1);nemptybins=zeros(10,1);
+for k=1:10,
+  for l=1:74,
+    emptysums(k)=emptysums(k)+sum(allemptybins{l,k});
+    nemptybins(k)=nemptybins(k)+length(allemptybins{l,k});
+  end;
+end;
 
+
+apply_noisethreshold=0;
+if apply_noisethreshold,
+  %---------------------------------------------------
+  % Substract noise level, 
+  % thresholding values below noise level to zero. 
+  %---------------------------------------------------
+  noiselevels=emptysums./nemptybins;
+  for l=1:10,
+    for k=1:size(allgenebins,1),
+      allgenebins{k,l}=allgenebins{k,l}-noiselevels(l);
+      I=find(allgenebins{k,l}<0);
+      allgenebins{k,l}(I)=0;
+    end;
+  end;
+end;
+
+apply_binwise_noisenormalization=0;
+if apply_binwise_noisenormalization,
+  %---------------------------------------------------
+  % Normalize by noise level.
+  %---------------------------------------------------
+  noiselevels=emptysums./nemptybins;
+  for l=1:10,
+    for k=1:size(allgenebins,1),
+      allgenebins{k,l}=allgenebins{k,l}/noiselevels(l);
+    end;
+  end;
+end;
+
+compute_meanprofiles=0;
+if compute_meanprofiles,
+  %---------------------------------------------------
+  % Compute mean profiles.
+  %---------------------------------------------------
+  meanpol2profiles=cell(size(allgenebins,1),1);
+  for k=1:size(allgenebins,1),
+    tempseries=[];
+    for l=1:10,
+      tempseries=[tempseries allgenebins{k,l}];
+    end;
+    tempseries=mean(tempseries')';
+    meanpol2profiles{k}=tempseries;
+  end;
+end;
+
+
+compute_widebins=0;
+if compute_widebins,
+  %---------------------------------------------------
+  % Compute profiles with 10x wider bins.
+  %---------------------------------------------------
+  allgenebins_10xwider=cell(size(allgenebins,1),size(allgenebins,2));
+  widthmultiplier=10;
+  for k=1:size(allgenebins,1),
+    k
+    for l=1:10,
+      tempseries=allgenebins{k,l};
+      tempseries10x=zeros(ceil(length(tempseries)/widthmultiplier),1);
+      for m=1:length(tempseries10x),
+	tempseries10x(m)=...
+	    mean(tempseries(1+(m-1)*widthmultiplier : ...
+			    min([1+(m-1)*widthmultiplier length(tempseries)])));
+      end;    
+      allgenebins_10xwider{k,l}=tempseries10x;
+    end;
+  end;
+  
+  meanpol2profiles_10xwider=cell(size(allgenebins_10xwider,1),1);
+  for k=1:size(allgenebins_10xwider,1),
+    tempseries=[];
+    for l=1:10,
+      tempseries=[tempseries allgenebins_10xwider{k,l}];
+    end;
+    tempseries=mean(tempseries')';
+    meanpol2profiles_10xwider{k}=tempseries;
+  end;
+end;
+
+compute_centersofmass=0;
+if compute_centersofmass,
+  % center of normalized mass for GREB1...
+  geneindex=6586;
+  for l=1:10,
+    normalizedprofile=...
+	allgenebins_10xwider{geneindex,l}...
+	./meanpol2profiles_10xwider{geneindex};
+    centmass(l)=sum(normalizedprofile.*[1:length(normalizedprofile)]')...
+	/sum(normalizedprofile);
+  end;
+end;
 
 
 
 %-----------------------------------------------------------------
-% Read in RNA activities (raw counts normalized in a way involving
-% gene-wise geometric means over time and medians over genes)
+% Read in RNA activities (raw counts normalized for each time point
+% in a way involving gene-wise geometric means over time and
+% medians over genes; not normalized for gene length)
 %-----------------------------------------------------------------
 
-load('~/synergy_data/RNA/DE/counts_normalized.mat');
+cd(rnadir);
+load('counts_filtered.mat');
+load('rna_geneinfo.mat');
 rna_summaryseries=nan*ones(size(bininfo,1),10);
-for i=1:length(geneNames),
-  gene_ensembleid=str2double(geneNames{i}(5:end));
-  bininfo_index=find(bininfo(:,5)==gene_ensembleid);
+rna_filteringresults=nan*ones(size(bininfo,1),1);
+k=0;
+for i=1:length(rna_genenames),  
+  % ensembl id of the gene as a number
+  gene_ensembleid=str2double(rna_genenames{i}(5:end));
+
+  % index in the array of filtered RNA time series
+  if genefilter(i)==1,
+    k=k+1;
+    kcurrent=k;
+  else
+    kcurrent=-1;
+  end
+  
+  % find the gene in the bininfo array
+  bininfo_index=find(bininfo(:,5)==gene_ensembleid);  
   if length(bininfo_index==1),
-    for j=1:10,
-      rna_summaryseries(bininfo_index,j)=normrpk(i,j);
-    end;  
+    if kcurrent>0,
+      for j=1:10,
+	rna_summaryseries(bininfo_index,j)=normcounts(kcurrent,j);
+      end;
+    end;    
+    rna_filteringresults(bininfo_index)=genefilter(i);
   end;  
 end;
+
+
 
 
 if 0,
@@ -162,6 +191,20 @@ end;
 % Create POL2 summary
 %-----------------------------------------------------------------
 
+
+% Version 0: mean over whole gene, normalized by gene length
+
+pol_summaryseries=nan*ones(size(bininfo,1),10);
+for i=1:size(bininfo,1),
+
+  % summarize by sum over whole gene, normalized by gene length
+  for j=1:10,
+    pol_summaryseries(i,j)=sum(allgenebins{i,j})/(bininfo(i,3)-bininfo(i,2));
+  end;
+  
+end;
+
+
 % Version 1: sum of first few bins from the start site onwards
 
 polsummarylength=20;
@@ -180,6 +223,28 @@ for i=1:size(bininfo,1),
   end;
   
 end;
+
+
+% Version 1b: sum of first few bins from the start site onwards, 
+% no offset
+
+polsummarylength=20;
+polsummaryoffset=0;
+
+pol_summaryseries=nan*ones(size(bininfo,1),10);
+nbinsinone=10;
+for i=1:size(bininfo,1),
+
+  % summarize by last bins 
+  % (note that last bins = bins closest to transcription start)
+  if (binlengths(i)>=polsummarylength+polsummaryoffset),
+    for j=1:10,
+      pol_summaryseries(i,j)=sum(allgenebins{i,j}((end-polsummarylength+1-polsummaryoffset):(end-polsummaryoffset)));
+    end;
+  end;
+  
+end;
+
 
 
 % Version 2: sum of last few bins (towards the end of the gene)
@@ -207,7 +272,21 @@ end;
 
 
 
+if 0,
+%---------------------------------------------------
+% normalize POL2 time points by noise levels estimated
+% from empty regions.
+%---------------------------------------------------
+noiselevels=emptysums./nemptybins;
+for j=1:10,
+  pol_summaryseries(:,j)=pol_summaryseries(:,j)/noiselevels(j);
+end;
+end;
 
+
+
+
+if 0,
 %---------------------------------------------------
 % normalize POL2 time points by a strategy involving
 % geometric means over time for each gene, and median
@@ -228,6 +307,25 @@ end;
 for j=1:10,
   pol_summaryseries(:,j)=pol_summaryseries(:,j)/tempmedians(j);
 end;
+end;
+
+
+if 0,
+  pol2overall_uniquehits = [101720334 91131727 72832980 93776268 93180719 94068955 87257588 85438329 92506713 94888353];
+  pol2overall_multipliers = (pol2overall_uniquehits/mean(pol2overall_uniquehits)).^(-1);  
+  for j=1:10,
+    pol_summaryseries(:,j)=pol_summaryseries(:,j)*pol2overall_multipliers(j);
+  end;
+end;
+
+if 0,
+  pol2filtered_hits = [82716552 76680010 51009272 78425211 74768277 73970821 59797272 56458506 83618025 81174490];
+  pol2filtered_multipliers = (pol2filtered_hits/mean(pol2filtered_hits)).^(-1);
+  for j=1:10,
+    pol_summaryseries(:,j)=pol_summaryseries(:,j)*pol2filtered_multipliers(j);
+  end;  
+end;
+
 
 
 if 0,
@@ -244,6 +342,263 @@ for k=1:size(allgenebins,1),
   end;
 end;
 end;
+
+var0='bininfo';
+var1='unnormalized_pol_summaryseries_first_0kb_to_4kb';
+var2='unnormalized_pol_summaryseries_first_1kb_to_5kb';
+var3='unnormalized_pol_summaryseries_last_0kb_to_4kb';
+var4='normalizedbyfilteredcount_pol_summaryseries_first_0kb_to_4kb';
+var5='normalizedbyfilteredcount_pol_summaryseries_first_1kb_to_5kb';
+var6='normalizedbyfilteredcount_pol_summaryseries_last_0kb_to_4kb';
+var8='normalizedbygeommeanmedian_pol_summaryseries_first_0kb_to_4kb';
+var9='normalizedbygeommeanmedian_pol_summaryseries_first_1kb_to_5kb';
+var10='normalizedbygeommeanmedian_pol_summaryseries_last_0kb_to_4kb';
+var11='normalizedbynoiselevel_pol_summaryseries_first_0kb_to_4kb';
+var12='normalizedbynoiselevel_pol_summaryseries_first_1kb_to_5kb';
+var13='normalizedbynoiselevel_pol_summaryseries_last_0kb_to_4kb';
+var14='normalizedbytotalreadcount_pol_summaryseries_first_0kb_to_4kb';
+var15='normalizedbytotalreadcount_pol_summaryseries_first_1kb_to_5kb';
+var16='normalizedbytotalreadcount_pol_summaryseries_last_0kb_to_4kb';
+var17='rna_summaryseries';
+var18='unnormalized_pol_summaryseries_meanovergene';
+var19='normalizedbyfilteredcount_pol_summaryseries_meanovergene';
+var20='normalizedbytotalreadcount_pol_summaryseries_meanovergene';
+var21='normalizedbygeommeanmedian_pol_summaryseries_meanovergene';
+var22='normalizedbynoiselevel_pol_summaryseries_meanovergene';
+var23='rna_filteringresults';
+
+
+save('pol2_for_matti_ver2.mat',var0,var1,var2,var3,var4,var5,var6,var8,var9,var10,var11,var12,var13,var14,var15,var16,var17,var18,var19,var20,var21,var22,var23,'-v7')
+
+
+
+
+pol_summaryseries=unnormalized_pol_summaryseries_first_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_1=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option1, %d genes pass',length(Isubstantialpol2_1)));
+
+pol_summaryseries=unnormalized_pol_summaryseries_first_1kb_to_5kb;
+compute_pol2meansvariances;
+Isubstantialpol2_2=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option2, %d genes pass',length(Isubstantialpol2_2)));
+
+pol_summaryseries=unnormalized_pol_summaryseries_last_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_3=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option3, %d genes pass',length(Isubstantialpol2_3)));
+
+pol_summaryseries=normalizedbytotalreadcount_pol_summaryseries_first_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_4=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option4, %d genes pass',length(Isubstantialpol2_4)));
+
+pol_summaryseries=normalizedbytotalreadcount_pol_summaryseries_first_1kb_to_5kb;
+compute_pol2meansvariances;
+Isubstantialpol2_5=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option5, %d genes pass',length(Isubstantialpol2_5)));
+
+pol_summaryseries=normalizedbytotalreadcount_pol_summaryseries_last_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_6=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option6, %d genes pass',length(Isubstantialpol2_6)));
+
+pol_summaryseries=normalizedbyfilteredcount_pol_summaryseries_first_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_7=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option7, %d genes pass',length(Isubstantialpol2_7)));
+
+pol_summaryseries=normalizedbyfilteredcount_pol_summaryseries_first_1kb_to_5kb;
+compute_pol2meansvariances;
+Isubstantialpol2_8=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option8, %d genes pass',length(Isubstantialpol2_8)));
+
+pol_summaryseries=normalizedbyfilteredcount_pol_summaryseries_last_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_9=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option9, %d genes pass',length(Isubstantialpol2_9)));
+
+pol_summaryseries=normalizedbygeommeanmedian_pol_summaryseries_first_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_10=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option10, %d genes pass',length(Isubstantialpol2_10)));
+
+pol_summaryseries=normalizedbygeommeanmedian_pol_summaryseries_first_1kb_to_5kb;
+compute_pol2meansvariances;
+Isubstantialpol2_11=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option11, %d genes pass',length(Isubstantialpol2_11)));
+
+pol_summaryseries=normalizedbygeommeanmedian_pol_summaryseries_last_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_12=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option12, %d genes pass',length(Isubstantialpol2_12)));
+
+pol_summaryseries=normalizedbynoiselevel_pol_summaryseries_first_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_13=find((pol_summaryseries_means>=exp(3)) & ...
+		      (pol_summaryseries_variances>=exp(3)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option13, %d genes pass',length(Isubstantialpol2_13)));
+
+pol_summaryseries=normalizedbynoiselevel_pol_summaryseries_first_1kb_to_5kb;
+compute_pol2meansvariances;
+Isubstantialpol2_14=find((pol_summaryseries_means>=exp(3)) & ...
+		      (pol_summaryseries_variances>=exp(3)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option14, %d genes pass',length(Isubstantialpol2_14)));
+
+pol_summaryseries=normalizedbynoiselevel_pol_summaryseries_last_0kb_to_4kb;
+compute_pol2meansvariances;
+Isubstantialpol2_15=find((pol_summaryseries_means>=exp(3)) & ...
+		      (pol_summaryseries_variances>=exp(3)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option15, %d genes pass',length(Isubstantialpol2_15)));
+
+pol_summaryseries=unnormalized_pol_summaryseries_meanovergene;
+compute_pol2meansvariances;
+Isubstantialpol2_16=find((pol_summaryseries_means>=exp(0.8)) & ...
+		      (pol_summaryseries_variances>=exp(0.8)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option16, %d genes pass',length(Isubstantialpol2_16)));
+
+pol_summaryseries=normalizedbytotalreadcount_pol_summaryseries_meanovergene;
+compute_pol2meansvariances;
+Isubstantialpol2_17=find((pol_summaryseries_means>=exp(0.8)) & ...
+		      (pol_summaryseries_variances>=exp(0.8)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option17, %d genes pass',length(Isubstantialpol2_17)));
+
+pol_summaryseries=normalizedbyfilteredcount_pol_summaryseries_meanovergene;
+compute_pol2meansvariances;
+Isubstantialpol2_18=find((pol_summaryseries_means>=exp(0.8)) & ...
+		      (pol_summaryseries_variances>=exp(0.8)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option18, %d genes pass',length(Isubstantialpol2_18)));
+
+pol_summaryseries=normalizedbygeommeanmedian_pol_summaryseries_meanovergene;
+compute_pol2meansvariances;
+Isubstantialpol2_19=find((pol_summaryseries_means>=exp(0.8)) & ...
+		      (pol_summaryseries_variances>=exp(0.8)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option19, %d genes pass',length(Isubstantialpol2_19)));
+
+% THIS ONE DOES NOT GIVE GOOD RESULTS
+pol_summaryseries=normalizedbynoiselevel_pol_summaryseries_meanovergene;
+compute_pol2meansvariances;
+Isubstantialpol2_20=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
+figure;
+subplot(2,1,1);hist(log(pol_summaryseries_means+1),40);
+subplot(2,1,2);hist(log(pol_summaryseries_variances+1),40);
+title(sprintf('option20, %d genes pass',length(Isubstantialpol2_20)));
+
+
+
+
+
+
+% Summarisoinnit: "meanovergene": summa yli geenin normalisoituna geenin pituudella
+% "first_0kb_to_4kb": summa yli geenin ensimmaisen 4 kilobasepairin, ei pituusnormalisointia
+% "first_1kb_to_5kb": muuten sama, mutta aloitetaan vasta 1kbp kohdalta
+% "last_0kb_to_4kb": summa yli viimeisten 4000 kilobasepairin (siis
+% trankription loppua lahimpien, kun "first_" ovat lahinna transkription alkua)
+% Normalisoinnit:
+% "totalreadcount": normalisoidaan kukin aikapiste silla kuinka paljon chipseq-readeja (unique match -readeja) oli yhteensa sille aikapisteelle
+% "filteredcount": sama, mutta ensin jatetaan pois duplikaatti-matchit
+% "geommeanmedian": se geometrisen keskiarvon ja mediaanin yhdistelma jota RNA:llekin on kaytetty
+% "noiselevel": aktiviteetti kasin kromosomi CHR1:sta valituissa "tyhjissa alueissa" (alueita joissa ei ole geeneja eika silmin havaittavaa merkittavaa RNA tai POL2 aktiviteetteja)
+% bininfo-muuttuja on tarkea, sen rivit ovat geeneja ja sarakkeet geenin tietoja, seuraavasti:
+%   bininfo(i,1)=line_chrindex; % chromosome index
+%   bininfo(i,2)=str2double(genetemp{3}(2:end-1)); % start location
+%   bininfo(i,3)=str2double(genetemp{4}(2:end-1)); % end location
+%   bininfo(i,4)=i; % line number in an original file, never mind this
+%   bininfo(i,5)=geneids(i);  % ENSEMBL id of the gene
+%   bininfo(i,6)=genestrands(i); % strand identifier (+1 or -1)
+% Eli siis: esim. geeni GREB1, jolla on ENSEMBL id 196208, loytyy seuraavasti: gene_index=find(bininfo(:,5)==196208); Ja sitten pol_summaryseries(gene_index,:) on POL2-aikasarja ja rna_summaryseries(gene_index,:) on vastaava RNA-aikasarja
+
+
 
 
 
@@ -279,20 +634,20 @@ end;
 % - substantial RNA variance over time
 %---------------------------------------------------
 
-pol_summaryseries_means=zeros(size(allgenebins,1),1);
-for k=1:size(allgenebins,1),
+pol_summaryseries_means=zeros(size(bininfo,1),1);
+for k=1:size(bininfo,1),
   pol_summaryseries_means(k)=mean(pol_summaryseries(k,:));
 end;
-pol_summaryseries_variances=zeros(size(allgenebins,1),1);
-for k=1:size(allgenebins,1),
+pol_summaryseries_variances=zeros(size(bininfo,1),1);
+for k=1:size(bininfo,1),
   pol_summaryseries_variances(k)=var(pol_summaryseries(k,:));
 end;
-rna_summaryseries_means=zeros(size(allgenebins,1),1);
-for k=1:size(allgenebins,1),
+rna_summaryseries_means=zeros(size(bininfo,1),1);
+for k=1:size(bininfo,1),
   rna_summaryseries_means(k)=mean(rna_summaryseries(k,:));
 end;
-rna_summaryseries_variances=zeros(size(allgenebins,1),1);
-for k=1:size(allgenebins,1),
+rna_summaryseries_variances=zeros(size(bininfo,1),1);
+for k=1:size(bininfo,1),
   rna_summaryseries_variances(k)=var(rna_summaryseries(k,:));
 end;
 
@@ -312,6 +667,9 @@ Isubstantialpol2=find((pol_summaryseries_means>=exp(12)) & ...
 		      (rna_summaryseries_means>=exp(1.3)) & ...
 		      (rna_summaryseries_variances>=exp(1.7)));
 
+Isubstantialpol2=find((pol_summaryseries_means>=exp(9)) & ...
+		      (pol_summaryseries_variances>=exp(15)) & ...
+		      (rna_filteringresults==1));
 
 
 %---------------------------------------------------
