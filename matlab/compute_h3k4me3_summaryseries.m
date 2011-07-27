@@ -1,0 +1,150 @@
+beep_on_error(1);
+warning("error",'Octave:divide-by-zero');
+
+
+mybasedir='/Users/hasanogul/jaakkos_files/synergy/mlprojects/';
+h3k4me3dir='/Users/hasanogul/jaakkos_files/synergy/synergy_data/H3K4me3/Mapping_results/'
+pol2dir='/Users/hasanogul/jaakkos_files/synergy/synergy_data/PolII/Mapping_results/'
+analysisdir='/Users/hasanogul/jaakkos_files/synergy/analyses/'
+
+% for kernel-level computations
+path1=[mybasedir 'kern/matlab/jaakko_testversion/']
+% for model-level computations
+path2=[mybasedir 'gpsim/matlab/jaakko_testversion/'];
+% for optimiDefaultConstraint.m
+path3=[mybasedir 'optimi/matlab/jaakko_testversion/'];
+% for lnDiffErfs.m
+path4=[mybasedir 'ndlutil/matlab/'];
+% for addPrior.m
+path5=[mybasedir 'prior/matlab/'];
+% for dist2.m
+path6=[mybasedir 'matlab/netlab/NETLAB3p3/'];
+% for modelTieParam.m
+path7=[mybasedir 'mltools/matlab/'];
+% for various experiment things
+path8=[mybasedir 'pol2rnaseq/matlab/'];
+
+addpath(path1,path2,path3,path4,path5,path6,path7,path8)
+
+
+
+
+cd(h3k4me3dir)
+load all_gene_h3k4me3bins.mat  % allgenebins bininfo
+load all_empty_h3k4me3bins.mat % allemptybins emptybininfo
+n_timepoints=9;
+
+%  bininfo(i,1)=line_chrindex;                    % chromosome index
+%  bininfo(i,2)=str2double(genetemp{3}(2:end-1)); % start location
+%  bininfo(i,3)=str2double(genetemp{4}(2:end-1)); % end location
+%  bininfo(i,4)=i;                                % file line number
+%  bininfo(i,5)=geneids(i);                       % ensembl id
+%  bininfo(i,6)=genestrands(i);                   % strand sign (+1 or -1)
+
+
+binlengths=zeros(size(h3k4me3bins,1),1);
+for k=1:size(h3k4me3bins,1),
+  binlengths(k)=length(h3k4me3bins{k,1});
+end;
+
+
+
+%-----------------------------------------------------------------
+% Perform noise thresholding
+%-----------------------------------------------------------------
+
+% For each time point, compute a noise level (average activity per
+% bin in hand-picked 'empty regions'. Note that the empty regions
+% have been hand-picked based on POL2 activity, not based on
+% H3K4me3 activity.
+emptysums=zeros(n_timepoints,1);nemptybins=zeros(n_timepoints,1);
+for k=1:n_timepoints,
+  for l=1:74,
+    emptysums(k)=emptysums(k)+sum(allemptybins{l,k});
+    nemptybins(k)=nemptybins(k)+length(allemptybins{l,k});
+  end;
+end;
+noiselevels=emptysums./nemptybins;
+
+
+apply_noisethreshold=1;
+if apply_noisethreshold,
+  %---------------------------------------------------
+  % Substract noise level, 
+  % thresholding values below noise level to zero. 
+  %---------------------------------------------------
+  for l=1:n_timepoints,
+    for k=1:size(h3k4me3bins,1),
+      h3k4me3bins{k,l}=h3k4me3bins{k,l}-noiselevels(l);
+      I=find(h3k4me3bins{k,l}<0);
+      h3k4me3bins{k,l}(I)=0;
+    end;
+  end;
+end;
+
+
+%-----------------------------------------------------------------
+% Compute geometric mean - median based normalization factors for
+% time points
+%-----------------------------------------------------------------
+
+% find genes that have a sufficient level above noise in all time points
+genemeans=zeros(size(h3k4me3bins,1),n_timepoints);
+for k=1:size(h3k4me3bins,1),
+  for l=1:n_timepoints,
+    if length(h3k4me3bins{k,l})>0,
+      genemeans(k,l)=mean(h3k4me3bins{k,l});
+    end;
+  end;
+end;
+readthreshold=5*200;
+enoughdata=genemeans>readthreshold;
+
+% compute geommeanmedian normalization from the above selected genes, using sum over whole gene
+tempgeommeans=zeros(size(h3k4me3bins,1),1);
+for i=1:size(h3k4me3bins,1),
+  % find the time points of this gene that have enough data,
+  % excluding the first time point
+  Igeommean=find(enoughdata(i,2:n_timepoints)==1)+1;
+  
+  % compute geometric mean of the selected time points for this gene
+  if length(Igeommean>0),
+    tempgeommeans(i)=exp(mean(log(genemeans(i,Igeommean))));  
+  end;
+end;
+% compute the normalization factors for the time points as a median
+% normalization factor across genes.
+Imedians=find(tempgeommeans>0);
+tempmedians=zeros(1,n_timepoints);
+tempmedians(1)=1;
+for j=2:n_timepoints,
+  tempmedians(j)=median(genemeans(Imedians,j)./tempgeommeans(Imedians));
+end;
+
+
+
+%-----------------------------------------------------------------
+% Create H3K4me3 summary series
+%-----------------------------------------------------------------
+
+% Simple version: sum over whole gene
+h3k4me3_summaryseries=nan*ones(size(h3k4me3bins,1),n_timepoints);
+for i=1:size(h3k4me3bins,1),
+  for j=1:n_timepoints,
+    if length(h3k4me3bins{i,j})>0,
+      h3k4me3_summaryseries(i,j)=sum(h3k4me3bins{i,j});
+    end;
+  end;
+end;
+
+
+%---------------------------------------------------
+% normalize H3K4me3 time points by noise levels estimated
+% from geommean procedure earlier.
+%---------------------------------------------------
+for j=1:n_timepoints,
+  h3k4me3_summaryseries(:,j)=h3k4me3_summaryseries(:,j)/tempmedians(j);
+end;
+                    
+
+beep();

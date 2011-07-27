@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <malloc.h>
+/* #include <malloc.h> */
 #include <string.h>
 #include <stdlib.h>
 
@@ -12,7 +12,7 @@
 
 
 #include "mex.h"
-#include "matrix.h"
+/* #include "matrix.h" */
 
 #define mymalloc mxMalloc
 #define myrealloc mxRealloc
@@ -47,12 +47,28 @@ int main(int argc, char *argv[])
 
 
 
-void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_data,signed char *tempreadstrands_data,float *tempreadscores_data,int fragment_length,int n_allowed_duplicates,int n_bins,int *tempbinstarts_data,int *tempbinends_data,signed char *tempbinstrands_data,int *n_subbins, double **subbins_data, int subbin_length)
+void compute_overlaps
+(
+  int n_reads,
+  int *tempreadstarts_data,
+  int *tempreadends_data,
+  signed char *tempreadstrands_data,
+  double *tempreadscores_data,
+  int fragment_length,
+  int n_allowed_duplicates,
+  int n_bins,
+  int *tempbinstarts_data,
+  int *tempbinends_data,
+  signed char *tempbinstrands_data,
+  int *n_subbins, 
+  double **subbins_data, 
+  int subbin_length
+)
 {
   int readstart, readend, tempreadstart, tempreadend, modified_readstart, modified_readend;
   int tempstart,tempend;
   signed char readstrand;
-  float readscore;
+  double readscore;
   double binscoredelta;
   int n_duplicatesfound;
   int i, j, k, k0;
@@ -68,6 +84,7 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
   {
     verbose=0;
     if ((i%50000)==0) verbose=1;
+
 
     tempreadstart=tempreadstarts_data[i];
     tempreadend=tempreadends_data[i];
@@ -100,6 +117,18 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
     {
       readstrand=tempreadstrands_data[i];
       readscore=tempreadscores_data[i];
+      if (verbose==1)
+	myprintf("Read %d: strand %d, score %f\n", i, readstrand, readscore);
+
+
+      /*
+      if (readscore != (int)readscore)
+      {
+	myprintf("problem1 at read %d: readstart %d, readend %d, readstrand %d, readscore %f not integer \n",
+		 i, readstart, readend, readstrand, (double)readscore);
+	exit(1);
+      }
+      */
 
       /*-------------------------------------
 	shift and extend the read using the desired fragment length
@@ -140,9 +169,14 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	  modified_readstart=readend-fragment_length;
 	}
       }
+      else
+      {
+	modified_readstart=readstart;
+	modified_readend=readend;
+      }
 
       if (verbose==1)
-	myprintf("Extended location: %d - %d\n", modified_readstart, modified_readend);
+	myprintf("Extended location: %d - %d, original %d - %d\n", modified_readstart, modified_readend,readstart,readend);
     
 
       /*-------------------------------------
@@ -157,7 +191,7 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
       k0=n_bins-1; while ((k0>=0) && (tempbinstarts_data[k0]>modified_readend)) k0=k0-1;
 
       if (verbose==1)
-	myprintf("Extended location: %d - %d\n", modified_readstart, modified_readend);
+	myprintf("Extended location, same again: %d - %d\n", modified_readstart, modified_readend);
     
       for (k=k0;k>=0;k--)
       {
@@ -213,6 +247,14 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
               %     If strand=-1, the first subbin is at the start of the bin.
 	      -------------------------------------*/
 	    binscoredelta=readscore;
+	    /*
+	    if (binscoredelta != (int)binscoredelta)
+	    {
+	      myprintf("problem at read %d, bin %d: readstart %d, readend %d, readscore %f not integer \n",
+		       i, k, readstart, readend, (double)readscore);
+	      exit(1);
+	    }
+	    */
 
 	    if (tempbinstrands_data[k] < 0)
 	    {
@@ -257,9 +299,38 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	      }
 
 	      subbins_data[k][firstsubbin] += firstsubbin_proportion*binscoredelta;
+
+	      /*
+	      if (subbins_data[k][firstsubbin] != ((int)subbins_data[k][firstsubbin]))
+	      {
+		myprintf("PROBLEM: first subbin [%d][%d] not integer, proportion %f, binscoredelta %f!\n",k,firstsubbin,firstsubbin_proportion,binscoredelta);
+		myprintf("problem at read %d, bin %d: bin [%d, %d], read [%d, %d], subbin_length %d, tempstart %d\n",
+			 i, k, tempbinstarts_data[k],tempbinends_data[k],
+			 modified_readstart,modified_readend,
+			 subbin_length, tempstart);
+		exit(1);
+	      }
+	      */
+
 	      subbins_data[k][lastsubbin] += lastsubbin_proportion*binscoredelta;
+
+	      /*
+	      if (subbins_data[k][lastsubbin] != ((int)subbins_data[k][lastsubbin]))
+	      {
+		myprintf("PROBLEM: last subbin [%d][%d] not integer, proportion %f, binscoredelta %f!\n",k,lastsubbin,lastsubbin_proportion,binscoredelta);
+	      }
+	      */
+
 	      for (l=firstsubbin+1;l<lastsubbin;l++)
+              {
 		subbins_data[k][l] += subbin_length*binscoredelta;	    
+		/*
+		if (subbins_data[k][l] != ((int)subbins_data[k][l]))
+		{
+		  myprintf("PROBLEM: subbin [%d][%d] not integer, proportion %f, binscoredelta %f!\n",k,l,subbin_length,binscoredelta);
+		}
+		*/
+              }
 
 	      if ((firstsubbin<0) || (lastsubbin>n_subbins[k]) || (firstsubbin_proportion<0) || (lastsubbin_proportion<0))
 		myprintf("PROBLEM: Read %d of %d (%d - %d) matched bin %d of %d (%d - %d), subbins %d-%d, firstprop %f, lastprop %f\n", 
@@ -267,7 +338,13 @@ void compute_overlaps(int n_reads,int *tempreadstarts_data,int *tempreadends_dat
 	    }
 	    else
 	    {
-	      subbins_data[k][firstsubbin] += (tempend-tempstart+1)*binscoredelta;
+	      subbins_data[k][firstsubbin] += (tempend-tempstart+1)*binscoredelta;	      
+	      /*
+	      if (subbins_data[k][firstsubbin] != ((int)subbins_data[k][firstsubbin]))
+	      {
+		myprintf("PROBLEM: first subbin (B) [%d][%d] not integer, proportion %f, binscoredelta %f!\n",k,firstsubbin,(tempend-tempstart+1),binscoredelta);
+	      }
+	      */
 	    }
 	  }
 	}
@@ -312,7 +389,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   int *tempreadstarts_data;
   int *tempreadends_data;
   signed char *tempreadstrands_data;
-  float *tempreadscores_data;
+  double *tempreadscores_data;
   int *tempnreads_data;
   int *tempmaxreads_data;
   int *tempsubbinlength_data;
@@ -389,7 +466,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempindex[1]=index_readscore;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
   tempreadscores=mxGetCell(tempmappings,j);
-  tempreadscores_data = (float *)mxGetData(tempreadscores);
+  tempreadscores_data = (double *)mxGetData(tempreadscores);
 
   /* Get number of bins and vectors of bin starts and bin ends and bin strands */
   tempnbins_data = (int *)mxGetData(tempnbins);
@@ -423,10 +500,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   /* Compute overlaps */
 
   
-  myprintf("%d reads %p %p %p %p, fragmentlength %d, duplicates %d, bins %d %p %p, subbins %p %p length %d\n",
-	   n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,n_subbins,subbins_data,subbin_length);
+  myprintf("%d reads %p %p %p %p, fragmentlength %d, duplicates %d, bins %d %p %p, subbins %p %p length %d, sizeof(float)=%d, sizeof(double)=%d\n",
+	   n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,n_subbins,subbins_data,subbin_length,(int)(sizeof(float)),(int)(sizeof(double)));
 
-  compute_overlaps(n_reads,tempreadstarts_data,tempreadends_data,tempreadstrands_data,tempreadscores_data,fragment_length,n_allowed_duplicates,n_bins,tempbinstarts_data,tempbinends_data,tempbinstrands_data,n_subbins,subbins_data,subbin_length);
+  compute_overlaps
+  (
+    n_reads,
+    tempreadstarts_data,
+    tempreadends_data,
+    tempreadstrands_data,
+    tempreadscores_data,
+    fragment_length,
+    n_allowed_duplicates,
+    n_bins,
+    tempbinstarts_data,
+    tempbinends_data,
+    tempbinstrands_data,
+    n_subbins,
+    subbins_data,
+    subbin_length
+  );
   
 
   if (1)
