@@ -1,12 +1,14 @@
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
-mybasedir_code='~/synergy_data_desktopbackup/tempcodebranch/';
+%mybasedir_code='~/synergy_data_desktopbackup/tempcodebranch/';
 %mybasedir_code='~/jaakkos_files/synergy/mlprojects/';
 %mybasedir_code='~/mlprojects/';
+mybasedir_code='~/code/mlprojects/';
 
 %mybasedir_data='/share/work/jtpelto/tempsynergy/';
 %mybasedir_data='/media/JPELTONEN4/synergy_data/';
 %mybasedir_data='~/jaakkos_files/synergy/synergy_data/';
-mybasedir_data='~/synergy_data_desktopbackup/';
+%mybasedir_data='~/synergy_data_desktopbackup/';
+mybasedir_data='~/synergy_data/';
 
 mybasedir_analyses=mybasedir_data;
 %mybasedir_analyses='~/jaakkos_files/synergy/';
@@ -143,5 +145,8 @@ for k=1:length(I),
 end;
 
 
-save smallvslargedelays_ascii.txt sortedresults_loglikelihoods -ASCII
+save smallvslargedelays_ascii.txt sortedresults_loglikelihoods -ascii
+save smallvslargedelays.mat sortedresults_loglikelihoods sortedresults_ensemblids ...
+   sortedresults_jointmodels_longdelay sortedresults_jointmodels_smalldelay ...
+   sortedresults_jointtransforminfos_longdelay sortedresults_jointtransforminfos_smalldelay -mat
 
