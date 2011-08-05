@@ -131,11 +131,13 @@ sortedresults_ensemblids=[];
 sortedresults_jointmodels_longdelay={};
 sortedresults_jointmodels_smalldelay={};
 for k=1:length(I),
-  if isnan(sortscore)==0,
+  if isnan(sortscore(I(k)))==0,
     m=I(k);
     sortedresults_loglikelihoods(k,1)=allresults_loglikelihoods_long(m,1);
     sortedresults_loglikelihoods(k,2)=allresults_loglikelihoods_small(m,3);
     sortedresults_loglikelihoods(k,3)=allresults_loglikelihoods_long(m,3);
+    sortedresults_loglikelihoods(k,4)=sortscore(m);
+    sortedresults_loglikelihoods(k,5)=allresults_ensemblids_long(m);
     sortedresults_ensemblids(k)=allresults_ensemblids_long(m);
     sortedresults_jointmodels_longdelay{k}=allresults_jointmodels_long{m};
     sortedresults_jointmodels_smalldelay{k}=allresults_jointmodels_small{m};
