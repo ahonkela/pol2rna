@@ -44,7 +44,7 @@ load smallvslargedelays.mat
 %---------------------------------------------------
 % Plot the series
 %---------------------------------------------------
-maxk=100;
+maxk=length(sortedresults_jointmodels_longd);
 k=1;while k<maxk,
   k
   model=sortedresults_jointmodels_longd{k};
@@ -84,9 +84,10 @@ k=1;while k<maxk,
   printplots=1;
   if printplots==1,
     % ENSG00000196208_GP.png
-    print(sprintf('ENSGtempprint%011d_GP.png',sortedresults_ensemblids(k)),'-dpng','-s400,600');
+    print(sprintf('ENSG%011d_GP.png',sortedresults_ensemblids(k)),'-dpng','-S400,400');
   end;
-      
+  close all
+ 
   k=k+1; 
 %  x=kbhit();
 %  if x=='w',k=k-1;
