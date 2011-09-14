@@ -1,13 +1,21 @@
-function [pol2predictions,pol2vars,rnapredictions,rnavars]=plotpredictions(gpsim3model,predicttimes,timescaletype,stdevmultiplier,plotdependent,plottitle);
+function [pol2predictions,pol2vars,rnapredictions,rnavars]=plotpredictions(gpsim3model,predicttimes,timescaletype,stdevmultiplier,plotrbf,plotpol,plotrna,plotpolrna,plottitle,timeshift);
 
 fontsize=9;
 mylinewidth=2;
+plotdatalines=0;
 
 if isempty(predicttimes),
   predicttimes=[0:1:1280]';
 end;
 
 numGenes=gpsim3model.numGenes;
+
+ntotalplots=0;
+if plotrbf==1, ntotalplots=ntotalplots+1;end;
+if plotpol==1, ntotalplots=ntotalplots+1;end;
+if plotrna==1, ntotalplots=ntotalplots+1;end;
+if plotpolrna==1, ntotalplots=ntotalplots+1;end;
+
 
 
 % predict only a few points at a time to avoid numerical problems
@@ -26,7 +34,7 @@ while k<length(predicttimes),
   kwidth=length(predicttimes);
   %kwidth=50;
   temptimes=predicttimes(k:min([length(predicttimes) k+kwidth-1]));
-  [temppriormeans,tempmeans,covmatrix,rbfmeans,rbfcovmatrix]=gpnddisimPredict(gpsim3model,temptimes,plotdependent);
+  [temppriormeans,tempmeans,covmatrix,rbfmeans,rbfcovmatrix]=gpnddisimPredict(gpsim3model,temptimes,plotrna);
   tempdiag=diag(covmatrix);
 
   plength=length(temptimes);
@@ -40,17 +48,19 @@ while k<length(predicttimes),
     rbfvars(k:k+plength-1)=rbfdiag(1:plength);
   end;
     
-  if plotdependent==1,
+  if plotrna==1,
     rnapredictions(k:k+plength-1)=tempmeans(plength+1:2*plength);
     rnavars(k:k+plength-1)=tempdiag(plength+1:2*plength);
-  else
-    [temppriormeans,tempmeans,covmatrix] = gpnddisimPredictRNAOnly(gpsim3model,temptimes);
-    rnapredictions(k:k+plength-1)=tempmeans(1:plength);
-    tempdiag=diag(covmatrix);
-    rnavars(k:k+plength-1)=tempdiag(1:plength);
   end;
+  
+  %else
+  %  [temppriormeans,tempmeans,covmatrix] = gpnddisimPredictRNAOnly(gpsim3model,temptimes);
+  %  rnapredictions(k:k+plength-1)=tempmeans(1:plength);
+  %  tempdiag=diag(covmatrix);
+  %  rnavars(k:k+plength-1)=tempdiag(1:plength);
+  %end;
 
-  if ((plotdependent==1) | (plotdependent==2) | (plotdependent==3)),
+  if (plotpolrna==1),
     [temppriormeans,tempmeans,covmatrix]=gpnddisimPredictRNAConditional(gpsim3model,temptimes);
     tempdiag=diag(covmatrix);
     
@@ -113,35 +123,37 @@ elseif timescaletype==1,
   rnatimes=log(gpsim3model.t+1);
   ticktimes=log(ticktimes_notransformation+1);
 elseif timescaletype==2,
-  temptimes=sqrt(predicttimes);
-  pol2times=sqrt(gpsim3model.t);
-  rnatimes=sqrt(gpsim3model.t);
-  ticktimes=sqrt(ticktimes_notransformation);
+  temptimes=sqrt(predicttimes-min(predicttimes));
+  pol2times=sqrt(gpsim3model.t-min(predicttimes));
+  rnatimes=sqrt(gpsim3model.t-min(predicttimes));
+  ticktimes=sqrt(ticktimes_notransformation-min(predicttimes));
 end;
 ticklabels={};
 for k=1:length(ticktimes), 
-  ticklabels{k}=sprintf('%.2f',ticktimes_notransformation(k));
+  if (abs(ticktimes_notransformation(k)-floor(ticktimes_notransformation(k)))<1e-6),
+    ticklabels{k}=sprintf('%d',ticktimes_notransformation(k)-timeshift);
+  else
+    ticklabels{k}=sprintf('%.2f',ticktimes_notransformation(k)-timeshift);
+  end;
 end;
-
+%pause
 
 
 clf;
+
+plotindex=1;
 
 %--------------------------------------
 % Plot Driving RBF
 %--------------------------------------
 drawme=0;
 showtitle=0;
-if plotdependent==1,
-  subplot(4,1,1);
-  drawme=1;
-  showtitle=1;
-elseif plotdependent==0
-  subplot(3,1,1);
+if plotrbf==1,
+  subplot(ntotalplots,1,plotindex);
+  plotindex=plotindex+1;
   drawme=1;
   showtitle=1;
 end;
-drawme=0;
 
 if drawme==1,
   
@@ -163,14 +175,18 @@ if drawme==1,
   end;
   
   
-  hold on; h=plot(temptimes,rbfpredictions,'k-');set(h,'LineWidth',mylinewidth);
+  hold on; 
+  h=plot(temptimes,rbfpredictions,'k-');set(h,'LineWidth',mylinewidth);
   
   h=gca;
+  set(h,'xlim',[min(temptimes) max(temptimes)]);
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
-  
-  ylabel('driving RBF');
+  set(h,'fontname','Helvetica');
+  h=ylabel('driving RBF');
+  set(h,'fontname','Helvetica');
+  grid on;
   
   if showtitle==1,
     if ~isempty(plottitle),
@@ -184,19 +200,20 @@ end;
 %--------------------------------------
 % Plot Input series
 %--------------------------------------
+
 drawme=0;
-showtitle=1;
-if plotdependent==1,
-  subplot(3,1,1);
-  drawme=1;
-elseif plotdependent==0,
-  subplot(3,1,2);
-  drawme=1;
-elseif plotdependent==3,
-  subplot(3,1,1);
+showtitle=0;
+if plotpol==1,
+%  plotxofs=0.1; plotwidth=0.8;
+%  plotyofs=0.1+0.9*(plotindex-1)/ntotalplots;
+%  plotheight=0.8*0.9/ntotalplots;
+%  axis([plotxofs plotxofs+plotwidth plotyofs plotyofs+plotheight]); 
+  subplot(ntotalplots,1,plotindex);
+  plotindex=plotindex+1;
   drawme=1;
   showtitle=1;
 end;
+
 
 if drawme==1,
   
@@ -219,14 +236,26 @@ if drawme==1,
   
   hold on; h=plot(temptimes,pol2predictions,'r-');set(h,'LineWidth',mylinewidth);
   
-  hold on; h=plot(pol2times,pol2vals,'k:o');
+  
+  hold on; 
+  if plotdatalines==1,
+    h=plot(pol2times,pol2vals,'k:o');
+  else
+    h=plot(pol2times,pol2vals,'ko');
+  end;
+  
     
   h=gca;
+  set(h,'xlim',[min(temptimes) max(temptimes)]);  
+  set(h,'ylim',[0 2.5]);  
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
+  set(h,'fontname','Helvetica');
+  grid on;
   
-  ylabel('input-series');
+  h=ylabel('input series (POLII)');
+  set(h,'fontname','Helvetica');
 
   if showtitle==1,
     if ~isempty(plottitle),
@@ -243,15 +272,16 @@ end;
 %--------------------------------------
 drawme=0;
 showtitle=0;
-if plotdependent==1,
-  subplot(3,1,2);
+if plotrna==1,
+%  plotxofs=0.1; plotwidth=0.8;
+%  plotyofs=0.1+0.9*(plotindex-1)/ntotalplots;
+%  plotheight=0.8*0.9/ntotalplots;
+%  h=axes();
+%  set(h,'position',[plotxofs plotxofs+plotwidth plotyofs plotyofs+plotheight]); 
+  subplot(ntotalplots,1,plotindex);
+  plotindex=plotindex+1;
   drawme=1;
-elseif plotdependent==0,
-  subplot(3,1,3);
-  drawme=1;
-elseif plotdependent==3,
-  subplot(3,1,2);
-  drawme=1;
+  showtitle=1;
 end;
 
 if drawme==1,
@@ -265,7 +295,8 @@ if drawme==1,
   tempc=[0.7 1.0 0.7];  
   tempy=rnapredictions;
   tempd=stdevmultiplier*(rnavars.^0.5);
-  
+
+if 1,  
   try
     h=fill([temptimes; temptimes(end:-1:1)], [tempy+tempd; tempy(end:-1:1)-tempd(end:-1:1)],tempc);
     set(h,'EdgeColor',tempc);
@@ -275,23 +306,37 @@ if drawme==1,
     hold on; h=plot(temptimes,tempy+tempd,'g--');set(h,'Color',tempc);set(h,'LineWidth',mylinewidth);
     hold on; h=plot(temptimes,tempy-tempd,'g--');set(h,'Color',tempc);set(h,'LineWidth',mylinewidth);
   end;
-  
+end;  
   
   % rnapredictions
   % pause
   
   hold on; h=plot(temptimes,rnapredictions,'g-');set(h,'LineWidth',mylinewidth);
   
-  hold on; plot(rnatimes,rnavals,'k:o');
+  hold on;
+  if plotdatalines==1,
+    plot(rnatimes,rnavals,'k:o');
+  else
+  %  plot(rnatimes,rnavals,'ko');
+  %rnatimes
+  %rnavals
+  %sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance)
+     errorbar(rnatimes, rnavals, sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance), 'ko');
+  end;
   
   %axis([min(predicttimes) max(predicttimes) min(rnavals)-sqrt(var(rnavals)) max(rnavals)+sqrt(var(rnavals))]);
   
   h=gca;
+  set(h,'xlim',[min(temptimes) max(temptimes)]); 
+  set(h,'ylim',[0 2.5]);    
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
+  set(h,'fontname','Helvetica');
+  grid on;
   
-  ylabel('RNA-series');  
+  h=ylabel('RNA series');  
+  set(h,'fontname','Helvetica');
   
   if showtitle==1,
     if ~isempty(plottitle),
@@ -307,15 +352,11 @@ end;
 %--------------------------------------
 drawme=0;
 showtitle=0;
-if plotdependent==1,
-  subplot(3,1,3);
-  drawme=1;
-elseif plotdependent==2,
+if plotpolrna==1,
+  subplot(ntotalplots,1,plotindex);
+  plotindex=plotindex+1;
   drawme=1;
   showtitle=1;
-elseif plotdependent==3,
-  subplot(3,1,3);
-  drawme=1;
 end;
   
 if (drawme==1),
@@ -348,16 +389,25 @@ if (drawme==1),
   
   hold on; h=plot(temptimes,rnapredictionsconditional,'c-');set(h,'LineWidth',mylinewidth);
   
-  hold on; plot(rnatimes,rnavals,'k:o');
+  hold on; 
+  if plotdatalines==1,
+    plot(rnatimes,rnavals,'k:o');
+  else
+    plot(rnatimes,rnavals,'ko');
+  end;
   
   %axis([min(predicttimes) max(predicttimes) min(rnavals)-sqrt(var(rnavals)) max(rnavals)+sqrt(var(rnavals))]);
   
   h=gca;
+  set(h,'xlim',[min(temptimes) max(temptimes)]);  
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
+  set(h,'fontname','Helvetica');
+  grid on;
   
-  ylabel('RNA predicted from input');  
+  h=ylabel('RNA predicted from input');  
+  set(h,'fontname','Helvetica');
   
   if showtitle==1,
     if ~isempty(plottitle),

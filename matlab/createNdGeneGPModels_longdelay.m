@@ -103,6 +103,12 @@ for initializationtype=1:ninits,
     %drawnow;
     %pause
 
+    %pars
+    %nams
+    %pause
+    %testKernelGradient(jointmodel.kern,jointmodel.t,jointmodel.invK)
+    %pause
+    
     fprintf(1,'Trying to optimize from initialization %d for SIM-DISIM\n',initializationtype);
     try
       tempmodelb = gpnddisimOptimise(jointmodel,1,maxiters);

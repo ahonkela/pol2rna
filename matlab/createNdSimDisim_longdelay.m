@@ -112,7 +112,8 @@ else
   rnadecay_range=[0.000001 1.5];
   rnaeffectvar_range=[0 20]; % *var(dataVals2)/var(dataVals1);
   %rnadelay_range=[0 800];
-  rnadelay_range=[0 1280];
+  rnadelay_range=[0 299];
+  %rnadelay_range=[0 5];
 
   rnanoisevar_range=[0.05 1]*var(dataVals2);
   if rnanoisevar_range(2)==rnanoisevar_range(1),
@@ -200,8 +201,11 @@ if(initializationtype==1),
     pars(rnabasal_index)=sigmoidabTransform(rnabasal_initval, 'xtoa', rnabasal_range);  
   
     % initialization of RNA start mean
+    % model.disimStartMean(k)*exp(model.D(k)*(-min(predtimes))) = desiredval
+    % --> disimStartMean = desiredval*exp(model.D(k)*(min(predtimes)))
     I=find(timevector==min(timevector));    
-    rnastartmean_initval=mean(dataVals2(I))    
+    rnastartmean_initval=mean(dataVals2(I));
+    rnastartmean_initval=rnastartmean_initval*exp(rnadecay_initval*min(timevector));
     pars(rnastartmean_index)=sigmoidabTransform(rnastartmean_initval, 'xtoa', rnastartmean_range);
   
     % initialization of RNA delay
@@ -260,6 +264,7 @@ if(initializationtype==2),
 
     % initialization of RNA start mean
     rnastartmean_initval=mean(dataVals2);
+    rnastartmean_initval=rnastartmean_initval*exp(rnadecay_initval*min(timevector));
     pars(rnastartmean_index)=sigmoidabTransform(rnastartmean_initval, 'xtoa', rnastartmean_range);    
 
     % initialization of RNA delay
@@ -316,6 +321,7 @@ if(initializationtype==3),
     % initialization of RNA start mean
     % idea: set to (B+polmean*S)/D
     rnastartmean_initval=(rnabasal_initval+pol2mean_initval*S_initval)/rnadecay_initval;
+    rnastartmean_initval=rnastartmean_initval*exp(rnadecay_initval*min(timevector));
     pars(rnastartmean_index)=sigmoidabTransform(rnastartmean_initval, 'xtoa', rnastartmean_range);
 
     % initialization of RNA delay
@@ -350,7 +356,8 @@ if(initializationtype>3),
     
     if numgenes>0,
       % initialization of RNA decay
-      pars(rnadecay_index)=sigmoidabTransform(rnadecay_range(1)+(rand^4)*(rnadecay_range(2)-rnadecay_range(1)), 'xtoa', rnadecay_range);
+      rnadecay_initval=rnadecay_range(1)+(rand^4)*(rnadecay_range(2)-rnadecay_range(1));
+      pars(rnadecay_index)=sigmoidabTransform(rnadecay_initval, 'xtoa', rnadecay_range);
       
       % initialization of RNA effect variance
       pars(rnaeffectvar_index)=sigmoidabTransform(rnaeffectvar_range(1)+(rand^4)*(rnaeffectvar_range(2)-rnaeffectvar_range(1)), 'xtoa', rnaeffectvar_range);
@@ -362,7 +369,9 @@ if(initializationtype>3),
       pars(rnabasal_index)=sigmoidabTransform(rnabasal_range(1)+(rand^3)*(rnabasal_range(2)-rnabasal_range(1)), 'xtoa', rnabasal_range);  
       
       % initialization of RNA start mean
-      pars(rnastartmean_index)=sigmoidabTransform(rand, 'xtoa', rnastartmean_range);  
+      rnastartmean_initval=rand;
+      rnastartmean_initval=rnastartmean_initval*exp(rnadecay_initval*min(timevector));    
+      pars(rnastartmean_index)=sigmoidabTransform(rnastartmean_initval, 'xtoa', rnastartmean_range);  
 
       % initialization of RNA delay
       % rnadelay_initval=rand*(max(timevector)-min(timevector))/2;

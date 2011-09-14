@@ -3,12 +3,12 @@
 %-------------------------------------------
 
 % base directory for code: set this to whatever is the correct path.
-%mybasedir_code='~/jaakkos_files/synergy/mlprojects/';
-mybasedir_code='/share/mi/workspace/jtpelto/synergy/mlprojects/mlprojects/';
+mybasedir_code='~/jaakkos_files/synergy/mlprojects/';
+%mybasedir_code='/share/mi/workspace/jtpelto/synergy/mlprojects/mlprojects/';
 
 % base directory for data: set this to where the result files are located.
-%mybasedir_data='~/jaakkos_files/synergy/synergy_data/analyses/';
-mybasedir_data='/share/mi/workspace/jtpelto/synergy/synergy_data/analyses/';
+mybasedir_data='~/jaakkos_files/synergy/synergy_data/analyses/';
+%mybasedir_data='/share/mi/workspace/jtpelto/synergy/synergy_data/analyses/';
 
 % base directory for plots: assumes the plots will be printed
 % to the same directory where the data is.
