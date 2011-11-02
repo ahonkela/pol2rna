@@ -1,10 +1,14 @@
-function stringfile=read_stringfile(filename,whitespace);
+function stringfile=read_stringfile(filename,whitespace,separators);
 % Reads a text file into a (nlines * 1) cell array of (k * 1) cell
 % arrays where k can be different for each line:
 % whitespace separated substrings in the line are
 % converted into a cell array of the substrings.
 % Author: Jaakko Peltonen, Jan 17, 2011 (based on old code from
 % March 29, 2006) 
+
+if nargin<3,
+  separators=[];
+end;
 
 stringfile={};
 
@@ -24,6 +28,8 @@ while tline~=-1,
   i=1; j=1;
   while i <= length(tline),
     nosubstring=1;
+
+    % Find the beginning of a content substring (content, not whitespace)
     while nosubstring==1,
       if sum(double(tline(i))==double(whitespace))==0, 
 	nosubstring=0; 
@@ -34,14 +40,17 @@ while tline~=-1,
 	end; 
       end;
     end;
+
+    % If a substring was found, extract it from the line
     if i <= length(tline),
-      j=i+1;
-      while (j <= length(tline)) && (sum(double(tline(j))==double(whitespace))==0), 
+      % Find the end of the content string
+      j=i;      
+      while (j <= length(tline)) && (sum(double(tline(j))==double([whitespace separators]))==0), 
 	j=j+1; 
       end;
       substring=tline(i:j-1);
       a={a{:},substring};
-      i=j;
+      i=j+1;
     end;
   end;
 
