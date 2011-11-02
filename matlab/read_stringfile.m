@@ -3,6 +3,15 @@ function stringfile=read_stringfile(filename,whitespace,separators);
 % arrays where k can be different for each line:
 % whitespace separated substrings in the line are
 % converted into a cell array of the substrings.
+% Inputs: 
+%   filename: name of the file to be read
+%   whitespace: characters that lie between substrings. Several of these can be between two substrings.
+%   separators: characters that lie between substrings. Only one such character can be between two substrings.
+% The difference between 'whitespace' and 'separator' is in strings like
+% "A;;B". If ";" is a whitespace character, then the example line has two
+% substrings "A" and "B". If ";" is a separator character, then the 
+% example line has three substrings "A", "", and "B".
+
 % Author: Jaakko Peltonen, Jan 17, 2011 (based on old code from
 % March 29, 2006) 
 
