@@ -7,7 +7,8 @@ timeshift = 300;
 %mybasedir_code='/share/work/jtpelto/tempsynergy/';
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
 %mybasedir_code='~/synergy_data/tempcodebranch/';
-mybasedir_code='~/jaakkos_files/synergy/mlprojects/';
+mybasedir_code='/share/mi/workspace/jtpelto/synergy/mlprojects/mlprojects/';
+%mybasedir_code='~/jaakkos_files/synergy/mlprojects/';
 %mybasedir_code='~/mlprojects/';
 
 %mybasedir_data='/share/work/jtpelto/tempsynergy/';
@@ -161,6 +162,7 @@ n_interesting_genes
 kstart=floor(startpercent*n_interesting_genes/100)+1;
 kend=n_interesting_genes;
 %kstart=2;kend=2;
+
 for k=kstart:kend,
   gene_index=interestinggenes(k);
   
@@ -174,10 +176,13 @@ for k=kstart:kend,
   temptimes=timevector;
   tempvals1=dataVals1;
   tempvals2=dataVals2;
-    
+
+  %------------------------  
+  % version with POL2 only
+  %------------------------  
   maxiters=100; ninits=8; lengthscale=2;
-  [jointmodelb,jointtransforminfo,pol2modelb,rnamodelb,naive_ll,rbf_ll,joint_ll]=createNdGeneGPModels_longdelay(temptimes,tempvals1,tempvals2,lengthscale,maxiters,ninits,[],[]);
-  %  [jointmodelb,jointtransforminfo,pol2modelb,rnamodelb,naive_ll,rbf_ll,joint_ll]=createGeneGPModelsConditional(timevector,dataVals1,dataVals2,lengthscale,maxiters,ninits);
+  %lengthscale=20;
+  [jointmodelb,jointtransforminfo,pol2modelb,rnamodelb,naive_ll,rbf_ll,joint_ll]=createNdGeneGPModels_celltimes({temptimes,[]},{tempvals1,[]},lengthscale,maxiters,ninits,[],[]);
 
   % try a run from Matti's parameters
   [pars1,nams1]=gpnddisimExtractParam(jointmodelb)
@@ -194,10 +199,7 @@ for k=kstart:kend,
   pars2=transformParametersWithSettings(parst2,jointtransforminfo,'xtoa');
   model2=gpnddisimExpandParam(jointmodelb,pars2);
   model2_ll=gpnddisimLogLikelihood(model2);
-  
-  % plotpredictions(model2,[0:5:1280]',2,1,1,'exampletitle');
-  % drawnow;
-  
+    
   try  
     model3=gpnddisimOptimise(model2,1,maxiters);
   catch
@@ -208,28 +210,76 @@ for k=kstart:kend,
     jointmodelb=model3;
     joint_ll=model3_ll;
   end;  
-  % plotpredictions(jointmodelb,[0:5:1280]',2,1,1,'exampletitle');
-  % drawnow;
-  fprintf(1, 'Gene %d (ENSG %d): optimized loglik: %f, ll w. Mattis params %f, ll opt w. M.params %f\n',...
-	  k,bininfo(gene_index,5),joint_ll,model2_ll,model3_ll);
-  %pause
 
-  % plotpredictions(results_jointmodels{k},[0:5:1280]',2,1,1,sprintf('ENSG %d',results_ensemblids(k)));
+  fprintf(1, 'Gene %d (ENSG %d) POL2 only: optimized loglik: %f, ll w. Mattis params %f, ll opt w. M.params %f\n',...
+	  k,bininfo(gene_index,5),joint_ll,model2_ll,model3_ll);
 
   results_geneindices(k)=gene_index;
   results_ensemblids(k)=bininfo(gene_index,5);
-  results_loglikelihoods(k,:)=[naive_ll rbf_ll joint_ll];
-  results_jointmodels{k}=jointmodelb;
-  results_jointtransforminfos{k}=jointtransforminfo;
+  results_pol2_loglikelihoods(k,:)=[naive_ll rbf_ll joint_ll];
+  results_pol2_jointmodels{k}=jointmodelb;
+  results_pol2_jointtransforminfos{k}=jointtransforminfo;
+
+
+
+  %------------------------  
+  % version with RNA only
+  %------------------------  
+  maxiters=100; ninits=10; lengthscale=2;
+  [jointmodelb,jointtransforminfo,pol2modelb,rnamodelb,naive_ll,rbf_ll,joint_ll]=createNdGeneGPModels_celltimes({[],temptimes},{[],tempvals2},lengthscale,maxiters,ninits,[],[]);
+
+  % try a run from Matti's parameters
+  [pars1,nams1]=gpnddisimExtractParam(jointmodelb)
+  parst1=transformParametersWithSettings(pars1,jointtransforminfo,'atox');  
+  parst2=parst1;
+  parst2(9)=mattisparameters_all(gene_index,1); % RNA start mean
+  parst2(8)=mattisparameters_all(gene_index,2); % Basal rate
+  parst2(4)=mattisparameters_all(gene_index,3)^2; % DISIM-level variance = square of sensitivity
+  parst2(3)=mattisparameters_all(gene_index,4); % DISIM-level decay
+  parst2(5)=mattisparameters_all(gene_index,5); % DISIM-level delay
+  parst2(10)=jointmodelb.y(1); % POL2 start mean
+  parst2(6)=1e-3; % start with low POL2 noise assumption
+  parst2(7)=1e-3; % start with low RNA noise assumption
+  pars2=transformParametersWithSettings(parst2,jointtransforminfo,'xtoa');
+  model2=gpnddisimExpandParam(jointmodelb,pars2);
+  model2_ll=gpnddisimLogLikelihood(model2);
+    
+  try  
+    model3=gpnddisimOptimise(model2,1,maxiters);
+  catch
+    model3=model2;
+  end;
+  model3_ll=gpnddisimLogLikelihood(model3);
+  if (model3_ll > joint_ll),
+    jointmodelb=model3;
+    joint_ll=model3_ll;
+  end;  
+
+  fprintf(1, 'Gene %d (ENSG %d) RNA only: optimized loglik: %f, ll w. Mattis params %f, ll opt w. M.params %f\n',...
+	  k,bininfo(gene_index,5),joint_ll,model2_ll,model3_ll);
+
+  results_geneindices(k)=gene_index;
+  results_ensemblids(k)=bininfo(gene_index,5);
+  results_rna_loglikelihoods(k,:)=[naive_ll rbf_ll joint_ll];
+  results_rna_jointmodels{k}=jointmodelb;
+  results_rna_jointtransforminfos{k}=jointtransforminfo;
 
   
   
-  %  if mod(k,5)==0,
-    tempfilename=sprintf('fittingresults_shifted_longerdelay_3.mat');
+  if mod(k,5)==0,
+    tempfilename=sprintf('fittingresults_shifted_polorrna4_startpercent%d.mat',startpercent);
     save(tempfilename,'results_geneindices','results_ensemblids',...
-       'results_loglikelihoods','results_jointmodels','results_jointtransforminfos','-mat');
-%  end;
+       'results_pol2_loglikelihoods','results_pol2_jointmodels','results_pol2_jointtransforminfos',...
+       'results_rna_loglikelihoods','results_rna_jointmodels','results_rna_jointtransforminfos','-mat');
+  end;
 end;
+
+tempfilename=sprintf('fittingresults_shifted_polorrna4_startpercent%d.mat',startpercent);
+save(tempfilename,'results_geneindices','results_ensemblids',...
+   'results_pol2_loglikelihoods','results_pol2_jointmodels','results_pol2_jointtransforminfos',...
+   'results_rna_loglikelihoods','results_rna_jointmodels','results_rna_jointtransforminfos','-mat');
+
+
 
 if 0,
   k=2;
@@ -250,69 +300,3 @@ if 0,
   print(sprintf('ENSG%011d_GP_shifted_delay%f.eps',ensemblid,model.delay),'-depsc','-S1024,800');
 end;
 
-
-k=2;
-model = results_jointmodels{k};
-tinfo=results_jointtransforminfos{k};
-[pars,nams]=gpnddisimExtractParam(model);
-parst=transformParametersWithSettings(pars,tinfo,'atox');  
-parst1=parst;
-parst(1)=1e-2;
-parst(2)=5e-3;
-parst(3)=0.03; %0.0453;
-parst(4)=0.001; %0.0397*0.0397;
-parst(5)=69;
-parst(6)=0.000001;
-parst(8)=0.3*0.03;
-parst(9)=0.1;
-parst(10)=1e-9;
-pars2=transformParametersWithSettings(parst,tinfo,'xtoa');  
-model2 = gpnddisimExpandParam(model,pars2);
-
-maxiters=100; ninits=8; lengthscale=2;
-[jointmodelb,jointtransforminfo,pol2modelb,rnamodelb,naive_ll,rbf_ll,joint_ll]=createNdGeneGPModels_longdelay(temptimes,tempvals1,tempvals2,lengthscale,maxiters,ninits,[],[]);
-
-
-
-if 0,
-  temptimes=timevector([1 (3:length(timevector))]);
-  tempvals1=dataVals1([1 (3:length(timevector))]);
-  tempvals2=dataVals2([1 (3:length(timevector))]);
-  
-  [jointmodel,temptransforminfo]=createSimDisim(temptimes,tempvals1,tempvals2,lengthscale,initializationtype);
-  jointmodelb=gpdisimOptimise(jointmodel);
-  [pars,nams]=gpdisimExtractParam(jointmodelb)
-  parst=transformParametersWithSettings(pars,temptransforminfo,'atox')
-  parst(4)=0.0683;parst(5)=0.0840*0.0840;parst(10)=1.073;parst(9)=0.0486;
-  parst(11)=mean(jointmodelb.y(1:10));parst(7)=1e-5;  
-  parst(3)=2;
-  pars2=transformParametersWithSettings(parst,temptransforminfo,'xtoa')
-  model2=gpdisimExpandParam(jointmodelb,pars2);  
-  plotpredictions(model2,[0:5:1280]',2,1,1,'exampletitle');
-  [pars3,nams]=gpdisimExtractParam(model2)
-  parst3=transformParametersWithSettings(pars3,temptransforminfo,'atox')
-end;
-
-
-
-% parst =
-%  Columns 1 through 9:
-%    1.0000e-12   1.0000e-02   1.0000e-02   8.0000e+01   1.2500e+04   1.0000e+00   1.0000e-01   1.0000e-01   0.0000e+00
-%  Columns 10 and 11:
-%    3.8000e-01   1.8000e-01
-
-
-
-if 0,
-  for k=1:length(results_jointmodels),
-    model=results_jointmodels{k};
-    model.disimdelaytransformationsettings=model.disimdelaytransformationsetting;
-    model.disimvariancetransformationsettings=model.disimvariancetransformationsett;
-    model.disimdecaytransformationsettings=model.disimdecaytransformationsetting;
-    plottitle=sprintf('Gene %d (ENSEMBL %d), loglik %f. B=%f, D=%f, S=%f,\ndelay=%f, MuPol=%f, Rna0=%f, nvarPol=%f\n',...
-                      k, results_ensemblids(k), results_loglikelihoods(k,3), model.B(1), model.D(1), model.S(1), ...
-                      model.delay(1), model.simMean, model.disimStartMean, model.kern.comp{2}.comp{1}.variance);
-    plotpredictions(model,[0:5:1280]',2,1,1,plottitle);
-    print(sprintf('tempprint%d.eps',k),'-depsc');
-  end;
-end;

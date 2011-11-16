@@ -166,4 +166,6 @@ for j=1:n_timepoints,
 end;
                     
 
+%save pol2_summaryseries_middle20percent.mat pol2_summaryseries -mat
+
 beep();

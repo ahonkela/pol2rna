@@ -34,7 +34,7 @@ while k<length(predicttimes),
   kwidth=length(predicttimes);
   %kwidth=50;
   temptimes=predicttimes(k:min([length(predicttimes) k+kwidth-1]));
-  [temppriormeans,tempmeans,covmatrix,rbfmeans,rbfcovmatrix]=gpnddisimPredict(gpsim3model,temptimes,plotrna);
+  [temppriormeans,tempmeans,covmatrix,rbfmeans,rbfcovmatrix]=gpnddisimPredict(gpsim3model,{temptimes,temptimes},plotrna);
   tempdiag=diag(covmatrix);
 
   plength=length(temptimes);
@@ -61,7 +61,7 @@ while k<length(predicttimes),
   %end;
 
   if (plotpolrna==1),
-    [temppriormeans,tempmeans,covmatrix]=gpnddisimPredictRNAConditional(gpsim3model,temptimes);
+    [temppriormeans,tempmeans,covmatrix]=gpnddisimPredictRNAConditional(gpsim3model,{temptimes,temptimes});
     tempdiag=diag(covmatrix);
     
     rnapredictionsconditional(k:k+plength-1)=tempmeans(1:plength);
@@ -110,22 +110,40 @@ if 0,
 end;
   
 
-
-ticktimes_notransformation=gpsim3model.t;
+if iscell(gpsim3model.t)==0,
+  ticktimes_notransformation=gpsim3model.t;
+else
+  ticktimes_notransformation=unique([gpsim3model.t{1};gpsim3model.t{2}]);
+end;
 if timescaletype==0,
   temptimes=predicttimes;
-  pol2times=gpsim3model.t;
-  rnatimes=gpsim3model.t;
+  if iscell(gpsim3model.t)==0,
+    pol2times=gpsim3model.t;
+    rnatimes=gpsim3model.t;
+  else
+    pol2times=gpsim3model.t{1};
+    rnatimes=gpsim3model.t{2};
+  end;
   ticktimes=ticktimes_notransformation;
 elseif timescaletype==1,
   temptimes=log(predicttimes+1);
-  pol2times=log(gpsim3model.t+1);
-  rnatimes=log(gpsim3model.t+1);
+  if iscell(gpsim3model.t)==0,
+    pol2times=log(gpsim3model.t+1);
+    rnatimes=log(gpsim3model.t+1);
+  else
+    pol2times=log(gpsim3model.t{1}+1);
+    rnatimes=log(gpsim3model.t{2}+1);
+  end;
   ticktimes=log(ticktimes_notransformation+1);
 elseif timescaletype==2,
   temptimes=sqrt(predicttimes-min(predicttimes));
-  pol2times=sqrt(gpsim3model.t-min(predicttimes));
-  rnatimes=sqrt(gpsim3model.t-min(predicttimes));
+  if iscell(gpsim3model.t)==0,
+    pol2times=sqrt(gpsim3model.t-min(predicttimes));
+    rnatimes=sqrt(gpsim3model.t-min(predicttimes));
+  else
+    pol2times=sqrt(gpsim3model.t{1}-min(predicttimes));
+    rnatimes=sqrt(gpsim3model.t{2}-min(predicttimes));
+  end;
   ticktimes=sqrt(ticktimes_notransformation-min(predicttimes));
 end;
 ticklabels={};
@@ -247,7 +265,8 @@ if drawme==1,
     
   h=gca;
   set(h,'xlim',[min(temptimes) max(temptimes)]);  
-  set(h,'ylim',[0 2.5]);  
+  %set(h,'ylim',[0 2.5]);  
+  %set(h,'ylim',[0 10]);  
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
@@ -287,6 +306,7 @@ end;
 if drawme==1,
   
   rnavals=gpsim3model.y(length(pol2times)+1:length(pol2times)+length(rnatimes));
+  %rnavals
   
   % hold on; plot(predicttimes,rnapredictions+stdevmultiplier*(rnavars.^0.5),'c-');
   % hold on; plot(predicttimes,rnapredictions-stdevmultiplier*(rnavars.^0.5),'m-');
@@ -318,17 +338,24 @@ end;
     plot(rnatimes,rnavals,'k:o');
   else
   %  plot(rnatimes,rnavals,'ko');
-  %rnatimes
-  %rnavals
-  %sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance)
-     errorbar(rnatimes, rnavals, sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance), 'ko');
+  rnatimes
+  rnavals
+  sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance)
+     if isempty(rnatimes)==0,
+       try
+         errorbar(rnatimes, rnavals, sqrt(gpsim3model.kern.comp{2}.comp{2}.fixedvariance),'ko');
+	 plot(rnatimes,rnavals,'ko');
+       catch
+         plot(rnatimes,rnavals,'ko');
+       end;
+     end;
   end;
   
   %axis([min(predicttimes) max(predicttimes) min(rnavals)-sqrt(var(rnavals)) max(rnavals)+sqrt(var(rnavals))]);
   
   h=gca;
   set(h,'xlim',[min(temptimes) max(temptimes)]); 
-  set(h,'ylim',[0 2.5]);    
+  %set(h,'ylim',[0 2.5]);    
   set(h,'xtick',ticktimes);
   set(h,'xticklabel',ticklabels);
   set(h,'fontsize',fontsize);
