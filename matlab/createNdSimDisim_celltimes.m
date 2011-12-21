@@ -1,4 +1,5 @@
-function [gpsim3model,transforminfo]=createNdSimDisim_celltimes(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance);
+function [gpsim3model,transforminfo]= ...
+    createNdSimDisim_celltimes(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors);
 
 fprintf(1,'createNdSimDisim step 1\n');
 
@@ -67,7 +68,12 @@ annotation=[];
 
 options=struct();
 options.includeNoise=1;
-options.addPriors=0;
+% Remember to add priors!
+if ~isempty(addPriors) && addPriors,
+  options.addPriors=1;
+else
+  options.addPriors=0;
+end
 options.asynchronyType=1;
 %options.optimiser='conjgrad';
 %options.optimiser='scg';
