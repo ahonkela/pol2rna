@@ -1,7 +1,11 @@
 function [gpsim3model,transforminfo]= ...
     createNdSimDisim_celltimes(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors);
 
-fprintf(1,'createNdSimDisim step 1\n');
+DEBUG=0;
+
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 1\n');
+end
 
 % normalization of POL2
 dataVals1=dataVals{1};
@@ -39,8 +43,9 @@ if ~isempty(dataVals2),
   end;
 end;
 
-
-fprintf(1,'createNdSimDisim step 2\n');
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 2\n');
+end
 
 
 %if ~isempty(dataVals2),
@@ -106,8 +111,9 @@ else
   pol2mean_index=4;
 end;
 
-fprintf(1,'createNdSimDisim step 3\n');
-
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 3\n');
+end
 
 if ~isempty(parameterranges),
   % use given parameter ranges
@@ -163,8 +169,9 @@ else
   pol2mean_range=[0 10000];
 end;
 
-fprintf(1,'createNdSimDisim step 4\n');
-
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 4\n');
+end
   
 transformsettings={};
 if(~isnan(inversewidth_index)), transformsettings{inversewidth_index}=inversewidth_range; end;
@@ -173,39 +180,47 @@ if(~isnan(pol2noisevar_index)), transformsettings{pol2noisevar_index}=pol2noisev
 if(~isnan(rnadecay_index)), transformsettings{rnadecay_index}=rnadecay_range; end;
 if(~isnan(rnaeffectvar_index)), transformsettings{rnaeffectvar_index}=rnaeffectvar_range; end;
 
-fprintf(1,'createNdSimDisim step 4a\n');
-numgenes
-rnadelay_index
-rnadelay_range
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 4a\n');
+  numgenes
+  rnadelay_index
+  rnadelay_range
+end
 
 if(~isnan(rnadelay_index)), transformsettings{rnadelay_index}=rnadelay_range; end;
 
-fprintf(1,'createNdSimDisim step 4a1\n');
-
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 4a1\n');
+end
 
 if(~isnan(rnanoisevar_index)), transformsettings{rnanoisevar_index}=rnanoisevar_range; end;
 if(~isnan(rnabasal_index)), transformsettings{rnabasal_index}=rnabasal_range; end;
 
-fprintf(1,'createNdSimDisim step 4a2\n');
-
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 4a2\n');
+end
 
 if(~isnan(rnastartmean_index)), transformsettings{rnastartmean_index}=rnastartmean_range; end;
 if(~isnan(pol2mean_index)), transformsettings{pol2mean_index}=pol2mean_range; end;
 
-fprintf(1,'createNdSimDisim step 4b\n');
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 4b\n');
+end
 
 transforminfo.indices=[inversewidth_index pol2effectvar_index rnadecay_index rnaeffectvar_index rnadelay_index pol2noisevar_index rnanoisevar_index rnabasal_index rnastartmean_index pol2mean_index];
 
 transforminfo.settings={inversewidth_range,pol2effectvar_range,rnadecay_range,rnaeffectvar_range,rnadelay_range,pol2noisevar_range,rnanoisevar_range,rnabasal_range,rnastartmean_range,pol2mean_range};
 
-fprintf(1,'createNdSimDisim step 5\n');
-
+if DEBUG,
+  fprintf(1,'createNdSimDisim step 5\n');
+end
 
 gpsim3model = gpnddisimCreate(numgenes, 1, timevector, dataValsCell,dataVarsCell, options, annotation, transformsettings );
 
 
-fprintf(1,'createNdSimDisim step 6\n');
-
+if DEBUG
+  fprintf(1,'createNdSimDisim step 6\n');
+end
 
 
 if 1,
@@ -777,4 +792,6 @@ end;
 
 end;
 
-fprintf(1,'createSimDisim done\n');
+if DEBUG,
+  fprintf(1,'createSimDisim done\n');
+end
