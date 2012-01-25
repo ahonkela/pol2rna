@@ -159,7 +159,11 @@ for k=1:length(mygenes),
   t = mygenes{k};
   I = find(str2double(t(10:end)) == bininfo(:, 5));
   if ~isempty(I),
-    indices(k) = I;
+    if std(pol_summaryseries(I, :)) == 0,
+      indices(k) = NaN;
+    else
+      indices(k) = I;
+    end
   else
     indices(k) = NaN;
   end
@@ -247,24 +251,79 @@ for i=myI,
   tempvals1=dataVals1;
   tempvals2=dataVals2;
     
-  lengthscale=2;
+  lengthscale=10;
 
-  timevector = {timevector,timevector};
+  timeCell = {timevector,timevector};
   dataVals = {tempvals1, tempvals2};
-  initializationtype=1;
+  initializationtype=5;
 
-  try,
-    [m,temptransforminfo]=createNdSimDisim_celltimes(timevector, ...
-						     dataVals,lengthscale,initializationtype,[],[],1);
-  catch,
-    warning('Unable to create a model for gene %s\n', gene_name);
+  if any(isnan(tempvals1)) || any(isnan(tempvals2)),
+    warning('NaN data for gene %s, skipping...\n', gene_name);
     continue;
   end
+  
+  % Create joint model
+  skipme = 0;
+  try,
+    [m,temptransforminfo]=createNdSimDisim_celltimes(timeCell, ...
+						     dataVals,lengthscale,initializationtype,[],[],1);
+  catch,
+    warning('Unable to create joint model for gene %s\n', gene_name);
+    skipme = 1;
+  end
+  
+  if ~skipme,
+    % Apply HMC sampling
+    HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters);
+    HMCsamples = HMCsamples(10:10:end, :);
+    save(sprintf('hmc_results/joint/%s_samples_%s.mat', gene_name, id), ...
+         'gene_name', 'gene_index', 'm', 'HMCsamples');
+  end
 
-  % Apply HMC sampling
-  HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters);
-  HMCsamples = HMCsamples(10:10:end, :);
-  save(sprintf('hmc_results/%s_samples_%s.mat', gene_name, id), ...
-       'gene_name', 'gene_index', 'm', 'HMCsamples');
+  
+  % Create Pol2 model
+  timeCell = {timevector,[]};
+  dataVals = {tempvals1, []};
+  initializationtype=5;
+
+  skipme = 0;
+  try,
+    [m,temptransforminfo]=createNdSimDisim_celltimes(timeCell, ...
+						     dataVals,lengthscale,initializationtype,[],[],1);
+  catch,
+    warning('Unable to create Pol2 model for gene %s\n', gene_name);
+    skipme = 1;
+  end
+  
+  if ~skipme,
+    % Apply HMC sampling
+    HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters);
+    HMCsamples = HMCsamples(10:10:end, :);
+    save(sprintf('hmc_results/pol2/%s_samples_%s.mat', gene_name, id), ...
+         'gene_name', 'gene_index', 'm', 'HMCsamples');
+  end
+
+
+  % Create RNA model
+  timeCell = {[],timevector};
+  dataVals = {[], tempvals2};
+  initializationtype=5;
+
+  skipme = 0;
+  try,
+    [m,temptransforminfo]=createNdSimDisim_celltimes(timeCell, ...
+						     dataVals,lengthscale,initializationtype,[],[],1);
+  catch,
+    warning('Unable to create RNA model for gene %s\n', gene_name);
+    skipme = 1;
+  end
+  
+  if ~skipme,
+    % Apply HMC sampling
+    HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters);
+    HMCsamples = HMCsamples(10:10:end, :);
+    save(sprintf('hmc_results/rna/%s_samples_%s.mat', gene_name, id), ...
+         'gene_name', 'gene_index', 'm', 'HMCsamples');
+  end
 end;
 
