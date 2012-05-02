@@ -111,3 +111,14 @@ for i=istart:iend,
   HMCsamples{Ijointrank(i)} = gpnddisimSampleHMC(model, 2, nHMCiters);
 end;
 
+save hmcsamples.mat HMCsamples -mat
+
+
+for i=istart:iend,
+  model = allresults_jointmodels_joint{Ijointrank(i)};
+
+  transformedparams=transformParametersWithSettings(params,transforminfo,transformtype);
+
+end;
+
+
