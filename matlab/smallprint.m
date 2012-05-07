@@ -14,7 +14,7 @@ end;
 
 if (done==0),
   formatstring=sprintf('%%.%de',maxdigits);
-  str1=sprintf(formatstring,mynum)
+  str1=sprintf(formatstring,mynum);
   % remove useless zeroes before or after exponent
   k1=find(str1=='.');
   k2=find(str1=='e');
@@ -25,7 +25,7 @@ if (done==0),
       uselesszeros=uselesszeros+1;
     end;
   end;
-  uselesszeros
+  uselesszeros;
   if uselesszeros<maxdigits,
     str1b=[str1b str1(k1:k1+maxdigits-uselesszeros)];
   end;
@@ -38,7 +38,7 @@ if (done==0),
   
   if abs(mynum)<1,
     musthavezeros=ceil(-log10(abs(mynum)))-1;
-    formatstring2=sprintf('%%.%df',musthavezeros+maxdigits)
+    formatstring2=sprintf('%%.%df',musthavezeros+maxdigits);
     str2=sprintf(formatstring2,mynum);
     if length(str2)<length(str),
       str=str2;
