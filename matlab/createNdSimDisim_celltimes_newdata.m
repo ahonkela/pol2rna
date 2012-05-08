@@ -1,5 +1,5 @@
 function [gpsim3model,transforminfo]= ...
-    createNdSimDisim_celltimes(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors);
+    createNdSimDisim_celltimes_newdata(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors);
 
 DEBUG=0;
 
@@ -23,19 +23,15 @@ else
   dataVals2=[];
 end;
 
-if length(dataVals) > 2,
-  rnavars = dataVals{3}.^2;
+if isempty(dataVals2)==0,
+  % RNA variance estimate based on unnormalized read counts
+  rnavar_sigma=0.004238473;
+  tempvals = max(1,dataVals2);
+  rnavars = tempvals+rnavar_sigma*tempvals.^2;
 else
-  if ~isempty(dataVals2),
-    % RNA variance estimate based on unnormalized read counts
-    rnavar_sigma=0.004541162;
-    tempvals = max(1,dataVals2);
-    rnavars = tempvals+rnavar_sigma*tempvals.^2;
-  else
-    rnavar_sigma=0.004541162;
-    rnavars = [];
-  end;
-end
+  rnavar_sigma=0.004238473;
+  rnavars = [];
+end;
 
 % normalization of RNA and RNA variance
 if ~isempty(dataVals2),
@@ -653,6 +649,10 @@ if(initializationtype==5),
 end;
 
 
+if any(isnan(pars)),
+    warning('NaN parameters');
+    pars(isnan(pars)) = 0;
+end
 
 
 if(initializationtype>5),
@@ -712,12 +712,12 @@ if(initializationtype>5),
 
       % initialization of RNA delay
       % rnadelay_initval=rand*(max(timevector)-min(timevector))/2;
-      rnadelay_initval=rnadelay_range(1)+(rand)*(rnadelay_range(2)-rnadelay_range(1))
+      rnadelay_initval=rnadelay_range(1)+(rand)*(rnadelay_range(2)-rnadelay_range(1));
       pars(rnadelay_index)=sigmoidabTransform(rnadelay_initval, 'xtoa', rnadelay_range);          
     end;    
 	
     gpsim3model=gpnddisimExpandParam(gpsim3model,pars);
-    templl=gpnddisimLogLikelihood(gpsim3model)
+    templl=gpnddisimLogLikelihood(gpsim3model);
     if templl>bestll,
       bestpars=pars;
       bestll=templl;
