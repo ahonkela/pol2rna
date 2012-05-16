@@ -1,5 +1,5 @@
 N = 200;
-filestem = '~/projects/pol2rnaseq/analyses/fittingresults_shifted_longerdelay_new_2012-05-07b_%d_200.mat';
+filestem = '/share/synergy/analyses/2012-05-07/fittingresults_shifted_longerdelay_new_2012-05-07b_%d_200.mat';
 
 mybasedir_code='~/mlprojects/';
 
@@ -42,7 +42,7 @@ r = load('~/projects/pol2rnaseq/data/rna_new_data.mat');
 [I, A, B] = intersect(r.geneids, bininfo(:, 5));
 symbols = r.symbols(A);
 
-figdir = '~/projects/pol2rnaseq/figures/';
+figdir = '/share/synergy/analyses/2012-05-07/figures/';
 
 for k=myI,
     mkdir(figdir, sprintf('%d', k));
