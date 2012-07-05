@@ -1,5 +1,5 @@
 
-d = dir('~/projects/pol2rnaseq/analyses/hmc_results/*.mat');
+d = dir('~/projects/pol2rnaseq/analyses/hmc_results/joint/*.mat');
 
 genes = cell(length(d), 1);
 means = zeros(length(d), 9);
@@ -7,7 +7,7 @@ stds = zeros(length(d), 9);
 h = cell(length(d), 1);
 for k=1:length(d),
   fprintf('%d/%d\n', k, length(d));
-  r = load(['~/projects/pol2rnaseq/analyses/hmc_results/', d(k).name]);
+  r = load(['~/projects/pol2rnaseq/analyses/hmc_results/joint/', d(k).name]);
   genes{k} = r.gene_name;
   h{k} = r.HMCsamples(501:end, [1:6, 8:10]);
   means(k, :) = mean(h{k});

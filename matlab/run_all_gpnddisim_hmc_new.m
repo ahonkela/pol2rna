@@ -4,6 +4,10 @@ tempanswer=1;
 
 timeshift = 300;
 
+if ~exist('initializationtype', 'var'),
+    error('No initializationtype set.')
+end
+
 %mybasedir_code='/share/work/jtpelto/tempsynergy/';
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
 %mybasedir_code='~/synergy_data/tempcodebranch/';
@@ -99,7 +103,7 @@ for i=myI,
 
   timeCell = {timevector,timevector};
   dataVals = {tempvals1, tempvals2};
-  initializationtype=5;
+  %initializationtype=5;
 
   if any(isnan(tempvals1)) || any(isnan(tempvals2)),
     warning('NaN data for gene %s, skipping...\n', gene_name);
@@ -123,7 +127,7 @@ for i=myI,
       dataVals = {[], tempvals2};
     end
     
-    initializationtype=5;
+    %initializationtype=5;
 
     skipme = 0;
     fname = sprintf('hmc_results/%s/%s_samples_%s_init%d.mat', ...
@@ -143,7 +147,7 @@ for i=myI,
   
     if ~skipme,
       % Apply HMC sampling
-      HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters);
+      HMCsamples = gpnddisimSampleHMC(m, 0, nHMCiters);
       HMCsamples = HMCsamples(10:10:end, :);
       save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples');
     end
