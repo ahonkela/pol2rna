@@ -27,8 +27,8 @@ for k=1:2,
   mycol = shadecols{k};
   h=fill([t_plot; t_plot(end:-1:1)], [p(1,I)'; flipud(p(2,I)')],mycol);
   set(h,'EdgeColor',mycol);
-  set(h,'FaceAlpha',0.5);
-  set(h,'EdgeAlpha',0.5);
+  %set(h,'FaceAlpha',0.5);
+  %set(h,'EdgeAlpha',0.5);
   hold on
   plot(sqrt(t_pred - min(t_pred)), mean(r(:, I)), linecols{k}, 'LineWidth', LINEWIDTH);
   switch k,
