@@ -64,7 +64,8 @@ cd(analysisdir)
 [I, A, B] = intersect(r.geneids, bininfo(:, 5));
 
 %interestinggenes = A; %find(r.pvals(A) < 0.1);
-interestinggenes = find(r.pvals(A) < 0.9);
+%interestinggenes = find(r.pvals(A) < 0.9);
+interestinggenes = find(sum(r.counts(A,:), 2) >= 1000);
 
 
 nHMCiters = 10000;
@@ -88,8 +89,8 @@ for i=myI,
 
   fprintf('Running gene %d/%d: %s\n', find(i==myI), length(myI), gene_name);
 
-  randn('seed',bininfo(gene_index,5));
-  rand('seed',bininfo(gene_index,5)+1234567);
+  randn('seed',bininfo(gene_index,5)+13*initializationtype);
+  rand('seed',bininfo(gene_index,5)+1234567+13*initializationtype);
   
   dataVals1=pol2_summaryseries(gene_index,:)';
   dataVals2=double(r.counts(rna_index,:)');
@@ -111,7 +112,9 @@ for i=myI,
   end
 
   modelnames = {'joint', 'pol2', 'rna'};
-  for k=1:3,
+  %for k=1:3,
+  % NOTE: run only joint models
+  for k=1:1,
     switch k,
      case 1,
       % Create joint model

@@ -1,6 +1,6 @@
 function plot_sampled_predictions(m, HMCsamples, gene_name),
 
-shadecols = {[1.0 0.7 0.7], [0.7 1.0 0.7]};
+shadecols = {[1.0 0.9 0.9], [0.9 1.0 0.9]};
 linecols = {'r', 'g'};
 FONTSIZE=9;
 LINEWIDTH=2;
@@ -20,7 +20,7 @@ p = prctile(r, [2.5 97.5]);
 mu = mean(r);
 
 for k=1:2,
-  subplot(3, 2, 2*k-1:2*k);
+  subplot(2, 3, 3*k-2:3*k-1);
   I = (1:length(t_pred)) + (k-1)*length(t_pred);
   J = (1:length(t_tick)) + (k-1)*length(t_tick);
   
@@ -33,9 +33,9 @@ for k=1:2,
   plot(sqrt(t_pred - min(t_pred)), mean(r(:, I)), linecols{k}, 'LineWidth', LINEWIDTH);
   switch k,
    case 1,
-    plot(t_tickplot, m.y(J), 'bo-')
+    plot(t_tickplot, m.y(J), 'bo')
    case 2,
-    errorbar(t_tickplot, m.y(J), 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance), 'bo-')
+    errorbar(t_tickplot, m.y(J), 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance), 'bo')
   end
   hold off
   V = axis;
@@ -46,7 +46,7 @@ for k=1:2,
   ylabel(titles{k});
 end
 
-subplot(3, 2, 5);
+subplot(2, 3, [3 6]);
 vals = sigmoidabTransform(HMCsamples(:, delayI), 'atox', settings{delayI});
 [n, x] = hist(vals, 5:10:295);
 bar(x,n/sum(n),settings{delayI},'hist');
@@ -54,7 +54,7 @@ set(gca, 'FontSize', FONTSIZE);
 xlabel('Delay (min)')
 
 if nargin > 2,
-  subplot(3, 2, 1:2);
+  subplot(2, 3, 1:2);
   title(gene_name);
-  subplot(3, 2, 5);
+  subplot(2, 3, [3 6]);
 end
