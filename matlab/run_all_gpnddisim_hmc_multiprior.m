@@ -162,14 +162,14 @@ for i=myI,
     if do_marginalise,
       m2 = multipriorCreate(m, priorspec, priors, struct('marginalise', 1));
     else
-      m2 = multipriorCreate(m, priorspec, priors);
+      m2 = multipriorCreate(m, priorspec, priors, struct());
     end
     options = hmcDefaultOptions;
     options.epsilon=0.05;
     
     if ~skipme,
       % Apply HMC sampling
-      HMCsamples = multipriorSampleHMC(m2, 1, nHMCiters, options);
+      HMCsamples = multipriorSampleHMC(m2, 0, nHMCiters, options);
       HMCsamples = HMCsamples(10:10:end, :);
       save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples');
     end
