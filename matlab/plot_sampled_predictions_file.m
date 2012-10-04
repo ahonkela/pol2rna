@@ -9,11 +9,11 @@ plotdir = '~/projects/pol2rnaseq/analyses/hmc_results/plots/';
 
 switch format,
   case 'png',
-    PNG_SIZE = [640 320];
+    PNG_SIZE = [640 480];
     DPI = 72;
-    plotfile = [plotdir gene '_hmc_2012-08-03.png'];
+    plotfile = [plotdir gene '_hmc_2012-09-25.png'];
   case 'eps',
-    plotfile = [plotdir gene '_hmc_2012-08-03.eps'];
+    plotfile = [plotdir gene '_hmc_2012-09-25.eps'];
 end
 
 if exist(plotfile, 'file'),

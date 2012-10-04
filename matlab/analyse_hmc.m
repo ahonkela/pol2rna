@@ -5,21 +5,20 @@ d = dir([resultdir '*.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
-% exclude init3, as it seems very unreliable
-I = cellfun('isempty', strfind(filenames, 'init3'));
-filenames = filenames(I);
+
+N_GOOD = 5;
 
 ids = zeros(size(filenames));
 for k=1:length(filenames),
   ids(k) = str2num(filenames{k}(5:15));
 end
-goodids = find(accumarray(ids, 1) == 5);
+goodids = find(accumarray(ids, 1) == N_GOOD);
 Ifiles = ismember(ids, goodids);
 
 Isampl = 501:1000;
 Isampl_thin = 501:10:1000;
 
-MYP = [2.5 25 50 75 9.75];
+MYP = [2.5 25 50 75 97.5];
 
 filenames = filenames(Ifiles);
 
@@ -27,7 +26,8 @@ mygene = '';
 genes = cell(length(filenames), 1);
 means = zeros(length(filenames), 9);
 stds = zeros(length(filenames), 9);
-prcts = zeros(length(filenames)/5, 9, length(MYP));
+thetameans = zeros(length(filenames), 1);
+prcts = zeros(length(filenames)/N_GOOD, 9, length(MYP));
 hgene = zeros(length(Isampl)/2, 9);
 curI = 1:length(Isampl_thin);
 Iincr = length(curI);
@@ -37,9 +37,11 @@ for k=1:length(filenames),
   r = load([resultdir, filenames{k}]);
   genes{k} = r.gene_name;
   hk = r.HMCsamples(Isampl, [1:6, 8:10]);
+  pp = [normpdf(hk(:, 5), 0, 2), normpdf(hk(:, 5), -4, 2)];
+  thetameans(k) = sum(mean(pp ./ repmat(sum(pp, 2), [1, 2])) .* [1 2]);
   if ~strcmp(r.gene_name, mygene),
     if k>1,
-      prcts(floor(k/5), :, :) = prctile(hgene, MYP)';
+      prcts(floor(k/N_GOOD), :, :) = prctile(hgene, MYP)';
     end
     curI = 1:length(Isampl_thin);
     mygene = r.gene_name;
@@ -60,11 +62,12 @@ prcts(end, :, :) = prctile(hgene, MYP)';
 
 baddata = zeros(length(goodids), 1);
 Rhat = zeros(length(goodids), 9);
+thetatruemeans = zeros(length(goodids), 1);
 for k=1:length(goodids),
-  I = (k-1)*5 + (1:5);
+  I = (k-1)*N_GOOD + (1:N_GOOD);
   S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
   I = I(S < 100 & sum(stds(I, :), 2) > 0.1);
-  if length(I) < 5,
+  if length(I) < N_GOOD,
     baddata(k) = 1;
     disp(I)
   end
@@ -74,6 +77,7 @@ for k=1:length(goodids),
   B = N*var(means(I,:));
   varHatPlus = (N-1)/N * W + 1/N * B;
   Rhat(k,:) = sqrt(varHatPlus./W);
+  thetatruemeans(k) = mean(thetameans(I));
 end
 
 K = max(Rhat, [], 2) < 1.2;
@@ -84,27 +88,28 @@ fclose(fp);
 
 save analysis_dump
 
-for k=find(max(Rhat, [], 2) > 1.2)',
-  I = (k-1)*5 + (1:5);
-  S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
-  I = I(S < 100 & sum(stds(I, :), 2) > 0.1);
-  fprintf('k=%d\n', k);
-  J = Rhat(k,:) > 1.2;
-  disp(Rhat(k,:));
-  disp(means(I,:));
-  disp(stds(I,:));
-  % for k=1:length(I),
-  %   subplot(5, 1, k);
-  %   plot(h{I(k)}(:,J));
-  % end
-  pause
-end
+% for k=find(max(Rhat, [], 2) > 1.2)',
+%   I = (k-1)*5 + (1:5);
+%   S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
+%   I = I(S < 100 & sum(stds(I, :), 2) > 0.1);
+%   fprintf('k=%d\n', k);
+%   J = Rhat(k,:) > 1.2;
+%   disp(Rhat(k,:));
+%   disp(means(I,:));
+%   disp(stds(I,:));
+%   % for k=1:length(I),
+%   %   subplot(5, 1, k);
+%   %   plot(h{I(k)}(:,J));
+%   % end
+%   pause
+% end
 
 
+Kind = find(K);
 delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
-fp = fopen('delay_prctiles_2012-08-14.txt', 'w');
-fprintf(fp, 'gene 2.5%% 25%% 50%% 75%% 97.5%%\n');
+fp = fopen('delay_prctiles_2012-09-25.txt', 'w');
+fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
 for k=1:length(goodgenes),
-  fprintf(fp, '%s %f %f %f %f %f\n', goodgenes{k}, delaypcts(k,:));
+  fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));
 end
 fclose(fp);
