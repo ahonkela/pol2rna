@@ -6,14 +6,16 @@ end
 
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
 plotdir = '~/projects/pol2rnaseq/analyses/hmc_results/plots/';
+aliases = load('~/projects/pol2rnaseq/data/aliases.mat');
+aliases = aliases.aliases;
 
 switch format,
   case 'png',
     PNG_SIZE = [640 480];
     DPI = 72;
-    plotfile = [plotdir gene '_hmc_2012-09-25.png'];
+    plotfile = [plotdir gene '_hmc_2012-10-08.png'];
   case 'eps',
-    plotfile = [plotdir gene '_hmc_2012-09-25.eps'];
+    plotfile = [plotdir gene '_hmc_2012-10-08.eps'];
 end
 
 if exist(plotfile, 'file'),
@@ -36,6 +38,10 @@ for k=1:length(filenames),
   assert(strcmp(r.gene_name, gene));
   mysamples((1:length(Isampl)) + (k-1)*length(Isampl), :) = ...
       r.HMCsamples(Isampl, :);
+end
+
+if isfield(aliases, gene),
+  gene = sprintf('%s (%s)', gene, aliases.(gene));
 end
 
 plot_sampled_predictions(r.m, mysamples, gene)

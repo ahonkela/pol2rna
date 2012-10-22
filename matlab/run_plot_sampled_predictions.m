@@ -19,7 +19,7 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
-g = importdata('~/mlprojects/pol2rnaseq/matlab/finished_genes_2012-09-25.txt');
+g = importdata('~/mlprojects/pol2rnaseq/matlab/finished_genes_2012-10-08.txt');
 myI = mybase:mymod:length(g);
 
 for k=myI,

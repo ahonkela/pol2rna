@@ -31,12 +31,13 @@ prcts = zeros(length(filenames)/N_GOOD, 9, length(MYP));
 hgene = zeros(length(Isampl)/2, 9);
 curI = 1:length(Isampl_thin);
 Iincr = length(curI);
-%h = cell(length(filenames), 1);
+h = cell(length(filenames), 1);
 for k=1:length(filenames),
   fprintf('%d/%d\n', k, length(filenames));
   r = load([resultdir, filenames{k}]);
   genes{k} = r.gene_name;
   hk = r.HMCsamples(Isampl, [1:6, 8:10]);
+  h{k} = hk;
   pp = [normpdf(hk(:, 5), 0, 2), normpdf(hk(:, 5), -4, 2)];
   thetameans(k) = sum(mean(pp ./ repmat(sum(pp, 2), [1, 2])) .* [1 2]);
   if ~strcmp(r.gene_name, mygene),
@@ -86,6 +87,12 @@ fp = fopen('finished_genes_latest.txt', 'w');
 fprintf(fp, '%s\n', goodgenes{:});
 fclose(fp);
 
+K = max(Rhat, [], 2) > 1.2;
+badgenes = genes(find(K)*5);
+fp = fopen('unfinished_genes_latest.txt', 'w');
+fprintf(fp, '%s\n', badgenes{:});
+fclose(fp);
+
 save analysis_dump
 
 % for k=find(max(Rhat, [], 2) > 1.2)',
@@ -107,7 +114,7 @@ save analysis_dump
 
 Kind = find(K);
 delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
-fp = fopen('delay_prctiles_2012-09-25.txt', 'w');
+fp = fopen('delay_prctiles_2012-10-08.txt', 'w');
 fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
 for k=1:length(goodgenes),
   fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));
