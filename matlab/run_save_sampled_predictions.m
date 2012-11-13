@@ -24,5 +24,5 @@ myI = mybase:mymod:length(g);
 
 for k=myI,
   fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  plot_sampled_predictions_file(g{k});
+  save_sampled_predictions_file(g{k});
 end

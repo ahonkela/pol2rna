@@ -5,6 +5,7 @@ d = dir([resultdir '*.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
+filenames = filenames(cellfun('length', filenames) == 44);
 
 N_GOOD = 5;
 
@@ -67,10 +68,10 @@ thetatruemeans = zeros(length(goodids), 1);
 for k=1:length(goodids),
   I = (k-1)*N_GOOD + (1:N_GOOD);
   S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
-  I = I(S < 100 & sum(stds(I, :), 2) > 0.1);
-  if length(I) < N_GOOD,
+  J = I(S < 100 & sum(stds(I, :), 2) > 0.1);
+  if length(J) < N_GOOD,
     baddata(k) = 1;
-    disp(I)
+    disp(J)
   end
   N = length(Isampl);
   M = length(I);
@@ -87,8 +88,8 @@ fp = fopen('finished_genes_latest.txt', 'w');
 fprintf(fp, '%s\n', goodgenes{:});
 fclose(fp);
 
-K = max(Rhat, [], 2) > 1.2;
-badgenes = genes(find(K)*5);
+Kbad = ~(max(Rhat, [], 2) < 1.2);
+badgenes = genes(find(Kbad)*5);
 fp = fopen('unfinished_genes_latest.txt', 'w');
 fprintf(fp, '%s\n', badgenes{:});
 fclose(fp);
