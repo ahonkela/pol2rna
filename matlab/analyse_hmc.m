@@ -96,21 +96,19 @@ fclose(fp);
 
 save analysis_dump
 
-% for k=find(max(Rhat, [], 2) > 1.2)',
-%   I = (k-1)*5 + (1:5);
-%   S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
-%   I = I(S < 100 & sum(stds(I, :), 2) > 0.1);
-%   fprintf('k=%d\n', k);
-%   J = Rhat(k,:) > 1.2;
-%   disp(Rhat(k,:));
-%   disp(means(I,:));
-%   disp(stds(I,:));
-%   % for k=1:length(I),
-%   %   subplot(5, 1, k);
-%   %   plot(h{I(k)}(:,J));
-%   % end
-%   pause
-% end
+for k=find(max(Rhat, [], 2) > 1.2)',
+  I = (k-1)*5 + (1:5);
+  fprintf('k=%d\n', k);
+  J = Rhat(k,:) > 1.2;
+  disp(Rhat(k,:));
+  disp(means(I,:));
+  disp(stds(I,:));
+  for k=1:length(I),
+    subplot(5, 1, k);
+    plot(h{I(k)}(:,J));
+  end
+  pause
+end
 
 
 Kind = find(K);

@@ -63,7 +63,7 @@ load('pol2_summaryseries_2012_09.mat');
 r = load('rna_new_data3.mat');
 act = importdata('activeGenes_new.txt');
 act_genes = act.textdata(find(act.data));
-badgenes = importdata('unfinished_genes_2012-11-06.txt');
+badgenes = importdata('unfinished_genes_2012-11-14b.txt');
 
 cd(analysisdir)
 
@@ -85,7 +85,7 @@ interestinggenes = A(sort(J(find(J))));
 %keyboard;
 
 nHMCburnin = 30000;
-nHMCiters = 10000;
+nHMCiters = 100000;
 
 for i=myI,
   % Start sampling from the maximum likelihood joint-model fit
@@ -185,25 +185,34 @@ for i=myI,
       m2 = multipriorCreate(m, priorspec, priors, struct());
     end
     options = hmcDefaultOptions;
-    options.epsilon=0.05;
 
-    m2 = modelExpandParam(m2, origres.HMCsamples(end,:));
     %if ~skipme,
       % Apply HMC sampling
     burninopts = options;
     oldparams = origres.HMCsamples(end,:);
-    for myeps = 1:5,
-      burninopts.epsilon = 0.01 * myeps;
+    oldparams(oldparams < -10) = -10;
+    oldparams(oldparams > 5) = 5;
+    m2 = modelExpandParam(m2, oldparams);
+    
+    EPS_SCHEDULE = [0.001 0.003 0.005 0.01 0.03 0.05];
+    burninopts.epsilon = EPS_SCHEDULE(1);
+    goodeps = burninopts.epsilon;
+    for myeps = 1:length(EPS_SCHEDULE),
       burninHMCsamples = multipriorSampleHMC(m2, 0, 100, burninopts);
       if all(oldparams == burninHMCsamples(end,:)),
-        fprintf('Unable to get gene %s going...\n', gene_name);
+        fprintf('Unable to get gene %s going, backtracking...\n', gene_name);
+        burninopts.epsilon = goodeps;
+      else
+        goodeps = burninopts.epsilon;
+        burninopts.epsilon = EPS_SCHEDULE(myeps);
       end
       oldparams = burninHMCsamples(end,:);
       m2 = modelExpandParam(m2, burninHMCsamples(end,:));
     end
     fprintf('Burn-in done\n');
+    options.epsilon = goodeps;
     HMCsamples = multipriorSampleHMC(m2, 0, nHMCiters, options);
-    HMCsamples = HMCsamples(10:10:end, :);
+    HMCsamples = HMCsamples(100:100:end, :);
     save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples');
     %end
   end
