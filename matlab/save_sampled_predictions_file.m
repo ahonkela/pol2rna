@@ -1,9 +1,9 @@
-function save_sampled_predictions_file(gene),
+function save_sampled_predictions_file(gene, filestem),
 
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
 savedir = '~/projects/pol2rnaseq/analyses/hmc_results/profiles/';
 
-savefile = [savedir gene '_hmc_2012-10-08.mat'];
+savefile = [savedir gene filestem '.mat'];
 
 if exist(savefile, 'file'),
   fprintf('Image %s exists, exitting...\n', savefile);

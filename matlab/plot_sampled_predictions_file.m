@@ -1,6 +1,6 @@
-function plot_sampled_predictions_file(gene, format),
+function plot_sampled_predictions_file(gene, filestem, format),
 
-if nargin < 2,
+if nargin < 3,
   format = 'png';
 end
 
@@ -13,9 +13,9 @@ switch format,
   case 'png',
     PNG_SIZE = [640 480];
     DPI = 72;
-    plotfile = [plotdir gene '_hmc_2012-10-08.png'];
+    plotfile = [plotdir gene filestem '.png'];
   case 'eps',
-    plotfile = [plotdir gene '_hmc_2012-10-08.eps'];
+    plotfile = [plotdir gene filestem '.eps'];
 end
 
 if exist(plotfile, 'file'),

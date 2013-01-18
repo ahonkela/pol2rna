@@ -113,7 +113,7 @@ end
 
 Kind = find(K);
 delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
-fp = fopen('delay_prctiles_2012-10-08.txt', 'w');
+fp = fopen('delay_prctiles_2012-11-21.txt', 'w');
 fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
 for k=1:length(goodgenes),
   fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));

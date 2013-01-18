@@ -19,10 +19,12 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
-g = importdata('~/mlprojects/pol2rnaseq/matlab/finished_genes_2012-11-16.txt');
+conf = importdata('~/mlprojects/pol2rnaseq/matlab/file_predictions_config.txt')
+
+g = importdata(['~/mlprojects/pol2rnaseq/matlab/', conf{1}]);
 myI = mybase:mymod:length(g);
 
 for k=myI,
   fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  save_sampled_predictions_file(g{k});
+  save_sampled_predictions_file(g{k}, conf{2});
 end
