@@ -23,6 +23,11 @@ MYP = [2.5 25 50 75 97.5];
 
 filenames = filenames(Ifiles);
 
+load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
+s = struct2cell(genefiles);
+filenames = [filenames; cat(1, s{:})];
+numgenes = length(goodids) + length(s);
+
 mygene = '';
 genes = cell(length(filenames), 1);
 means = zeros(length(filenames), 9);
@@ -38,7 +43,7 @@ for k=1:length(filenames),
   r = load([resultdir, filenames{k}]);
   genes{k} = r.gene_name;
   hk = r.HMCsamples(Isampl, [1:6, 8:10]);
-  h{k} = hk;
+  %h{k} = hk;
   pp = [normpdf(hk(:, 5), 0, 2), normpdf(hk(:, 5), -4, 2)];
   thetameans(k) = sum(mean(pp ./ repmat(sum(pp, 2), [1, 2])) .* [1 2]);
   if ~strcmp(r.gene_name, mygene),
@@ -62,10 +67,10 @@ prcts(end, :, :) = prctile(hgene, MYP)';
 %   p30(k) = mean(h{k}(:, 5) > bound30);
 % end
 
-baddata = zeros(length(goodids), 1);
-Rhat = zeros(length(goodids), 9);
-thetatruemeans = zeros(length(goodids), 1);
-for k=1:length(goodids),
+baddata = zeros(numgenes, 1);
+Rhat = zeros(numgenes, 9);
+thetatruemeans = zeros(numgenes, 1);
+for k=1:numgenes,
   I = (k-1)*N_GOOD + (1:N_GOOD);
   S = sum(bsxfun(@minus, means(I,:), median(means(I,:))) .^ 2, 2);
   J = I(S < 100 & sum(stds(I, :), 2) > 0.1);
@@ -103,17 +108,17 @@ for k=find(max(Rhat, [], 2) > 1.2)',
   disp(Rhat(k,:));
   disp(means(I,:));
   disp(stds(I,:));
-  for k=1:length(I),
-    subplot(5, 1, k);
-    plot(h{I(k)}(:,J));
-  end
-  pause
+  % for k=1:length(I),
+  %   subplot(5, 1, k);
+  %   plot(h{I(k)}(:,J));
+  % end
+  % pause
 end
 
 
 Kind = find(K);
 delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
-fp = fopen('delay_prctiles_2012-11-21.txt', 'w');
+fp = fopen('delay_prctiles_latest.txt', 'w');
 fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
 for k=1:length(goodgenes),
   fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));

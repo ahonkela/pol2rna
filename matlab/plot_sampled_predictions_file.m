@@ -8,6 +8,11 @@ resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
 plotdir = '~/projects/pol2rnaseq/analyses/hmc_results/plots/';
 aliases = load('~/projects/pol2rnaseq/data/aliases.mat');
 aliases = aliases.aliases;
+try,
+  load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
+catch,
+  genefiles = struct();
+end
 
 switch format,
   case 'png',
@@ -23,12 +28,16 @@ if exist(plotfile, 'file'),
   return;
 end
 
-d = dir([resultdir gene '*.mat']);
-filenames = {};
-[filenames{1:length(d),1}] = deal(d.name);
-% exclude init3, as it seems very unreliable
-I = cellfun('isempty', strfind(filenames, 'init3'));
-filenames = filenames(I);
+if isfield(genefiles, gene),
+  filenames = genefiles.(gene);
+else
+  d = dir([resultdir gene '*.mat']);
+  filenames = {};
+  [filenames{1:length(d),1}] = deal(d.name);
+  % exclude init3, as it seems very unreliable
+  I = cellfun('isempty', strfind(filenames, 'init3'));
+  filenames = filenames(I);
+end
 
 Isampl = 501:10:1000;
 mysamples = zeros(5*length(Isampl), 10);

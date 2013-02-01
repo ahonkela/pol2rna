@@ -655,7 +655,7 @@ if any(isnan(pars)),
 end
 
 
-if(initializationtype>5),
+if(initializationtype==6),
   bestpars=-1;
   bestll=-inf;
 
@@ -713,6 +713,79 @@ if(initializationtype>5),
       % initialization of RNA delay
       % rnadelay_initval=rand*(max(timevector)-min(timevector))/2;
       rnadelay_initval=rnadelay_range(1)+(rand)*(rnadelay_range(2)-rnadelay_range(1));
+      pars(rnadelay_index)=sigmoidabTransform(rnadelay_initval, 'xtoa', rnadelay_range);          
+    end;    
+	
+    gpsim3model=gpnddisimExpandParam(gpsim3model,pars);
+    templl=gpnddisimLogLikelihood(gpsim3model);
+    if templl>bestll,
+      bestpars=pars;
+      bestll=templl;
+    end;
+  end;
+  pars=bestpars;  
+end;
+
+
+if(initializationtype>6),
+  rand('seed', initializationtype);
+  bestpars=-1;
+  bestll=-inf;
+
+  ntrials=3;
+  for itrial=1:ntrials,
+    if isempty(lengthscale),
+      % initialization of inverse squared width
+      pars(inversewidth_index)=sigmoidabTransform(1/(2*(15^2)), 'xtoa', inversewidth_range);
+    else
+      pars(inversewidth_index)=sigmoidabTransform(1/(2*(lengthscale^2)), 'xtoa', inversewidth_range);  
+    end;
+    
+    % initialization of POL2 effect variance
+    if isempty(dataVals1)==0,
+      pol2effectvar_initval=(rand^2)*var(dataVals1);
+    else
+      pol2effectvar_initval=(rand^2);
+    end;
+    pars(pol2effectvar_index)=sigmoidabTransform(pol2effectvar_initval, 'xtoa', pol2effectvar_range);
+    
+    % initialization of POL2 noise variance
+    if isempty(dataVals1)==0,
+      pol2noisevar_initval=(rand^2)*var(dataVals1);
+    else
+      pol2noisevar_initval=(rand^2);
+    end;
+    pars(pol2noisevar_index)=sigmoidabTransform(pol2noisevar_initval, 'xtoa', pol2noisevar_range);
+
+    % initialization of POL2 mean
+    pars(pol2mean_index)=sigmoidabTransform(rand, 'xtoa', pol2mean_range);
+    
+    if numgenes>0,
+      % initialization of RNA decay
+      rnadecay_initval=rnadecay_range(1)+(rand^4)*(rnadecay_range(2)-rnadecay_range(1));
+      pars(rnadecay_index)=sigmoidabTransform(rnadecay_initval, 'xtoa', rnadecay_range);
+      
+      % initialization of RNA effect variance
+      pars(rnaeffectvar_index)=sigmoidabTransform(rnaeffectvar_range(1)+(rand^4)*(rnaeffectvar_range(2)-rnaeffectvar_range(1)), 'xtoa', rnaeffectvar_range);
+      
+      % initialization of RNA noise variance
+      pars(rnanoisevar_index)=sigmoidabTransform(rnanoisevar_range(1)+(rand^4)*(rnanoisevar_range(2)-rnanoisevar_range(1)), 'xtoa', rnanoisevar_range);
+      
+      % initialization of RNA basal rate
+      pars(rnabasal_index)=sigmoidabTransform(rnabasal_range(1)+(rand^3)*(rnabasal_range(2)-rnabasal_range(1)), 'xtoa', rnabasal_range);  
+      
+      % initialization of RNA start mean
+      if isempty(dataVals2)==0,
+        rnastartmean_initval=rand;
+        rnastartmean_initval=rnastartmean_initval*exp(rnadecay_initval*min(timevector{2}));    
+      else
+        rnastartmean_initval=rand;
+      end;
+      pars(rnastartmean_index)=sigmoidabTransform(rnastartmean_initval, 'xtoa', rnastartmean_range);  
+
+      % initialization of RNA delay
+      % rnadelay_initval=rand*(max(timevector)-min(timevector))/2;
+      rnadelay_initval=rnadelay_range(1)+(rand^3)*(rnadelay_range(2)-rnadelay_range(1));
       pars(rnadelay_index)=sigmoidabTransform(rnadelay_initval, 'xtoa', rnadelay_range);          
     end;    
 	
