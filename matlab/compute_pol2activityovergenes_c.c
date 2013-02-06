@@ -187,7 +187,9 @@ void compute_overlaps
 	% influence of the read is multiplied).
 	%-------------------------------------*/
 
-      /* find latest bin (greatest index) whose start is not after the read */
+      /* Find latest bin (greatest index) whose start is not after the read.
+         Bins after this index all start after the current read, so they cannot
+         overlap with the read. */
       k0=n_bins-1; while ((k0>=0) && (tempbinstarts_data[k0]>modified_readend)) k0=k0-1;
 
       if (verbose==1)
@@ -271,8 +273,8 @@ void compute_overlaps
 
 	    if ((firstsubbin<0)||(lastsubbin<0)||(firstsubbin>=n_subbins[k])||(lastsubbin>=n_subbins[k]))
 	    {
-	      myprintf("PROBLEM: Read %d of %d (%d - %d) matched bin %d of %d (%d - %d), subbins %d-%d of %d\n", 
-		       i, n_reads, tempreadstart, tempreadend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], firstsubbin, lastsubbin, n_subbins[k]);
+	      myprintf("PROBLEM: Read %d of %d (%d - %d, modified %d - %d) matched bin %d of %d (%d - %d), subbins %d-%d of %d, k0=%d\n", 
+		       i, n_reads, tempreadstart, tempreadend, modified_readstart, modified_readend, k, n_bins, tempbinstarts_data[k], tempbinends_data[k], firstsubbin, lastsubbin, n_subbins[k], k0);
 	      return;
 	    }
 
@@ -420,19 +422,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempsubbinlength = prhs[8];
 
   /* Get chromosome index, convert to zero-based index */
+  myprintf("Reading inputs step1\n");
   tempchrindex_data = (int *)mxGetData(tempchrindex);
   chr_index = tempchrindex_data[0];
   chr_index=chr_index-1;
 
   /* Get desired fragment length */
+  myprintf("Reading inputs step2\n");
   tempfragmentlength_data = (int *)mxGetData(tempfragmentlength);
   fragment_length = tempfragmentlength_data[0];
 
   /* Get maximum number of allowed duplicates */
+  myprintf("Reading inputs step3\n");
   tempnallowedduplicates_data = (int *)mxGetData(tempnallowedduplicates);
   n_allowed_duplicates = tempnallowedduplicates_data[0];
 
   /* Get number of reads */
+  myprintf("Reading inputs step4\n");
   tempindex[0]=chr_index;
   tempindex[1]=index_nreads;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
@@ -441,6 +447,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   n_reads = tempnreads_data[0];
 
   /* Get vector of read starts */
+  myprintf("Reading inputs step5\n");
   tempindex[0]=chr_index;
   tempindex[1]=index_readstart;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
@@ -448,6 +455,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempreadstarts_data = (int *)mxGetData(tempreadstarts);
 
   /* Get vector of read ends */
+  myprintf("Reading inputs step6\n");
   tempindex[0]=chr_index;
   tempindex[1]=index_readend;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
@@ -455,6 +463,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempreadends_data = (int *)mxGetData(tempreadends);
 
   /* Get vector of read strands */
+  myprintf("Reading inputs step7\n");
   tempindex[0]=chr_index;
   tempindex[1]=index_readstrand;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
@@ -462,6 +471,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempreadstrands_data = (signed char *)mxGetData(tempreadstrands);
 
   /* Get vector of read scores */
+  myprintf("Reading inputs step8\n");
   tempindex[0]=chr_index;
   tempindex[1]=index_readscore;
   j = mxCalcSingleSubscript(tempmappings,2,tempindex);
@@ -469,6 +479,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   tempreadscores_data = (double *)mxGetData(tempreadscores);
 
   /* Get number of bins and vectors of bin starts and bin ends and bin strands */
+  myprintf("Reading inputs step9\n");
   tempnbins_data = (int *)mxGetData(tempnbins);
   n_bins=tempnbins_data[0];
   tempbinstarts_data = (int *)mxGetData(tempbinstarts);
@@ -478,13 +489,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (1)
   {
     /* Get desired length of sub-bins */
+    myprintf("Reading inputs step10\n");
     tempsubbinlength_data = (int *)mxGetData(tempsubbinlength);
     subbin_length=tempsubbinlength_data[0];
 
     /* Create output cell array for subbin heights */
+    /* myprintf("Allocating output cell array (%d by 1)\n", n_bins); */
     tempsubbins = mxCreateCellMatrix(n_bins,1);
+    /* myprintf("Allocating n_subbins integer array (%d by 1)\n", n_bins); */
     n_subbins = (int *)mymalloc(n_bins*sizeof(int));
+    /* myprintf("Allocating subbins_data double 2d array (%d by variable)\n", n_bins); */
     subbins_data = (double **)mymalloc(n_bins*sizeof(double *));
+    /* myprintf("Allocating tempbinheights mxArrays (%d by 1)\n", n_bins); */
     tempbinheights = (mxArray **)mymalloc(n_bins*sizeof(mxArray *));
     for (j=0; j<n_bins; j++)
     {
@@ -492,6 +508,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
       k = (tempbinends_data[j]-tempbinstarts_data[j]+1)/subbin_length; 
       if (tempbinends_data[j]-tempbinstarts_data[j]+1 > k*subbin_length)
 	k=k+1;
+      /* myprintf("Allocating %d subbins for bin %d\n", k, j); */
       tempbinheights[j] = mxCreateNumericMatrix(k,1,mxDOUBLE_CLASS,0);
       subbins_data[j] = (double *)mxGetData(tempbinheights[j]);
       n_subbins[j] = k;
@@ -525,6 +542,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   if (1)
   {
     /* Place answers into cell array */
+    myprintf("Returning outputs\n");
     for (j=0; j<n_bins; j++)
     {
       tempindex[0]=j;
