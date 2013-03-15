@@ -1,0 +1,8 @@
+In Matlab:
+r = load('info_gene_mean_var.mat');
+save_rna_means(r)
+
+In R:
+r <- read.table('rna_means.txt', row.names=1)
+n <- calcNormFactors(r, method='RLE')
+write.table(n, file='rna_norm_factors.txt', row.names=FALSE, col.names=FALSE)
