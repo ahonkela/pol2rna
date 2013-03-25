@@ -1,11 +1,11 @@
-resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
+resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint_nodelay/';
 %resultdir = '/share/synergy/analyses/hmc_results/joint/';
 
 d = dir([resultdir '*.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
-filenames = filenames(cellfun('length', filenames) == 44);
+filenames = filenames(cellfun('length', filenames) == 45);
 
 N_GOOD = 5;
 
@@ -23,18 +23,21 @@ MYP = [2.5 25 50 75 97.5];
 
 filenames = filenames(Ifiles);
 
-load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
-s = struct2cell(genefiles);
-filenames = [filenames; cat(1, s{:})];
-numgenes = length(goodids) + length(s);
+if 0,
+  load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
+  s = struct2cell(genefiles);
+  filenames = [filenames; cat(1, s{:})];
+  numgenes = length(goodids) + length(s);
+end
 
+parI = [1:4, 6, 8:10];
 mygene = '';
 genes = cell(length(filenames), 1);
-means = zeros(length(filenames), 9);
-stds = zeros(length(filenames), 9);
+means = zeros(length(filenames), length(parI));
+stds = zeros(length(filenames), length(parI));
 thetameans = zeros(length(filenames), 1);
-prcts = zeros(length(filenames)/N_GOOD, 9, length(MYP));
-hgene = zeros(length(Isampl)/2, 9);
+prcts = zeros(length(filenames)/N_GOOD, length(parI), length(MYP));
+hgene = zeros(length(Isampl)/2, length(parI));
 curI = 1:length(Isampl_thin);
 Iincr = length(curI);
 h = cell(length(filenames), 1);
@@ -42,10 +45,10 @@ for k=1:length(filenames),
   fprintf('%d/%d\n', k, length(filenames));
   r = load([resultdir, filenames{k}]);
   genes{k} = r.gene_name;
-  hk = r.HMCsamples(Isampl, [1:6, 8:10]);
+  hk = r.HMCsamples(Isampl, parI);
   %h{k} = hk;
-  pp = [normpdf(hk(:, 5), 0, 2), normpdf(hk(:, 5), -4, 2)];
-  thetameans(k) = sum(mean(pp ./ repmat(sum(pp, 2), [1, 2])) .* [1 2]);
+  %pp = [normpdf(hk(:, 5), 0, 2), normpdf(hk(:, 5), -4, 2)];
+  %thetameans(k) = sum(mean(pp ./ repmat(sum(pp, 2), [1, 2])) .* [1 2]);
   if ~strcmp(r.gene_name, mygene),
     if k>1,
       prcts(floor(k/N_GOOD), :, :) = prctile(hgene, MYP)';
@@ -53,7 +56,7 @@ for k=1:length(filenames),
     curI = 1:length(Isampl_thin);
     mygene = r.gene_name;
   end
-  hgene(curI,:) = r.HMCsamples(Isampl_thin, [1:6, 8:10]);
+  hgene(curI,:) = r.HMCsamples(Isampl_thin, parI);
   curI = curI + Iincr;
   means(k, :) = mean(hk);
   stds(k, :) = std(hk);
@@ -68,7 +71,7 @@ prcts(end, :, :) = prctile(hgene, MYP)';
 % end
 
 baddata = zeros(numgenes, 1);
-Rhat = zeros(numgenes, 9);
+Rhat = zeros(numgenes, length(parI));
 thetatruemeans = zeros(numgenes, 1);
 for k=1:numgenes,
   I = (k-1)*N_GOOD + (1:N_GOOD);
@@ -116,11 +119,11 @@ for k=find(max(Rhat, [], 2) > 1.2)',
 end
 
 
-Kind = find(K);
-delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
-fp = fopen('delay_prctiles_latest.txt', 'w');
-fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
-for k=1:length(goodgenes),
-  fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));
-end
-fclose(fp);
+% Kind = find(K);
+% delaypcts = sigmoidabTransform(squeeze(prcts(K,5,:)), 'atox', [0, 299]);
+% fp = fopen('delay_prctiles_latest.txt', 'w');
+% fprintf(fp, 'gene thetamean 2.5%% 25%% 50%% 75%% 97.5%%\n');
+% for k=1:length(goodgenes),
+%   fprintf(fp, '%s %f %f %f %f %f %f\n', goodgenes{k}, thetatruemeans(Kind(k))-1, delaypcts(k,:));
+% end
+% fclose(fp);
