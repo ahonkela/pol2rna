@@ -173,7 +173,24 @@ for i=myI,
       [m,temptransforminfo]=createNdSimDisim_celltimes_newdata2(...
           timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars);
 
+      % Hack: do not change the transformed decay even though the range changes
       oldparams = modelExtractParam(m);
+
+      % Tweak RNA decay and Pol2 noise prior
+      trsets = gpnddisimExtractParamTransformSettings(m);
+      % Set RNA decay bounds and prior
+      trsets{3} = [5e-4, 0.35];
+      m.kern.comp{1}.comp{2}.priors{1}.mu = -2;
+      % Set Pol2 noise bounds
+      lb = min(min(m.kern.comp{2}.comp{2}.fixedvariance), 0.01*var(tempvals1));
+      ub = min(25*max(m.kern.comp{2}.comp{2}.fixedvariance), ...
+               0.25*var(tempvals1));
+      trsets{6} = [lb, ub];
+
+      % Set lengthscale bounds
+      trsets{1} = 1 ./ [1280, 20].^2;
+      m = gpnddisimExpandParamTransformSettings(m, trsets);
+
       oldparams(oldparams < -5) = -5;
       oldparams(oldparams > 5) = 5;
       m = modelExpandParam(m, oldparams);

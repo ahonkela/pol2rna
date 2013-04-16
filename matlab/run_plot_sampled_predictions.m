@@ -19,12 +19,19 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
-conf = importdata('~/mlprojects/pol2rnaseq/matlab/file_predictions_config.txt')
+fid = fopen('~/mlprojects/pol2rnaseq/matlab/file_predictions_config.txt');
+conf = textscan(fid, '%s');
+fclose(fid);
+conf = conf{1};
 
 g = importdata(['~/mlprojects/pol2rnaseq/matlab/', conf{1}]);
 myI = mybase:mymod:length(g);
 
+if length(conf) > 3,
+  NODELAYHIST = str2num(conf{4});
+end
+
 for k=myI,
   fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  plot_sampled_predictions_file(g{k}, conf{2});
+  plot_sampled_predictions_file(g{k}, conf{3}, conf{2}, 'png', NODELAYHIST);
 end

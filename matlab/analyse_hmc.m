@@ -1,11 +1,11 @@
-resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint_nodelay/';
+resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
 %resultdir = '/share/synergy/analyses/hmc_results/joint/';
 
 d = dir([resultdir '*.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
-filenames = filenames(cellfun('length', filenames) == 45);
+filenames = filenames(cellfun('length', filenames) == 44);
 
 N_GOOD = 5;
 
@@ -28,9 +28,12 @@ if 0,
   s = struct2cell(genefiles);
   filenames = [filenames; cat(1, s{:})];
   numgenes = length(goodids) + length(s);
+else
+  numgenes = length(goodids);
 end
 
-parI = [1:4, 6, 8:10];
+%parI = [1:4, 6, 8:10];
+parI = [1:6, 8:10];
 mygene = '';
 genes = cell(length(filenames), 1);
 means = zeros(length(filenames), length(parI));

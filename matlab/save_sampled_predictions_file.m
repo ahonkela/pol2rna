@@ -1,6 +1,6 @@
-function save_sampled_predictions_file(gene, filestem),
+function save_sampled_predictions_file(gene, sampledir, filestem),
 
-resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
+resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
 savedir = '~/projects/pol2rnaseq/analyses/hmc_results/profiles/';
 try,
   load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
@@ -18,7 +18,7 @@ end
 if isfield(genefiles, gene),
   filenames = genefiles.(gene);
 else
-  d = dir([resultdir gene '*.mat']);
+  d = dir([resultdir sampledir gene '*.mat']);
   filenames = {};
   [filenames{1:length(d),1}] = deal(d.name);
   % exclude init3, as it seems very unreliable
@@ -27,10 +27,10 @@ else
 end
 
 Isampl = 501:10:1000;
-mysamples = zeros(5*length(Isampl), 10);
+mysamples = zeros(length(filenames)*length(Isampl), 10);
 
 for k=1:length(filenames),
-  r = load([resultdir, filenames{k}]);
+  r = load([resultdir, sampledir, filenames{k}]);
   assert(strcmp(r.gene_name, gene));
   mysamples((1:length(Isampl)) + (k-1)*length(Isampl), :) = ...
       r.HMCsamples(Isampl, :);

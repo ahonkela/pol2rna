@@ -1,10 +1,18 @@
-function plot_sampled_predictions_file(gene, filestem, format),
+function plot_sampled_predictions_file(gene, sampledir, filestem, format, NODELAYHIST, SQRTTIME),
 
-if nargin < 3,
+if nargin < 4,
   format = 'png';
 end
 
-resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
+if nargin < 5,
+  NODELAYHIST = 0;
+end
+
+if nargin < 6,
+  SQRTTIME = 1;
+end
+
+resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
 plotdir = '~/projects/pol2rnaseq/analyses/hmc_results/plots/';
 aliases = load('~/projects/pol2rnaseq/data/aliases.mat');
 aliases = aliases.aliases;
@@ -31,7 +39,7 @@ end
 if isfield(genefiles, gene),
   filenames = genefiles.(gene);
 else
-  d = dir([resultdir gene '*.mat']);
+  d = dir([resultdir sampledir gene '*.mat']);
   filenames = {};
   [filenames{1:length(d),1}] = deal(d.name);
   % exclude init3, as it seems very unreliable
@@ -40,10 +48,10 @@ else
 end
 
 Isampl = 501:10:1000;
-mysamples = zeros(5*length(Isampl), 10);
+mysamples = zeros(length(filenames)*length(Isampl), 10);
 
 for k=1:length(filenames),
-  r = load([resultdir, filenames{k}]);
+  r = load([resultdir, sampledir, filenames{k}]);
   assert(strcmp(r.gene_name, gene));
   mysamples((1:length(Isampl)) + (k-1)*length(Isampl), :) = ...
       r.HMCsamples(Isampl, :);
@@ -53,13 +61,13 @@ if isfield(aliases, gene),
   gene = sprintf('%s (%s)', gene, aliases.(gene));
 end
 
-plot_sampled_predictions(r.m, mysamples, gene)
+plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
 set(gcf, 'PaperUnits', 'inches')
 switch format,
   case 'png',
     set(gcf, 'PaperPosition', [0, 0, PNG_SIZE/DPI])
     print('-dpng', sprintf('-r%d', DPI), plotfile);
   case 'eps',
-    set(gcf, 'PaperPosition', [0, 0, 4, 2])
+    set(gcf, 'PaperPosition', [0, 0, 7, 5])
     print('-depsc2', plotfile);
 end

@@ -1,10 +1,12 @@
 % analyse_hmc
 
+parI = [1:4, 6, 8:10];
+
 [~, paramnames] =  modelExtractParam(r.m);
 trsets = gpnddisimExtractParamTransformSettings(r.m);
-trsets = trsets([1:6, 8:10]);
-paramnames = paramnames([1:6, 8:10]);
-genemeans = squeeze(mean(reshape(means, [5, size(means, 1)/5, 9])));
+trsets = trsets(parI);
+paramnames = paramnames(parI);
+genemeans = squeeze(mean(reshape(means, [5, size(means, 1)/5, length(parI)])));
 truemeans = zeros(size(genemeans));
 for k=1:length(trsets),
   truemeans(:, k) = sigmoidabTransform(genemeans(:, k), 'atox', trsets{k});

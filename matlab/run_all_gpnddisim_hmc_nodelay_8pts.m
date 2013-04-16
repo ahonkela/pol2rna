@@ -133,6 +133,7 @@ for i=myI,
     
   lengthscale=10;
 
+  TIMEPTS = 1:8;
   timeCell = {timevector,timevector};
   dataVals = {tempvals1, tempvals2};
   %initializationtype=5;
@@ -142,23 +143,26 @@ for i=myI,
     continue;
   end
 
-  modelnames = {'joint_nodelay', 'pol2', 'rna'};
+  modelnames = {'joint_nodelay8', 'pol2', 'rna'};
   %for k=1:3,
   % NOTE: run only joint models
   for k=1:1,
     switch k,
      case 1,
       % Create joint model
-      timeCell = {timevector,timevector};
-      dataVals = {tempvals1, tempvals2};
+      timeCell = {timevector(TIMEPTS), timevector(TIMEPTS)};
+      dataVals = {tempvals1(TIMEPTS), tempvals2(TIMEPTS)};
+      dataVars = {[], rnaVars(TIMEPTS)};
      case 2,
       % Create Pol2 model
-      timeCell = {timevector,[]};
-      dataVals = {tempvals1, []};
+      timeCell = {timevector(TIMEPTS),[]};
+      dataVals = {tempvals1(TIMEPTS), []};
+      dataVars = {[], []};
      case 3,
       % Create RNA model
-      timeCell = {[],timevector};
-      dataVals = {[], tempvals2};
+      timeCell = {[],timevector(TIMEPTS)};
+      dataVals = {[], tempvals2(TIMEPTS)};
+      dataVars = {[], rnaVars(TIMEPTS)};
     end
     
     %initializationtype=5;
@@ -171,13 +175,31 @@ for i=myI,
       skipme = 1;
     else
       [m,temptransforminfo]=createNdSimDisim_celltimes_newdata2(...
-          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars);
+          timeCell,dataVals,lengthscale,initializationtype,[],[],1, dataVars{2});
 
+      % Hack: do not change the transformed decay even though the range changes
       oldparams = modelExtractParam(m);
+
+      % Tweak RNA decay and Pol2 noise prior
+      trsets = gpnddisimExtractParamTransformSettings(m);
+      % Set RNA decay bounds and prior
+      trsets{3} = [5e-4, 0.35];
+      m.kern.comp{1}.comp{2}.priors{1}.mu = -2;
+      % Set Pol2 noise bounds
+      lb = min(min(m.kern.comp{2}.comp{2}.fixedvariance), 0.01*var(tempvals1));
+      ub = min(25*max(m.kern.comp{2}.comp{2}.fixedvariance), ...
+               0.25*var(tempvals1));
+      trsets{6} = [lb, ub];
+
+      % Set lengthscale bounds
+      trsets{1} = 1 ./ [1280, 20].^2;
+      m = gpnddisimExpandParamTransformSettings(m, trsets);
+      
       oldparams(oldparams < -5) = -5;
       oldparams(oldparams > 5) = 5;
       m = modelExpandParam(m, oldparams);
 
+      % Fix delay to a very small value
       m.fix.index = 5;
       m.fix.value = -100;
       
