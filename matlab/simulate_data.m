@@ -36,22 +36,32 @@ end
 % end GP fit
 
 Dvals = log(2) ./ [2 4 8 16 32 64]; %[0.32, 0.16, 0.08, 0.04, 0.02, 0.01];
-funcs = zeros(length(Dvals), length(t_test));
+Deltavals = [0 4 8 12];
+funcs = zeros(length(Dvals), length(Deltavals), length(t_test));
 
 for k=1:length(Dvals),
-  S = 0.01;
-  B = 0.001;
-  D = Dvals(k);
-  Delta = 0;
-  m0 = 0.001;
-  t0 = 0;
+  for l=1:length(Deltavals),
+    S = 0.01;
+    D = Dvals(k);
+    B = 0.005;
+    Delta = Deltavals(l);
+    m0 = 0.008 / D;
+    t0 = 0;
 
-  m = m0 * exp(D*(t0-t_test)) + B/D * (1-exp(D*(t0-t_test))) + ...
-      S*exp(-D*t_test) .* cumtrapz(exp(D*t_test) .* pol2fit');
-  funcs(k,:) = m / max(m);
+    pol2shift = [pol2fit(1)*ones(Delta, 1); pol2fit(1:end-Delta)];
+  
+    m = m0 * exp(D*(t0-t_test)) + B/D * (1-exp(D*(t0-t_test))) + ...
+	S*exp(-D*t_test) .* cumtrapz(exp(D*t_test) .* pol2shift');
+    funcs(k,l,:) = m / max(m);
+  end
 end
 
-plot(sqrt(t_test), funcs);
+t_indices = zeros(size(t));
+for k=1:length(t),
+  t_indices(k) = find(t_test == t(k));
+end
+
+plot(sqrt(t_test(t_indices)), squeeze(funcs(:, 1, t_indices)));
 hold on;
 plot(sqrt(t_test), pol2fit / max(pol2fit), 'k--');
 plot(sqrt(t), myrna / max(myrna), 'k-.');
@@ -61,3 +71,13 @@ axis([0 sqrt(1280) 0 1])
 set(gca, 'XTick', sqrt(t));
 set(gca, 'XTickLabel', t);
 %set(gcf, 'PaperPosition', [0 0 14 10]); print -depsc2 tiparp_simulation.eps
+
+pol2data = pol2fit(t_indices);
+rnadata = funcs(:, :, t_indices);
+randn('state', 42);
+pol2noise = 0.1 * randn(size(pol2data));
+rnanoise = 0.1 * randn(1, 1, length(t_indices));
+pol2data = pol2data + pol2noise;
+rnadata = rnadata + repmat(rnanoise, [size(rnadata, 1), size(rnadata, 2), 1]);
+
+save simulated_data.mat pol2data rnadata Dvals Deltavals
