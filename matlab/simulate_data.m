@@ -35,7 +35,7 @@ if ~exist('pol2fit', 'var'),
 end
 % end GP fit
 
-Dvals = [0.32, 0.16, 0.08, 0.04, 0.02, 0.01];
+Dvals = log(2) ./ [2 4 8 16 32 64]; %[0.32, 0.16, 0.08, 0.04, 0.02, 0.01];
 funcs = zeros(length(Dvals), length(t_test));
 
 for k=1:length(Dvals),
@@ -56,7 +56,7 @@ hold on;
 plot(sqrt(t_test), pol2fit / max(pol2fit), 'k--');
 plot(sqrt(t), myrna / max(myrna), 'k-.');
 hold off
-legend('D=0.32', 'D=0.16', 'D=0.08', 'D=0.04', 'D=0.02', 'D=0.01', 'Pol2', 'RNA', 'Location', 'NorthEast')
+legend('t1/2=2', 't1/2=4', 't1/2=8', 't1/2=16', 't1/2=32', 't1/2=64', 'Pol2', 'RNA', 'Location', 'NorthEast')
 axis([0 sqrt(1280) 0 1])
 set(gca, 'XTick', sqrt(t));
 set(gca, 'XTickLabel', t);
