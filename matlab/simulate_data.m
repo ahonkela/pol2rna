@@ -7,6 +7,9 @@ load([datapath, 'bininfo_dec2012_corrected.mat'], 'bininfo');
 TIPIND = find(bininfo(:, 5) == ensg2int(TIPARP));
 t = [0, 5, 10, 20, 40, 80, 160, 320, 640, 1280];
 t_test = 0:2.5:1280;
+t_gen = {[0, 5, 10, 20, 40, 80, 160, 320, 640, 1280], ...
+        [0, 20, 40, 60, 80, 120, 160, 200, 240, 320], ...
+        [0, 10, 20, 40, 60, 80, 120, 160, 240, 320]};
 
 if ~exist('r', 'var'),
   r = load([datapath, 'info_gene_mean_var.mat']);
@@ -72,12 +75,21 @@ set(gca, 'XTick', sqrt(t));
 set(gca, 'XTickLabel', t);
 %set(gcf, 'PaperPosition', [0 0 14 10]); print -depsc2 tiparp_simulation.eps
 
-pol2data = pol2fit(t_indices);
-rnadata = funcs(:, :, t_indices);
-randn('state', 42);
-pol2noise = 0.1 * randn(size(pol2data));
-rnanoise = 0.1 * randn(1, 1, length(t_indices));
-pol2data = pol2data + pol2noise;
-rnadata = rnadata + repmat(rnanoise, [size(rnadata, 1), size(rnadata, 2), 1]);
+rnadata = cell(size(t_gen));
+pol2data = cell(size(t_gen));
+for k=1:length(t_gen),
+  t_indices = zeros(size(t_gen{k}));
+  for l=1:length(t_indices),
+    t_indices(l) = find(t_test == t_gen{k}(l));
+  end
 
-save simulated_data.mat pol2data rnadata Dvals Deltavals
+  pol2data{k} = pol2fit(t_indices);
+  rnadata{k} = funcs(:, :, t_indices);
+  randn('state', 42);
+  pol2noise = 0.1 * randn(size(pol2data{k}));
+  rnanoise = 0.1 * randn(1, 1, length(t_indices));
+  pol2data{k} = pol2data{k} + pol2noise;
+  rnadata{k} = rnadata{k} + repmat(rnanoise, [size(rnadata{k}, 1), size(rnadata{k}, 2), 1]);
+end
+
+save simulated_data.mat pol2data rnadata Dvals Deltavals t_gen
