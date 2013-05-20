@@ -1,3 +1,6 @@
+% Generate synthetic data based on TIPARP Pol2 profile
+% Antti Honkela, May 2013
+
 datapath = '~/projects/pol2rnaseq/data/';
 
 TIPARP='ENSG00000163659';
