@@ -18,20 +18,28 @@ titles = {'Pol2 (input)', 'mRNA'};
 delayI = 5;
 settings = gpnddisimExtractParamTransformSettings(m);
 
-if SQRTTIME,
-  t_pred = (((0:100)/100*sqrt(1280)).^2 + 300)';
-  t_tick = m.t{1} - min(m.t{1});
-  t_plot = sqrt(t_pred - min(t_pred));
-  t_tickplot = sqrt(t_tick);
-else
-  t_pred = [linspace(0, 157.5, 64), exp(linspace(log(160), log(1280), 61))]';
-  t_tick = m.t{1} - min(m.t{1});
-  t_plot = (1:length(t_pred))';
-  t_tickplot = zeros(size(t_tick));
-  for k=1:length(t_tick)
-    t_tickplot(k) = find(abs(t_pred - t_tick(k)) < 1);
-  end
-  t_pred = t_pred + 300;
+t_len = m.t{1}(end) - m.t{1}(1);
+
+switch SQRTTIME,
+  case 2,
+    t_pred = linspace(m.t{1}(1), m.t{1}(end), 101)';
+    t_tick = m.t{1} - min(m.t{1});
+    t_plot = t_pred - min(t_pred);
+    t_tickplot = t_tick;
+  case 1,
+    t_pred = (((0:100)/100*sqrt(t_len)).^2 + 300)';
+    t_tick = m.t{1} - min(m.t{1});
+    t_plot = sqrt(t_pred - min(t_pred));
+    t_tickplot = sqrt(t_tick);
+  case 0,
+    t_pred = [linspace(0, 157.5, 64), exp(linspace(log(160), log(1280), 61))]';
+    t_tick = m.t{1} - min(m.t{1});
+    t_plot = (1:length(t_pred))';
+    t_tickplot = zeros(size(t_tick));
+    for k=1:length(t_tick)
+      t_tickplot(k) = find(abs(t_pred - t_tick(k)) < 1);
+    end
+    t_pred = t_pred + 300;
 end
 
 r = gpnddisimSamplePredictions(m, HMCsamples,t_pred, 500);

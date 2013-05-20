@@ -29,9 +29,18 @@ myI = mybase:mymod:length(g);
 
 if length(conf) > 3,
   NODELAYHIST = str2num(conf{4});
+else
+  NODELAYHIST = 0;
 end
+
+if length(conf) > 4,
+  SQRTTIME = str2num(conf{5});
+else
+  SQRTTIME = 1;
+end
+  
 
 for k=myI,
   fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  plot_sampled_predictions_file(g{k}, conf{3}, conf{2}, 'png', NODELAYHIST);
+  plot_sampled_predictions_file(g{k}, conf{3}, conf{2}, 'png', NODELAYHIST, SQRTTIME);
 end

@@ -8,6 +8,14 @@ if ~exist('initializationtype', 'var'),
     error('No initializationtype set.')
 end
 
+if ~exist('dataset', 'var'),
+    error('Dataset not selected.')
+end
+
+if ~exist('use_pol2_fixedvar', 'var'),
+  use_pol2_fixedvar = 0;
+end
+
 %mybasedir_code='/share/work/jtpelto/tempsynergy/';
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
 %mybasedir_code='~/synergy_data/tempcodebranch/';
@@ -52,7 +60,7 @@ addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
 load('simulated_data.mat');
 
-datasize = size(rnadata);
+datasize = size(rnadata{dataset});
 
 nHMCiters = 10000;
 
@@ -69,7 +77,7 @@ for i=myI,
   %model.disimdecaytransformationsettings=model.disimdecaytransformationsetting;
   [rna_index(1), rna_index(2)] = ind2sub(datasize(1:2), i); 
   gene_index = 1;
-  gene_name = sprintf('Synthetic %d', i);
+  gene_name = sprintf('Synthetic_%02d', i);
 
   if isnan(gene_index),
     continue;
@@ -77,13 +85,21 @@ for i=myI,
 
   fprintf('Running gene %d/%d: %s\n', find(i==myI), length(myI), gene_name);
 
-  randn('seed',bininfo(gene_index,5)+13*initializationtype);
-  rand('seed',bininfo(gene_index,5)+1234567+13*initializationtype);
+  randn('seed',gene_index+13*initializationtype);
+  rand('seed',gene_index+1234567+13*initializationtype);
   
-  dataVals1=pol2data;
-  dataVals2=squeeze(rnadata(rna_index(1), rna_index(2), :));
-  rnaVars=0.01 * ones(size(dataVals2));
-  timevector=[0 5 10 20 40 80 160 320 640 1280]' + timeshift;
+  if ndims(pol2data{dataset}) > 2,
+    dataVals1=squeeze(pol2data{dataset}(rna_index(1), rna_index(2), :));
+  else
+    dataVals1=pol2data{dataset};
+  end
+  dataVals2=squeeze(rnadata{dataset}(rna_index(1), rna_index(2), :));
+  if use_pol2_fixedvar,
+    rnaVars = {0.01 * ones(size(dataVals1)), 0.01 * ones(size(dataVals2))};
+  else
+    rnaVars=0.01 * ones(size(dataVals2));
+  end
+  timevector=t_gen{dataset}' + timeshift;
 
   temptimes=timevector;
   tempvals1=dataVals1;
@@ -135,6 +151,13 @@ for i=myI,
       oldparams(oldparams < -5) = -5;
       oldparams(oldparams > 5) = 5;
       m = modelExpandParam(m, oldparams);
+
+      if 0,
+        m.kern.comp{1}.comp{1}.priors{1}.sd = 20;
+        m.kern.comp{1}.comp{1}.priors{2}.sd = 20;
+        m.kern.comp{1}.comp{2}.priors{1}.sd = 20;
+        m.kern.comp{1}.comp{2}.priors{2}.sd = 20;
+      end
 
       m.fix.index = 5;
       m.fix.value = -100;

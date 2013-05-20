@@ -8,8 +8,7 @@ mypaths = {'~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-08',
 	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-14'};
 sdata = load('simulated_data.mat');
 
-%inits = [1,2,4,5, 8];
-inits = [2,4,5, 8];
+inits = [1,2,4,5,8];
 variables = {[1:6, 8:10], [1:4, 6, 8:10], ...
 	     [1:6, 8:10], [1:4, 6, 8:10], ...
 	     [1:6, 8:10], [1:4, 6, 8:10]};
@@ -17,7 +16,7 @@ variables = {[1:6, 8:10], [1:4, 6, 8:10], ...
 samples = cell(6, 4, 6);
 fnames = cell(6, 4, 6);
 
-datasize = size(sdata.rnadata);
+datasize = size(sdata.rnadata{1});
 for i=1:prod(datasize(1:2)),
   [k, l] = ind2sub(datasize(1:2), i);
   fnames{k,l,1} = sprintf('Synthetic_%d_samples_synth_2013-05-07_init%%d.mat', i);

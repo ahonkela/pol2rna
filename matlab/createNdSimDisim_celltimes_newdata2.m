@@ -38,7 +38,11 @@ if ~isempty(dataVals2),
   if mean(dataVals2.^2)>0,
     normalizationfactor=sqrt(mean(dataVals2.^2));
     dataVals2=dataVals2/normalizationfactor;
-    rnavars=rnavars/(normalizationfactor^2);
+    if iscell(rnavars),
+      rnavars{2}=rnavars{2}/(normalizationfactor^2);
+    else
+      rnavars=rnavars/(normalizationfactor^2);
+    end
     fprintf('Normalizing!\n')
   end;
 end;
@@ -53,13 +57,21 @@ if length(dataVals)>1,
   % dataValsMatrix=[dataVals1 dataVals2];
   % dataVarsMatrix=[0*dataVals1 rnavars];
   dataValsCell={dataVals1, dataVals2};
-  dataVarsCell={0*dataVals1, rnavars};
+  if iscell(rnavars),
+    dataVarsCell=rnavars;
+  else
+    dataVarsCell={0*dataVals1, rnavars};
+  end
   numgenes=1;
 else
   % dataValsMatrix=[dataVals1];
   % dataVarsMatrix=[0*dataVals1];
   dataValsCell={dataVals1};
-  dataVarsCell={0*dataVals1};
+  if iscell(rnavars),
+    dataVarsCell=rnavars;
+  else
+    dataVarsCell={0*dataVals1};
+  end
   numgenes=0;
 end;
 
