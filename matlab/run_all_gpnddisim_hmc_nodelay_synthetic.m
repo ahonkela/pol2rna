@@ -144,12 +144,19 @@ for i=myI,
       fprintf('File %s exists, skipping...\n', fname);
       skipme = 1;
     else
-      [m,temptransforminfo]=createNdSimDisim_celltimes_newdata2(...
-          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars);
+      [m,temptransforminfo]=createNdSimDisim_celltimes_newdata4(...
+          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars,1,1);
 
       oldparams = modelExtractParam(m);
-      oldparams(oldparams < -5) = -5;
-      oldparams(oldparams > 5) = 5;
+      %oldparams(oldparams < -5) = -5;
+      %oldparams(oldparams > 5) = 5;
+      bounds = gpnddisimExtractParamTransformSettings(m);
+      bounds = cat(1, bounds{:})';
+      I1 = (oldparams < bounds(1,:));
+      oldparams(I1) = bounds(1, I1);
+      I2 = (oldparams > bounds(2,:));
+      oldparams(I2) = bounds(2, I2);
+      
       m = modelExpandParam(m, oldparams);
 
       if 0,
@@ -160,8 +167,8 @@ for i=myI,
       end
 
       m.fix.index = 5;
-      m.fix.value = -100;
-      
+      m.fix.value = 1e-100;
+
       options = hmcDefaultOptions;
       burninopts = options;
     end
@@ -171,13 +178,17 @@ for i=myI,
       burninopts.epsilon = EPS_SCHEDULE(1);
       goodeps = burninopts.epsilon;
       for myeps = 1:length(EPS_SCHEDULE),
-        burninHMCsamples = gpnddisimSampleHMC(m, 0, 100, burninopts);
+	fprintf('Running with epsilon=%f\n', burninopts.epsilon);
+        [burninHMCsamples, Ehist, g_mean] = gpnddisimSampleHMC(m, 0, 100, burninopts);
+	%keyboard;
+	disp(g_mean)
         if mean(all(diff(burninHMCsamples) == 0, 2)) > 0.2,
           fprintf('Too high rejection rate for gene %s, backtracking eps schedule...\n', gene_name);
           burninopts.epsilon = goodeps;
         else
           goodeps = burninopts.epsilon;
-          burninopts.epsilon = EPS_SCHEDULE(myeps);
+          burninopts.epsilon = EPS_SCHEDULE(find(EPS_SCHEDULE==goodeps)+1);
+	  burninopts.scales = 1 ./ (sqrt(g_mean) + 1);
         end
         oldparams = burninHMCsamples(end,:);
         m = modelExpandParam(m, burninHMCsamples(end,:));
@@ -186,6 +197,7 @@ for i=myI,
       fprintf('Burn-in done\n');
 
       options.epsilon = goodeps;
+      options.scales = burninopts.scales;
       % Apply HMC sampling
       HMCsamples = gpnddisimSampleHMC(m, 0, nHMCiters, options);
       HMCsamples = HMCsamples(10:10:end, :);

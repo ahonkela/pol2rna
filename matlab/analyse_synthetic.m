@@ -10,10 +10,8 @@ mypaths = {'~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-08',
 	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
 	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
 	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
-	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
-	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
-	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17',
-	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-17'};
+	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-22',
+	  '~/Dropbox/projects/pol2rnaseq/hmc_synthetic_results_2013-05-22'};
 sdata = load('simulated_data.mat');
 
 %inits = [1,2,4,5, 8];
@@ -43,10 +41,10 @@ for i=1:prod(datasize(1:2)),
   fnames{k,l,8} = sprintf('Synthetic_%02d_samples_synth_1_nodelay_2013-05-17_init%%d.mat', i);
   fnames{k,l,9} = sprintf('Synthetic_%02d_samples_synth_pol2fix_1_2013-05-17_init%%d.mat', i);
   fnames{k,l,10} = sprintf('Synthetic_%02d_samples_synth_pol2fix_1_nodelay_2013-05-17_init%%d.mat', i);
-  fnames{k,l,11} = sprintf('Synthetic_%02d_samples_synth_4_2013-05-17_init%%d.mat', i);
-  fnames{k,l,12} = sprintf('Synthetic_%02d_samples_synth_4_nodelay_2013-05-17_init%%d.mat', i);
-  fnames{k,l,13} = sprintf('Synthetic_%02d_samples_synth_pol2fix_4_2013-05-17_init%%d.mat', i);
-  fnames{k,l,14} = sprintf('Synthetic_%02d_samples_synth_pol2fix_4_nodelay_2013-05-17_init%%d.mat', i);
+  %fnames{k,l,11} = sprintf('Synthetic_%02d_samples_synth_4_2013-05-17_init%%d.mat', i);
+  fnames{k,l,11} = sprintf('Synthetic_%02d_samples_synth_4_nodelay_2013-05-22_init%%d.mat', i);
+  %fnames{k,l,13} = sprintf('Synthetic_%02d_samples_synth_pol2fix_4_2013-05-17_init%%d.mat', i);
+  fnames{k,l,12} = sprintf('Synthetic_%02d_samples_synth_pol2fix_4_nodelay_2013-05-22_init%%d.mat', i);
 end
 
 %d = dir([mypath '/*.mat']);
@@ -80,7 +78,7 @@ difficult = cellfun(@(x) any(x > 1.2), Rhat);
 parammeans = cellfun(@(x) squeeze(mean(x, 2)), means, 'UniformOutput', false);
 decaymeans = cellfun(@(x) x(3), parammeans);
 sensmeans = cellfun(@(x) x(4), parammeans);
-delaymeans = cellfun(@(x) x(5), parammeans(:, :, [1 3 5 7 9 11 13]));
+delaymeans = cellfun(@(x) x(5), parammeans(:, :, [1 3 5 7 9]));
 settings = gpnddisimExtractParamTransformSettings(r.m);
 
 decays = sigmoidabTransform(decaymeans, 'atox', settings{3});
