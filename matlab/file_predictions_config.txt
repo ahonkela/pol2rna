@@ -1,5 +1,5 @@
 finished_synthetic_2013-05-15.txt
-_hmc_synthetic_pol2fix_nodelay_2013-05-17_1_
-synthetic_1_pol2fix/joint_nodelay/
+_hmc_synthetic_nodelay_2013-05-23_1
+synthetic_1/joint_nodelay/
 1
 1

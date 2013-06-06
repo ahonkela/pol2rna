@@ -148,8 +148,8 @@ for i=myI,
       fprintf('File %s exists, skipping...\n', fname);
       skipme = 1;
     else
-      [m,temptransforminfo]=createNdSimDisim_celltimes_newdata2(...
-          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars);
+      [m,temptransforminfo]=createNdSimDisim_celltimes_newdata3(...
+          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars,1);
 
       % Hack: do not change the transformed decay even though the range changes
       oldparams = modelExtractParam(m);
