@@ -12,6 +12,10 @@ if ~exist('dataset', 'var'),
     error('Dataset not selected.')
 end
 
+if ~exist('nodelay', 'var'),
+  nodelay = 0;
+end
+
 if ~exist('use_pol2_fixedvar', 'var'),
   use_pol2_fixedvar = 0;
 end
@@ -116,7 +120,11 @@ for i=myI,
     continue;
   end
 
-  modelnames = {'joint_nodelay', 'pol2', 'rna'};
+  if nodelay,
+    modelnames = {'joint_nodelay', 'pol2', 'rna'};
+  else
+    modelnames = {'joint', 'pol2', 'rna'};
+  end
   %for k=1:3,
   % NOTE: run only joint models
   for k=1:1,
@@ -159,56 +167,30 @@ for i=myI,
       
       m = modelExpandParam(m, oldparams);
 
-      if 0,
-        m.kern.comp{1}.comp{1}.priors{1}.sd = 20;
-        m.kern.comp{1}.comp{1}.priors{2}.sd = 20;
-        m.kern.comp{1}.comp{2}.priors{1}.sd = 20;
-        m.kern.comp{1}.comp{2}.priors{2}.sd = 20;
-      end
-
       m.kern.comp{1}.comp{2}.priors{3} = ...
-        priorCreate('mixture', struct('types', {{'uniform', 'uniform'}}));
+        priorCreate('mixture', struct('types', {{'truncatedGamma', 'uniform'}}));
       m.kern.comp{1}.comp{2}.priors{3}.index = 5;
       m.kern.comp{1}.comp{2}.priors{3} = ...
         priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
       m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
-        priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, 20]);
-      %m.fix.index = 5;
-      %m.fix.value = 1e-100;
+        priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, log(0.1)]);
+
+      if nodelay,
+        m.fix.index = 5;
+        m.fix.value = 1e-100;
+      end
 
       options = hmcDefaultOptions;
-      burninopts = options;
     end
     
     if ~skipme,
-      EPS_SCHEDULE = [0.00001 0.0001 0.001 0.003 0.005 0.01 0.03 0.05 0.07 0.1];
-      burninopts.epsilon = EPS_SCHEDULE(1);
-      goodeps = burninopts.epsilon;
-      for myeps = 1:length(EPS_SCHEDULE),
-	fprintf('Running with epsilon=%f\n', burninopts.epsilon);
-        [burninHMCsamples, Ehist, g_mean] = gpnddisimSampleHMC(m, 0, 100, burninopts);
-	%keyboard;
-	disp(g_mean)
-        if mean(all(diff(burninHMCsamples) == 0, 2)) > 0.2,
-          fprintf('Too high rejection rate for gene %s, backtracking eps schedule...\n', gene_name);
-          burninopts.epsilon = goodeps;
-        else
-          goodeps = burninopts.epsilon;
-          burninopts.epsilon = EPS_SCHEDULE(find(EPS_SCHEDULE==goodeps)+1);
-	  burninopts.scales = 1 ./ (sqrt(g_mean) + 1);
-        end
-        oldparams = burninHMCsamples(end,:);
-        m = modelExpandParam(m, burninHMCsamples(end,:));
-        disp(oldparams)
-      end
-      fprintf('Burn-in done\n');
+      [options.epsilon, options.scales, m] = gpnddisimTuneHMC(m, options);
+      fprintf('Adaptation done\n');
 
-      options.epsilon = goodeps;
-      options.scales = burninopts.scales;
       % Apply HMC sampling
       HMCsamples = gpnddisimSampleHMC(m, 0, nHMCiters, options);
       HMCsamples = HMCsamples(10:10:end, :);
-      save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples');
+      save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples', 'options');
     end
   end
 end;
