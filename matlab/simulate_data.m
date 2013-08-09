@@ -47,8 +47,8 @@ funcs = zeros(length(Dvals), length(Deltavals), length(t_test));
 
 for k=1:length(Dvals),
   for l=1:length(Deltavals),
-    S = 0.01;
     D = Dvals(k);
+    S = 0.03;
     B = 0.005;
     Delta = Deltavals(l);
     m0 = 0.008 / D;
@@ -58,7 +58,7 @@ for k=1:length(Dvals),
   
     m = m0 * exp(D*(t0-t_test)) + B/D * (1-exp(D*(t0-t_test))) + ...
 	S*exp(-D*t_test) .* cumtrapz(exp(D*t_test) .* pol2shift');
-    funcs(k,l,:) = m / max(m);
+    funcs(k,l,:) = 2*m / sqrt(mean(m.^2));
   end
 end
 
@@ -73,7 +73,7 @@ plot(sqrt(t_test), pol2fit / max(pol2fit), 'k--');
 plot(sqrt(t), myrna / max(myrna), 'k-.');
 hold off
 legend('t1/2=2', 't1/2=4', 't1/2=8', 't1/2=16', 't1/2=32', 't1/2=64', 'Pol2', 'RNA', 'Location', 'NorthEast')
-axis([0 sqrt(1280) 0 1])
+axis([0 sqrt(1280) 0 5])
 set(gca, 'XTick', sqrt(t));
 set(gca, 'XTickLabel', t);
 %set(gcf, 'PaperPosition', [0 0 14 10]); print -depsc2 tiparp_simulation.eps
@@ -95,4 +95,4 @@ for k=1:length(t_gen),
   rnadata{k} = rnadata{k} + repmat(rnanoise, [size(rnadata{k}, 1), size(rnadata{k}, 2), 1]);
 end
 
-save simulated_data.mat pol2data rnadata Dvals Deltavals t_gen
+save simulated_data_2013-08-09.mat pol2data rnadata Dvals Deltavals t_gen
