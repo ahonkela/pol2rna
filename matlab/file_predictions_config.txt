@@ -1,5 +1,4 @@
 finished_synthetic_2013-05-15.txt
-_hmc_synthetic_nodelay_2013-05-23_1
-synthetic_1/joint_nodelay/
-1
+_hmc_synthetic_nodelay_2013-08-07b
+synthetic_2013-08-07/joint_nodelay/
 1

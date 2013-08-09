@@ -1,14 +1,10 @@
-function plot_sampled_predictions_file(gene, sampledir, filestem, format, NODELAYHIST, SQRTTIME),
+function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME),
 
 if nargin < 4,
   format = 'png';
 end
 
 if nargin < 5,
-  NODELAYHIST = 0;
-end
-
-if nargin < 6,
   SQRTTIME = 1;
 end
 
@@ -56,6 +52,9 @@ for k=1:length(filenames),
   mysamples((1:length(Isampl)) + (k-1)*length(Isampl), :) = ...
       r.HMCsamples(Isampl, :);
 end
+% Check if delay is fixed and only plot delay histogram if it is not
+g = gpnddisimLogLikeGradients(r.m);
+NODELAYHIST = (g(5) == 0);
 
 if isfield(aliases, gene),
   gene = sprintf('%s (%s)', gene, aliases.(gene));
