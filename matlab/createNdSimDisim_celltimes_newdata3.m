@@ -1,5 +1,5 @@
 function [gpsim3model,transforminfo]= ...
-    createNdSimDisim_celltimes_newdata4(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors,rnavars,donotnormalize,uniformPriors);
+    createNdSimDisim_celltimes_newdata3(timevector,dataVals,lengthscale,initializationtype,parameterranges,use_fixedrnavariance,addPriors,rnavars,donotnormalize,uniformPriors);
 
 DEBUG=0;
 
@@ -748,12 +748,20 @@ end;
 
 
 if(initializationtype>6),
-  rand('seed', initializationtype);
+  rng(initializationtype);
   bestpars=-1;
   bestll=-inf;
 
   ntrials=3;
   for itrial=1:ntrials,
+    if uniformPriors,
+      pars0 = gpnddisimExtractParam(gpsim3model);
+      pars = rand(size(pars0));
+      for k=1:length(pars),
+        pars(k) = transformsettings{k}(1) + ...
+                  pars(k) * (transformsettings{k}(2)-transformsettings{k}(1));
+      end
+    else
     if isempty(lengthscale),
       % initialization of inverse squared width
       pars(inversewidth_index)=mytransform(1/(2*(15^2)), 'xtoa', inversewidth_range);
@@ -808,6 +816,7 @@ if(initializationtype>6),
       rnadelay_initval=rnadelay_range(1)+(rand^3)*(rnadelay_range(2)-rnadelay_range(1));
       pars(rnadelay_index)=mytransform(rnadelay_initval, 'xtoa', rnadelay_range);          
     end;    
+    end   % if ~uniformPriors
 	
     gpsim3model=gpnddisimExpandParam(gpsim3model,pars);
     templl=gpnddisimLogLikelihood(gpsim3model);

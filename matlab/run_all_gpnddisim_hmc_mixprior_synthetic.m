@@ -20,6 +20,10 @@ if ~exist('use_pol2_fixedvar', 'var'),
   use_pol2_fixedvar = 0;
 end
 
+if ~exist('use_uniform_priors', 'var'),
+  use_uniform_priors = 1;
+end
+
 %mybasedir_code='/share/work/jtpelto/tempsynergy/';
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
 %mybasedir_code='~/synergy_data/tempcodebranch/';
@@ -62,7 +66,7 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
 
-load('simulated_data.mat');
+load('simulated_data_2013-08-09.mat');
 
 datasize = size(rnadata{dataset});
 
@@ -146,38 +150,64 @@ for i=myI,
     %initializationtype=5;
 
     skipme = 0;
-    fname = sprintf('hmc_results/%s/%s_samples_%s_init%d.mat', ...
-		    modelnames{k}, gene_name, id, initializationtype);
+    fname = sprintf('hmc_results/%s/%s_samples_%s_unif%d_init%d.mat', ...
+		    modelnames{k}, gene_name, id, use_uniform_priors, ...
+                    initializationtype);
     if exist(fname, 'file'),
       fprintf('File %s exists, skipping...\n', fname);
       skipme = 1;
     else
       [m,temptransforminfo]=createNdSimDisim_celltimes_newdata3(...
-          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars,1,1);
+          timeCell,dataVals,lengthscale,initializationtype,[],[],1, rnaVars,1,use_uniform_priors);
 
       oldparams = modelExtractParam(m);
       %oldparams(oldparams < -5) = -5;
       %oldparams(oldparams > 5) = 5;
-      bounds = gpnddisimExtractParamTransformSettings(m);
-      bounds = cat(1, bounds{:})';
-      I1 = (oldparams < bounds(1,:));
-      oldparams(I1) = bounds(1, I1);
-      I2 = (oldparams > bounds(2,:));
-      oldparams(I2) = bounds(2, I2);
+      if use_uniform_priors,
+	bounds = gpnddisimExtractParamTransformSettings(m);
+	bounds = cat(1, bounds{:})';
+	I1 = (oldparams < bounds(1,:));
+	oldparams(I1) = bounds(1, I1);
+	I2 = (oldparams > bounds(2,:));
+	oldparams(I2) = bounds(2, I2);
       
-      m = modelExpandParam(m, oldparams);
+	m = modelExpandParam(m, oldparams);
+      end
 
-      m.kern.comp{1}.comp{2}.priors{3} = ...
-        priorCreate('mixture', struct('types', {{'truncatedGamma', 'uniform'}}));
-      m.kern.comp{1}.comp{2}.priors{3}.index = 5;
-      m.kern.comp{1}.comp{2}.priors{3} = ...
-        priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
-      m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
-        priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, log(0.1)]);
+      if use_uniform_priors,
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorCreate('mixture', struct('types', {{'truncatedGamma', 'uniform'}}));
+        m.kern.comp{1}.comp{2}.priors{3}.index = 5;
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, log(0.1)]);
+      else
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorCreate('mixture', struct('types', {{'logisticNormal', 'logisticNormal'}}));
+        m.kern.comp{1}.comp{2}.priors{3}.index = 5;
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [-2, log(2)]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{2} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{2}, [-2, log(2)]);
+      end
+
+      m.fix(1).index = 10;
+      if use_uniform_priors,
+        m.fix(1).value = 1e-100;
+      else
+        m.fix(1).value = -100;
+      end
 
       if nodelay,
-        m.fix.index = 5;
-        m.fix.value = 1e-100;
+        m.fix(2).index = 5;
+        if use_uniform_priors,
+          m.fix(2).value = 1e-100;
+        else
+          m.fix(2).value = -100;
+        end
       end
 
       options = hmcDefaultOptions;
@@ -188,7 +218,7 @@ for i=myI,
       fprintf('Adaptation done\n');
 
       % Apply HMC sampling
-      HMCsamples = gpnddisimSampleHMC(m, 0, nHMCiters, options);
+      HMCsamples = gpnddisimSampleHMC(m, 1, nHMCiters, options);
       HMCsamples = HMCsamples(10:10:end, :);
       save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples', 'options');
     end

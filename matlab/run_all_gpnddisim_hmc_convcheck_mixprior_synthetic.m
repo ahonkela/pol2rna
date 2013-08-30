@@ -20,6 +20,10 @@ if ~exist('use_pol2_fixedvar', 'var'),
   use_pol2_fixedvar = 0;
 end
 
+if ~exist('use_uniform_priors', 'var'),
+  use_uniform_priors = 1;
+end
+
 %mybasedir_code='/share/work/jtpelto/tempsynergy/';
 %mybasedir_code='/media/JPELTONEN4/mlprojects/';
 %mybasedir_code='~/synergy_data/tempcodebranch/';
@@ -62,7 +66,7 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
 
-load('simulated_data.mat');
+load('simulated_data_2013-08-09.mat');
 
 datasize = size(rnadata{dataset});
 
@@ -139,65 +143,93 @@ for i=myI,
       dataVals = {[], tempvals2};
     end
     
-    fname = sprintf('hmc_results/%s/%s_samples_%s.mat', ...
-		    modelnames{k}, gene_name, id);
+    fname = sprintf('hmc_results/%s/%s_samples_%s_data%d_unif%d.mat', ...
+		    modelnames{k}, gene_name, id, dataset, use_uniform_priors);
     if exist(fname, 'file'),
       fprintf('File %s exists, loading existing results...\n', fname);
       load(fname);
     else
       
       [m,temptransforminfo]=createNdSimDisim_celltimes_newdata3(...
-          timeCell,dataVals,lengthscale,11,[],[],1, rnaVars,1,1);
+          timeCell,dataVals,lengthscale,11,[],[],1, rnaVars,1,use_uniform_priors);
 
       oldparams = modelExtractParam(m);
       %oldparams(oldparams < -5) = -5;
       %oldparams(oldparams > 5) = 5;
-      bounds = gpnddisimExtractParamTransformSettings(m);
-      bounds = cat(1, bounds{:})';
-      I1 = (oldparams < bounds(1,:));
-      oldparams(I1) = bounds(1, I1);
-      I2 = (oldparams > bounds(2,:));
-      oldparams(I2) = bounds(2, I2);
+      if use_uniform_priors,
+	bounds = gpnddisimExtractParamTransformSettings(m);
+	bounds = cat(1, bounds{:})';
+	I1 = (oldparams < bounds(1,:));
+	oldparams(I1) = bounds(1, I1);
+	I2 = (oldparams > bounds(2,:));
+	oldparams(I2) = bounds(2, I2);
 
-      m = modelExpandParam(m, oldparams);
-
-      m.kern.comp{1}.comp{2}.priors{3} = ...
-          priorCreate('mixture', struct('types', {{'truncatedGamma', 'uniform'}}));
-      m.kern.comp{1}.comp{2}.priors{3}.index = 5;
-      m.kern.comp{1}.comp{2}.priors{3} = ...
-          priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
-      m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
-          priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, log(0.1)]);
-
-      if nodelay,
-        m.fix.index = 5;
-        m.fix.value = 1e-100;
+	m = modelExpandParam(m, oldparams);
       end
 
-      g = gpnddisimLogLikeGradients(m);
-      Irealparams = find(g);
+      if use_uniform_priors,
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorCreate('mixture', struct('types', {{'truncatedGamma', 'uniform'}}));
+        m.kern.comp{1}.comp{2}.priors{3}.index = 5;
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [0, log(0.1)]);
+      else
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorCreate('mixture', struct('types', {{'logisticNormal', 'logisticNormal'}}));
+        m.kern.comp{1}.comp{2}.priors{3}.index = 5;
+        m.kern.comp{1}.comp{2}.priors{3} = ...
+            priorSetBounds(m.kern.comp{1}.comp{2}.priors{3}, [0, 299]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{1} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{1}, [-2, log(2)]);
+        m.kern.comp{1}.comp{2}.priors{3}.comp{2} = ...
+            priorExpandParam(m.kern.comp{1}.comp{2}.priors{3}.comp{2}, [-2, log(2)]);
+      end
+
+      %m.fix(1).index = 10;
+      %if use_uniform_priors,
+      %  m.fix(1).value = 1e-100;
+      %else
+      %  m.fix(1).value = -100;
+      %end
+
+      if nodelay,
+        m.fix(1).index = 5;
+        if use_uniform_priors,
+          m.fix(1).value = 1e-100;
+        else
+          m.fix(1).value = -100;
+        end
+      end
 
       options = hmcDefaultOptions;
       options.maxit = 100000;
       finished = 0;
       samples_done = 0;
-      states.rand = cell(size(seeds));
-      states.randn = cell(size(seeds));
+      states.rng = cell(size(seeds));
       HMCsamples = cell(size(seeds));
       states.params = cell(size(seeds));
       tuning.epsilons = zeros(size(seeds));
       tuning.scales = cell(size(seeds));
-    
       for chain=1:length(seeds),
-        randn('seed',gene_index+13*seeds(chain));
-        rand('seed',gene_index+1234567+13*seeds(chain));
+        rng(gene_index+13*seeds(chain));
       
-        % Random initial parameters
-        initparams = bounds(1,:) + ...
-            rand(size(oldparams)) .* (bounds(2,:)-bounds(1,:));
+	if use_uniform_priors,
+          % Random initial parameters
+          initparams = bounds(1,:) + ...
+		       rand(size(oldparams)) .* (bounds(2,:)-bounds(1,:));
 
-        % Initialise to a small delay
-        initparams(5) = min(initparams(5), 10*rand(1));
+          % Initialise to a small delay
+          initparams(5) = min(initparams(5), 10*rand(1));
+	else
+          % Random initial parameters
+	  initparams = randn(size(oldparams));
+
+          % Initialise to a small delay
+          initparams(5) = initparams(5) - 2;
+	end
+
         m = modelExpandParam(m, initparams);
       
         [tuning.epsilons(chain), tuning.scales{chain}, m] = gpnddisimTuneHMC(m, options);
@@ -205,10 +237,9 @@ for i=myI,
 
         states.params{chain} = modelExtractParam(m);
         % Save chain random state
-        states.rand{chain} = rand('state');
-        states.randn{chain} = randn('state');
+        states.rng{chain} = rng;
       end
-      [~,bestI] = max(tuning.epsilons);
+      [~,bestI] = min(tuning.epsilons);
       options.epsilon = tuning.epsilons(bestI(1));
       options.scales = tuning.scales{bestI(1)};
       save(fname, 'gene_name', 'gene_index', 'm', 'HMCsamples', 'options', ...
@@ -218,25 +249,26 @@ for i=myI,
     while ~finished && samples_done < options.maxit,
       for chain=1:length(seeds),
         % Restore chain random state
-        rand('state', states.rand{chain});
-        randn('state', states.randn{chain});
+        rng(states.rng{chain});
         m = modelExpandParam(m, states.params{chain});
         
         % Apply HMC sampling
         HMCsamples{chain} = gpnddisimSampleHMC(m, 0, nHMCiters, options);
-        states.rand{chain} = rand('state');
-        states.randn{chain} = randn('state');
-        states.params{chain} = modelExtractParam(m);
+        states.rng{chain} = rng;
+        states.params{chain} = HMCsamples{chain}(end, :);
         HMCsamples{chain} = HMCsamples{chain}(10:10:end, :);
       end
 
+      g = gpnddisimLogLikeGradients(m);
+      Irealparams = find(g);
       samples_done = samples_done + nHMCiters;
-      means = cellfun(@(x) squeeze(mean(x(end-500:end,:), 1)), HMCsamples, 'UniformOutput', false);
-      stds = cellfun(@(x) squeeze(std(x(end-500:end,:), 0, 1)), HMCsamples, 'UniformOutput', false);
-      W = cellfun(@(x) mean(x.^2, 2), stds, 'UniformOutput', false);
-      B = cellfun(@(x) N*var(x, 0, 2), means, 'UniformOutput', false);
-      varHatPlus = cellfun(@(W, B) (N-1)/N * W + 1/N * B, W, B, 'UniformOutput', false);
-      Rhat = cellfun(@(a, b) sqrt(a ./ b), varHatPlus, W);
+      N = 500;
+      means = cellfun(@(x) squeeze(mean(x(end-N:end,:), 1)), HMCsamples, 'UniformOutput', false);
+      stds = cellfun(@(x) squeeze(std(x(end-N:end,:), 0, 1)), HMCsamples, 'UniformOutput', false);
+      W = mean(cat(1, stds{:}).^2);
+      B = N*var(cat(1, means{:}));
+      varHatPlus = (N-1)/N * W + 1/N * B;
+      Rhat = sqrt(varHatPlus./W);
       fprintf('%d samples done, Rhat:\n', samples_done);
       disp(Rhat);
       finished = all(Rhat(Irealparams) < 1.2);

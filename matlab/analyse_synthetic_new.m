@@ -1,27 +1,38 @@
-mypaths = {'~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/',
-          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/'};
+mypaths = {'~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
+          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
+          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
+          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
+          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
+          '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
+          };
 sdata = load('simulated_data.mat');
 
-inits = [1,2,4,5, 8];
+%inits = [1,2,4,5, 8];
 %inits = [2,4,8];
-variables = {[1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10], ...
-	     [1:6, 8:10], [1:4, 6, 8:10]};
+inits = [11, 12, 13, 14, 15];
+variables = {[1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], ... %[1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9], ...
+	     [1:6, 8:9], [1:4, 6, 8:9]};
 
 samples = cell(6, 4, length(mypaths));
 fnames = cell(6, 4, length(mypaths));
+epsilons = zeros(6, 4, length(mypaths), length(inits));
 
 datasize = size(sdata.rnadata{1});
 for i=1:prod(datasize(1:2)),
   [k, l] = ind2sub(datasize(1:2), i);
-  fnames{k,l,1} = sprintf('Synthetic_%02d_samples_synth_1_2013-06-21b_init%%d.mat', i);
-  fnames{k,l,2} = sprintf('Synthetic_%02d_samples_synth_1_nodelay_2013-06-21b_init%%d.mat', i);
+  fnames{k,l,1} = sprintf('Synthetic_%02d_samples_synth_1_2013-08-07b_unif0_init%%d.mat', i);
+  fnames{k,l,2} = sprintf('Synthetic_%02d_samples_synth_1_nodelay_2013-08-07b_unif0_init%%d.mat', i);
+  fnames{k,l,3} = sprintf('Synthetic_%02d_samples_synth_1_2013-08-09a_unif0_init%%d.mat', i);
+  fnames{k,l,4} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-09b_unif0_init%%d.mat', i);
+  fnames{k,l,5} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-09b_unif0_init%%d.mat', i);
+  fnames{k,l,6} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-12a_unif0_init%%d.mat', i);
 end
 
 %d = dir([mypath '/*.mat']);
@@ -33,8 +44,17 @@ for k=1:length(sdata.Dvals),
     for n=1:size(samples, 3),
       samples{k,l,n} = zeros(500, length(variables{n}), length(inits));
       for m=1:length(inits),
-        r = load([mypaths{n}, '/', sprintf(fnames{k,l,n}, inits(m))]);
-        samples{k,l,n}(:, :, m) = r.HMCsamples(501:end,variables{n});
+        bad = 0;
+        try,
+          r = load([mypaths{n}, '/', sprintf(fnames{k,l,n}, inits(m))]);
+        catch,
+          samples{k,l,n}(:, :, m) = samples{k,l,n}(:, :, m-1);
+          bad = 1;
+        end
+        if ~bad,
+          samples{k,l,n}(:, :, m) = r.HMCsamples(501:end,variables{n});
+	  epsilons(k, l, n, m) = r.options.epsilon;
+        end
       end
     end
   end
@@ -55,8 +75,8 @@ difficult = cellfun(@(x) any(x > 1.2), Rhat);
 parammeans = cellfun(@(x) squeeze(mean(x, 2)), means, 'UniformOutput', false);
 decaymeans = cellfun(@(x) x(3), parammeans);
 sensmeans = cellfun(@(x) x(4), parammeans);
-delaymeans = cellfun(@(x) x(5), parammeans(:, :, [1]));
-%settings = gpnddisimExtractParamTransformSettings(r.m);
+delaymeans = cellfun(@(x) x(5), parammeans(:, :, [1, 3, 4, 6]));
+settings = gpnddisimExtractParamTransformSettings(r.m);
 
-%decays = sigmoidabTransform(decaymeans, 'atox', settings{3});
-%delays = sigmoidabTransform(delaymeans, 'atox', settings{5});
+decays = sigmoidabTransform(decaymeans, 'atox', settings{3});
+delays = sigmoidabTransform(delaymeans, 'atox', settings{5});
