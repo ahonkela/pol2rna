@@ -2,10 +2,6 @@ mypaths = {'~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
            '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
            '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
            '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
-           '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
-           '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
-           '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint/', ...
-           '~/mlprojects/pol2rnaseq/matlab/hmc_results/joint_nodelay/',...
           };
 sdata = load('simulated_data.mat');
 
@@ -25,14 +21,10 @@ epsilons = zeros(6, 4, length(mypaths));
 datasize = size(sdata.rnadata{1});
 for i=1:prod(datasize(1:2)),
   [k, l] = ind2sub(datasize(1:2), i);
-  fnames{k,l,1} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-28a_data1_unif0.mat', i);
-  fnames{k,l,2} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-28a_data1_unif0.mat', i);
-  fnames{k,l,3} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-28a_data2_unif0.mat', i);
-  fnames{k,l,4} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-28a_data2_unif0.mat', i);
-  fnames{k,l,5} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-29a_data1_unif0.mat', i);
-  fnames{k,l,6} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-29a_data1_unif0.mat', i);
-  fnames{k,l,7} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-29a_data2_unif0.mat', i);
-  fnames{k,l,8} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-29a_data2_unif0.mat', i);
+  fnames{k,l,1} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-30a_data1_unif0.mat', i);
+  fnames{k,l,2} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-30a_data1_unif0.mat', i);
+  fnames{k,l,3} = sprintf('Synthetic_%02d_samples_synth_new_2013-08-30a_data2_unif0.mat', i);
+  fnames{k,l,4} = sprintf('Synthetic_%02d_samples_synth_new_nodelay_2013-08-30a_data2_unif0.mat', i);
 end
 
 %d = dir([mypath '/*.mat']);

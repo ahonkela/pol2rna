@@ -27,7 +27,11 @@ conf = conf{1};
 g = importdata(['~/mlprojects/pol2rnaseq/matlab/', conf{1}]);
 myI = mybase:mymod:length(g);
 
+FILESTEM = conf{2};
+SAMPLEDIR = conf{3};  
+FILESPEC = conf{5};
+
 for k=myI,
-  fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  save_sampled_predictions_file(g{k}, conf{3}, conf{2});
+  fprintf('Running gene %d/%d: %s\n', find(k==myI), length(myI), g{k});
+  save_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, FILESPEC);
 end

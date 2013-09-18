@@ -1,4 +1,5 @@
-finished_synthetic_2013-05-15.txt
-_hmc_synthetic_nodelay_2013-08-07b
-synthetic_2013-08-07/joint_nodelay/
+interesting_genes.txt
+_hmc_2013-08-30
+joint/
 1
+_samples_2013-08-30_unif0.mat

@@ -19,7 +19,11 @@ path8=[mybasedir_code 'pol2rnaseq/matlab/'];
 
 addpath(path1,path2,path3,path4,path5,path6,path7,path8)
 
-fid = fopen('~/mlprojects/pol2rnaseq/matlab/file_predictions_config.txt');
+if ~exist('config', 'var'),
+  config = 'file_predictions_config.txt';
+end
+
+fid = fopen(['~/mlprojects/pol2rnaseq/matlab/' config]);
 conf = textscan(fid, '%s');
 fclose(fid);
 conf = conf{1};
@@ -32,9 +36,12 @@ if length(conf) > 3,
 else
   SQRTTIME = 1;
 end
-  
+
+FILESTEM = conf{2};
+SAMPLEDIR = conf{3};  
+FILESPEC = conf{5};
 
 for k=myI,
-  fprintf('Running gene %d/%d\n', find(k==myI), length(myI));
-  plot_sampled_predictions_file(g{k}, conf{3}, conf{2}, 'png', SQRTTIME);
+  fprintf('Running gene %d/%d: %s\n', find(k==myI), length(myI), g{k});
+  plot_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, 'png', SQRTTIME, FILESPEC);
 end

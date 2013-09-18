@@ -1,4 +1,4 @@
-function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME),
+function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME, FILESPEC),
 
 if nargin < 4,
   format = 'png';
@@ -12,11 +12,6 @@ resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
 plotdir = '~/projects/pol2rnaseq/analyses/hmc_results/plots/';
 aliases = load('~/projects/pol2rnaseq/data/aliases.mat');
 aliases = aliases.aliases;
-try,
-  load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
-catch,
-  genefiles = struct();
-end
 
 switch format,
   case 'png',
@@ -32,26 +27,32 @@ if exist(plotfile, 'file'),
   return;
 end
 
-if isfield(genefiles, gene),
-  filenames = genefiles.(gene);
-else
-  d = dir([resultdir sampledir gene '*.mat']);
-  filenames = {};
-  [filenames{1:length(d),1}] = deal(d.name);
-  % exclude init3, as it seems very unreliable
-  I = cellfun('isempty', strfind(filenames, 'init3'));
-  filenames = filenames(I);
-end
+d = dir([resultdir sampledir gene FILESPEC]);
+filenames = {};
+[filenames{1:length(d),1}] = deal(d.name);
 
 Isampl = 501:10:1000;
-mysamples = zeros(length(filenames)*length(Isampl), 10);
 
-for k=1:length(filenames),
-  r = load([resultdir, sampledir, filenames{k}]);
-  assert(strcmp(r.gene_name, gene));
-  mysamples((1:length(Isampl)) + (k-1)*length(Isampl), :) = ...
-      r.HMCsamples(Isampl, :);
+if length(filenames)~=1,
+  fprintf('Found %d != 1 files for gene %s, aborting...\n', ...
+          length(filenames), gene);
+  return;
 end
+
+r = load([resultdir, sampledir, filenames{1}]);
+
+if ~r.finished,
+  fprintf('Gene %s not finished yet, exitting...\n', gene);
+  return;
+end
+
+assert(strcmp(r.gene_name, gene));
+mysamples = cat(3, r.HMCsamples{:});
+mysamples = mysamples(Isampl, :, :);
+mysamples = permute(mysamples, [1 3 2]);
+sz = size(mysamples);
+mysamples = reshape(mysamples, [sz(1)*sz(2), sz(3)]);
+
 % Check if delay is fixed and only plot delay histogram if it is not
 g = gpnddisimLogLikeGradients(r.m);
 NODELAYHIST = (g(5) == 0);
