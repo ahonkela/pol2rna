@@ -41,7 +41,13 @@ FILESTEM = conf{2};
 SAMPLEDIR = conf{3};  
 FILESPEC = conf{5};
 
+if length(conf) > 5,
+  PLOTPREMRNA = str2num(conf{6});
+else
+  PLOTPREMRNA = 0;
+end
+
 for k=myI,
   fprintf('Running gene %d/%d: %s\n', find(k==myI), length(myI), g{k});
-  plot_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, 'png', SQRTTIME, FILESPEC);
+  plot_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, 'png', SQRTTIME, FILESPEC, PLOTPREMRNA);
 end

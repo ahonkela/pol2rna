@@ -1,4 +1,4 @@
-function plot_sampled_predictions(m, HMCsamples, gene_name, NODELAYHIST, SQRTTIME),
+function plot_sampled_predictions(m, HMCsamples, gene_name, NODELAYHIST, SQRTTIME, premrnadata),
 
 if nargin < 4,
   NODELAYHIST=0;
@@ -6,6 +6,24 @@ end
 
 if nargin < 5,
   SQRTTIME=1;
+end
+
+if nargin < 6,
+  PLOTPREMRNA=0;
+else
+  PLOTPREMRNA=1;
+end
+
+if PLOTPREMRNA,
+  PLOTROWS = 3;
+else
+  PLOTROWS = 2;
+end
+
+if NODELAYHIST,
+  PLOTCOLS = 1;
+else
+  PLOTCOLS = 3;
 end
 
 shadecols = {[1.0 0.9 0.9], [0.9 1.0 0.9]};
@@ -48,12 +66,35 @@ mu = mean(r);
 
 for k=1:2,
   if NODELAYHIST,
-    subplot(2, 1, k);
+    if PLOTPREMRNA,
+      subplot(PLOTROWS, PLOTCOLS, 2*k-1);
+    else
+      subplot(PLOTROWS, PLOTCOLS, k);
+    end
   else
-    subplot(2, 3, 3*k-2:3*k-1);
+    if PLOTPREMRNA,
+      subplot(PLOTROWS, PLOTCOLS, 6*k-5:6*k-4);
+    else
+      subplot(PLOTROWS, PLOTCOLS, 3*k-2:3*k-1);
+    end
   end
   I = (1:length(t_pred)) + (k-1)*length(t_pred);
   J = (1:length(t_tick)) + (k-1)*length(t_tick);
+
+  % plot bounds
+  switch k,
+    case 1,
+      minbound = -1;
+      maxbound = ceil(max(m.y(J)))+1;
+    case 2,
+      minbound = 0;
+      maxbound = ceil(1.1 * max(m.y(J) ...
+                                + 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance)));
+  end
+
+  % clip error bars to plot bounds
+  p(1,I(p(1,I) < minbound)) = minbound;
+  p(2,I(p(2,I) > maxbound)) = maxbound;
   
   mycol = shadecols{k};
   h=fill([t_plot; t_plot(end:-1:1)], [p(1,I)'; flipud(p(2,I)')],mycol);
@@ -69,22 +110,32 @@ for k=1:2,
     errorbar(t_tickplot, m.y(J), 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance), 'bo')
   end
   hold off
-  V = axis;
-  switch k,
-    case 1,
-      axis([0 max(t_plot) -1, ceil(max(m.y(J)))+1]);
-    case 2,
-      axis([0 max(t_plot) 0, ceil(max(m.y(J)))+1]);
-  end
-  %axis([0 max(t_plot) V(3:4)]);
+  axis([0, max(t_plot), minbound, maxbound]);
   set(gca, 'XTick', t_tickplot);
   set(gca, 'XTickLabel', t_tick)
   set(gca, 'FontSize', FONTSIZE);
   ylabel(titles{k});
+  if k==2,
+    xlabel('t (min)');
+  end
+end
+
+if PLOTPREMRNA,
+  if NODELAYHIST,
+    subplot(PLOTROWS, PLOTCOLS, 2);
+  else
+    subplot(PLOTROWS, PLOTCOLS, 4:5);
+  end
+  plot(t_tickplot, premrnadata, 'bo-')
+  axis([0, max(t_plot), 0, 1.1*max(premrnadata)])
+  set(gca, 'XTick', t_tickplot);
+  set(gca, 'XTickLabel', t_tick)
+  set(gca, 'FontSize', FONTSIZE);
+  ylabel('pre-mRNA');
 end
 
 if ~NODELAYHIST,
-  subplot(2, 3, [3 6]);
+  subplot(PLOTROWS, PLOTCOLS, PLOTCOLS*(1:PLOTROWS));
   vals = sigmoidabTransform(HMCsamples(:, delayI), 'atox', settings{delayI});
   [n, x] = hist(vals, 5:10:295);
   bar(x,n/sum(n),settings{delayI},'hist');
@@ -98,12 +149,12 @@ end
 
 if nargin > 2,
   if NODELAYHIST,
-    subplot(2, 1, 1);
+    subplot(PLOTROWS, PLOTCOLS, 1);
     title(gene_name);
-    subplot(2, 1, 2);
+    subplot(PLOTROWS, PLOTCOLS, PLOTROWS);
   else
-    subplot(2, 3, 1:2);
+    subplot(PLOTROWS, PLOTCOLS, 1:2);
     title(gene_name);
-    subplot(2, 3, [3 6]);
+    subplot(PLOTROWS, PLOTCOLS, PLOTCOLS*(1:PLOTROWS));
   end
 end
