@@ -1,0 +1,5 @@
+library(biomaRt)
+mymart=useMart('ensembl',dataset="hsapiens_gene_ensembl")
+# listAttributes(mymart)
+myres=getBM(mart=mymart,attributes=c('strand','ensembl_gene_id'))
+write.table(myres,file="genestrands.txt")
