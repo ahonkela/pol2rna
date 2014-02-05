@@ -83,7 +83,14 @@ assert(all(strcmp(r.geneID, premrna_data.genes)));
 act = importdata('BF_RNASeq_gene.txt');
 act_mrna = act.textdata(find(act.data > 3));
 
-act_genes = sort(act_mrna);
+pol2act = importdata('Pol2_BF8.txt');
+act_pol2 = pol2act.textdata(find(pol2act.data > 3));
+
+act_genes = unique([act_mrna; act_pol2]);
+
+%extra_genes = {'ENSG00000064195'; 'ENSG00000187109'; 'ENSG00000198668'; 'ENSG00000142178'; 'ENSG00000183484'; 'ENSG00000105372'; 'ENSG00000168140'; 'ENSG00000134107'; 'ENSG00000166226'; 'ENSG00000101331'; 'ENSG00000164626'; 'ENSG00000099860'; 'ENSG00000010278'; 'ENSG00000137193'; 'ENSG00000181026'; 'ENSG00000163659'};
+
+%act_genes = sort([act_mrna; extra_genes]);
 
 if exist('run_just_bad', 'var'),
   act_genes = importdata(run_just_bad);
@@ -92,12 +99,12 @@ end
 cd(analysisdir)
 
 [~, ~, J] = intersect(act_genes, r.geneID);
-assert(length(J) == length(act_genes));
+assert(length(J) == length(intersect(r.geneID(J), act_genes)));
+interestinggenes_rna = J;
 
 %interestinggenes = A; %find(r.pvals(A) < 0.1);
 %interestinggenes = find(r.pvals(A) < 0.9);
 %interestinggenes = find(sum(r.counts(A,:), 2) >= 1000);
-interestinggenes_rna = J;
 
 nHMCiters = 10000;
 

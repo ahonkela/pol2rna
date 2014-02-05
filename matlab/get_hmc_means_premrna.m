@@ -1,4 +1,5 @@
 % analyse_hmc
+id = '2013-11-05';
 
 %parI = [1:4, 6, 8:10];
 
@@ -14,7 +15,7 @@ end
 
 load('~/projects/pol2rnaseq/data/aliases.mat');
 
-profiles = load('~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_2013-08-30.mat');
+profiles = load(['~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_' id '.mat']);
 
 %t_pred = (((0:100)/100*sqrt(1280)).^2)';
 T_MIN = 300;
@@ -63,7 +64,7 @@ assert(all(strcmp(mygenes, goodgenes(A2))));
 
 delaymeans = goodmeans(A2, 5);
 
-fid = fopen('pol2max_and_delays_2013-08-30.txt', 'w');
+fid = fopen(['pol2max_and_delays_' id '.txt'], 'w');
 fprintf(fid, 'ENSG\tgene\ttmax\tdelay\tcorr\tbegdev10\tbegdev30\n');
 for k=1:length(mygenes),
   if ~isfinite(pol2intcorr(k)),

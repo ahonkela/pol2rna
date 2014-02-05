@@ -1,4 +1,4 @@
-function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME, FILESPEC, PLOTPREMRNA),
+function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME, FILESPEC, PLOTPREMRNA, PREMRNAMODEL),
 
 if nargin < 4,
   format = 'png';
@@ -10,6 +10,10 @@ end
 
 if nargin < 7,
   PLOTPREMRNA = 0;
+end
+
+if nargin < 8,
+  PREMRNAMODEL = 0;
 end
 
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
@@ -51,9 +55,16 @@ if ~r.finished,
 end
 
 if PLOTPREMRNA,
-  premrna_data = load('~/projects/pol2rnaseq/data/rpkm.mat');
-  premrnaI = find(strcmp(gene, premrna_data.genes));
-  my_premrna = premrna_data.mT2(premrnaI, :);
+  if PREMRNAMODEL,
+    load('~/projects/pol2rnaseq/data/pol2_summaryseries_2013_01_02.mat');
+    load('~/projects/pol2rnaseq/data/bininfo_dec2012_corrected.mat', 'bininfo');
+    pol2I = find(ensg2int(gene) == bininfo(:, 5));
+    my_pol2 = pol2_summaryseries(pol2I, :);
+  else
+    premrna_data = load('~/projects/pol2rnaseq/data/rpkm.mat');
+    premrnaI = find(strcmp(gene, premrna_data.genes));
+    my_premrna = premrna_data.mT2(premrnaI, :);
+  end
 end
 
 assert(strcmp(r.gene_name, gene));
@@ -71,10 +82,18 @@ if isfield(aliases, gene),
   gene = sprintf('%s (%s)', gene, aliases.(gene));
 end
 
-if PLOTPREMRNA,
-  plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_premrna)
+if PREMRNAMODEL,
+  if PLOTPREMRNA,
+    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_pol2)
+  else
+    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
+  end
 else
-  plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
+  if PLOTPREMRNA,
+    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_premrna)
+  else
+    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
+  end
 end
 
 set(gcf, 'PaperUnits', 'inches')

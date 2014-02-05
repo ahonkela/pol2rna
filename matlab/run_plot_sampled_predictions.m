@@ -47,7 +47,13 @@ else
   PLOTPREMRNA = 0;
 end
 
+if length(conf) > 6,
+  PREMRNAMODEL = str2num(conf{7});
+else
+  PREMRNAMODEL = 0;
+end
+
 for k=myI,
   fprintf('Running gene %d/%d: %s\n', find(k==myI), length(myI), g{k});
-  plot_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, 'png', SQRTTIME, FILESPEC, PLOTPREMRNA);
+  plot_sampled_predictions_file(g{k}, SAMPLEDIR, FILESTEM, 'png', SQRTTIME, FILESPEC, PLOTPREMRNA, PREMRNAMODEL);
 end

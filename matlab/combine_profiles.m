@@ -1,12 +1,14 @@
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/profiles/';
 
-id = '2013-08-30';
+%id = '2013-08-30';
+id = '2013-11-05';
 
 d = dir([resultdir 'ENSG*' id '.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
 
+cwd = pwd();
 cd(resultdir);
 r = load(filenames{1});
 genes = cell(length(filenames), 1);
@@ -23,3 +25,4 @@ for k=1:length(filenames),
   prctiles(k,:,:) = r.p';
 end
 save(['all_profiles_' id '.mat'], 'genes', 'mu', 'prctiles', 't_pred');
+cd(cwd);
