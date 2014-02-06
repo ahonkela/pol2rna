@@ -1,7 +1,1 @@
-interesting_genes.txt
-_hmc_2013-11-05
-joint/
-1
-_samples_2013-11-05_unif0.mat
-1
-1
+file_predictions_config_pol2.txt

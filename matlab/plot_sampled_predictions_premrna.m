@@ -31,7 +31,7 @@ linecols = {'r', 'g'};
 FONTSIZE=9;
 LINEWIDTH=2;
 
-titles = {'pre-mRNA (input)', 'mRNA'};
+titles = {'pre-mRNA (input)', 'mRNA (RPKM)'};
 
 delayI = 5;
 settings = gpnddisimExtractParamTransformSettings(m);

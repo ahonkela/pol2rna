@@ -31,7 +31,7 @@ linecols = {'r', 'g'};
 FONTSIZE=9;
 LINEWIDTH=2;
 
-titles = {'Pol2 (input)', 'mRNA'};
+titles = {'Pol II (input)', 'mRNA (RPKM)'};
 
 delayI = 5;
 settings = gpnddisimExtractParamTransformSettings(m);
@@ -84,8 +84,8 @@ for k=1:2,
   % plot bounds
   switch k,
     case 1,
-      minbound = -1;
-      maxbound = ceil(max(m.y(J)))+1;
+      minbound = 0;
+      maxbound = 1.1*(max(m.y(J)) + 1e-3);
     case 2,
       minbound = 0;
       maxbound = ceil(1.1 * max(m.y(J) ...
