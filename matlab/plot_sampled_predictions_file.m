@@ -102,6 +102,7 @@ switch format,
     set(gcf, 'PaperPosition', [0, 0, PNG_SIZE/DPI])
     print('-dpng', sprintf('-r%d', DPI), plotfile);
   case 'eps',
-    set(gcf, 'PaperPosition', [0, 0, 7, 5])
+    set(gcf, 'PaperPositionMode', 'auto');
+    set(gcf, 'PaperPosition', [0, 0, 60/25.4, 60/25.4])
     print('-depsc2', plotfile);
 end

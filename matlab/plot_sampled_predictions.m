@@ -27,11 +27,11 @@ else
 end
 
 shadecols = {[1.0 0.9 0.9], [0.9 1.0 0.9]};
-linecols = {'r', 'g'};
-FONTSIZE=9;
-LINEWIDTH=2;
+linecols = {'r', 'g', 'b'};
+FONTSIZE=6;
+LINEWIDTH=1.5;
 
-titles = {'Pol II (input)', 'mRNA (RPKM)'};
+titles = {'Pol II', 'mRNA', 'pre-mRNA'};
 
 delayI = 5;
 settings = gpnddisimExtractParamTransformSettings(m);
@@ -44,19 +44,26 @@ switch SQRTTIME,
     t_tick = m.t{1} - min(m.t{1});
     t_plot = t_pred - min(t_pred);
     t_tickplot = t_tick;
+    t_ticklabels = t_tick;
   case 1,
     t_pred = (((0:100)/100*sqrt(t_len)).^2 + 300)';
     t_tick = m.t{1} - min(m.t{1});
     t_plot = sqrt(t_pred - min(t_pred));
     t_tickplot = sqrt(t_tick);
+    t_ticklabels = t_tick;
   case 0,
     t_pred = [linspace(0, 157.5, 64), exp(linspace(log(160), log(1280), 61))]';
     t_tick = m.t{1} - min(m.t{1});
     t_plot = (1:length(t_pred))';
     t_tickplot = zeros(size(t_tick));
+    t_ticklabels = cell(size(t_tick));
     for k=1:length(t_tick)
       t_tickplot(k) = find(abs(t_pred - t_tick(k)) < 1);
+      t_ticklabels{k} = sprintf('%d', t_tick(k));
     end
+    t_ticklabels{2} = '';
+    t_ticklabels{3} = '';
+    t_ticklabels{4} = '';
     t_pred = t_pred + 300;
 end
 
@@ -85,7 +92,7 @@ for k=1:2,
   switch k,
     case 1,
       minbound = 0;
-      maxbound = 1.1*(max(m.y(J)) + 1e-3);
+      maxbound = 1.2*(max(m.y(J)) + 1e-3);
     case 2,
       minbound = 0;
       maxbound = ceil(1.1 * max(m.y(J) ...
@@ -105,14 +112,18 @@ for k=1:2,
   plot(t_plot, mean(r(:, I)), linecols{k}, 'LineWidth', LINEWIDTH);
   switch k,
    case 1,
-    plot(t_tickplot, m.y(J), 'bo')
+    plot(t_tickplot, m.y(J), 'bx')
    case 2,
-    errorbar(t_tickplot, m.y(J), 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance), 'bo')
+    errorbar(t_tickplot, m.y(J), 2*sqrt(m.kern.comp{2}.comp{2}.fixedvariance), 'bx')
   end
   hold off
   axis([0, max(t_plot), minbound, maxbound]);
   set(gca, 'XTick', t_tickplot);
-  set(gca, 'XTickLabel', t_tick)
+  if k==2,
+    set(gca, 'XTickLabel', t_ticklabels)
+  else
+    set(gca, 'XTickLabel', []);
+  end
   set(gca, 'FontSize', FONTSIZE);
   ylabel(titles{k});
   if k==2,
@@ -126,24 +137,37 @@ if PLOTPREMRNA,
   else
     subplot(PLOTROWS, PLOTCOLS, 4:5);
   end
-  plot(t_tickplot, premrnadata, 'bo-')
-  axis([0, max(t_plot), 0, 1.1*max(premrnadata)])
+  plot(t_tickplot, premrnadata, [linecols{3} 'x-'])
+  axis([0, max(t_plot), 0, 1.2*(max(premrnadata)+1e-3)])
   set(gca, 'XTick', t_tickplot);
-  set(gca, 'XTickLabel', t_tick)
+  set(gca, 'XTickLabel', [])
   set(gca, 'FontSize', FONTSIZE);
-  ylabel('pre-mRNA');
+  ylabel(titles{3});
 end
 
 if ~NODELAYHIST,
   subplot(PLOTROWS, PLOTCOLS, PLOTCOLS*(1:PLOTROWS));
   vals = sigmoidabTransform(HMCsamples(:, delayI), 'atox', settings{delayI});
   [n, x] = hist(vals, 5:10:295);
-  bar(x,n/sum(n),settings{delayI},'hist');
   if x(max(find(n))) < 100,
-    V = axis;
-    axis([0 100 V(3:4)]);
+    %V = axis;
+    %axis([0 100 V(3:4)]);
+    bar(x(1:10),n(1:10)/sum(n),settings{delayI},'hist');
+    axis([0 100 0 1]);
+    xmax = 100;
+  else
+    bar(x,n/sum(n),settings{delayI},'hist');
+    axis([0 300 0 1]);
+    xmax = 300;
   end
   set(gca, 'FontSize', FONTSIZE);
+  if xmax == 100,
+    set(gca, 'XTick', 0:50:xmax);
+    set(gca, 'XTickLabel', 0:50:xmax);
+  else
+    set(gca, 'XTick', 0:100:xmax);
+    set(gca, 'XTickLabel', 0:100:xmax);
+  end
   xlabel('Delay (min)')
 end
 
