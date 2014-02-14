@@ -92,30 +92,74 @@ shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['delay.x']<15, 'lastProp
 
 library(vioplot)
 ##vioplot(longuncorr, longcorr, shortuncorr, shortcorr, names=expression(Delta > 15 ~ "min," ~ rho < 0.5, Delta > 15 ~ "min," ~ rho > 0.5, Delta < 15 ~ "min," ~ rho < 0.5, Delta < 15 ~ "min," ~ rho > 0.5))
+
+pdf('intron_lengths.pdf', width=178/25.4, height=70/25.4)
+par(mfrow=c(1, 3))
+
+longcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['delay.x']>15, 'maxTrLengths']) / log(10)
+longuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['delay.x']>15, 'maxTrLengths']) / log(10)
+shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['delay.x']<15, 'maxTrLengths']) / log(10)
+shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['delay.x']<15, 'maxTrLengths']) / log(10)
+
+plot.new()
 par(ps=8, cex=1)
-par(mar=c(2, 2, 0, 0)+0.4)
-par(mgp=c(1.5, 0.5, 0))
-vioplot(longuncorr, longcorr, shortuncorr, shortcorr,
-        names=c(paste('+/+, n=', length(longuncorr), sep=''),
-          paste('+/-, n=', length(longcorr), sep=''),
-          paste('-/+, n=', length(shortuncorr), sep=''),
-          paste('-/-, n=', length(shortcorr), sep='')), col='grey')
+par(mar=c(3, 3, 0, 0)+0.4)
+par(mgp=c(2, 1, 0))
+plot.window(xlim=c(0.5, 4.5), ylim=c(2.8, 6.1))
+axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
+                     paste('+/-\nn=', length(longcorr), sep=''),
+                     paste('-/+\nn=', length(shortuncorr), sep=''),
+                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
+axis(2, at=log(c(1000, 10000, 100000, 1000000))/log(10),
+     labels=c(1, 10, 100, 1000))
+vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
+title(ylab="Max transcript length (kb)")
+title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
+
+
+longcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['delay.x']>15, 'maxmaxLastIntrons']) / log(10)
+longuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['delay.x']>15, 'maxmaxLastIntrons']) / log(10)
+shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['delay.x']<15, 'maxmaxLastIntrons']) / log(10)
+shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['delay.x']<15, 'maxmaxLastIntrons']) / log(10)
+
+plot.new()
+par(ps=8, cex=1)
+par(mar=c(3, 3, 0, 0)+0.4)
+par(mgp=c(2, 1, 0))
+plot.window(xlim=c(0.5, 4.5), ylim=c(1.7, 5.7))
+axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
+                     paste('+/-\nn=', length(longcorr), sep=''),
+                     paste('-/+\nn=', length(shortuncorr), sep=''),
+                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
+axis(2, at=log(c(100, 1000, 10000, 100000, 500000))/log(10),
+       labels=c(0.1, 1, 10, 100, 500))
+vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
+title(ylab="Max last intron length (kb)")
+title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
+
+
+
+longcorr <- mydelays[mydelays['corr']>0.5 & mydelays['delay.x']>15, 'lastProportion']
+longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['delay.x']>15, 'lastProportion']
+shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['delay.x']<15, 'lastProportion']
+shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['delay.x']<15, 'lastProportion']
+
+plot.new()
+par(ps=8, cex=1)
+par(mar=c(3, 3, 0, 0)+0.4)
+par(mgp=c(2, 1, 0))
+plot.window(xlim=c(0.5, 4.5), ylim=c(-0.02, 1.02))
+axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
+                     paste('+/-\nn=', length(longcorr), sep=''),
+                     paste('-/+\nn=', length(shortuncorr), sep=''),
+                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
+axis(2, at=c(0, 0.2, 0.4, 0.6, 0.8, 1))
+vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
 title(ylab="Last intron fraction")
 title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
 
-pdf('last_intron_fraction.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
-par(mar=c(2, 2, 0, 0)+0.4)
-par(mgp=c(1.5, 0.5, 0))
-vioplot(longuncorr, longcorr, shortuncorr, shortcorr,
-        names=c(paste('+/+, n=', length(longuncorr), sep=''),
-          paste('+/-, n=', length(longcorr), sep=''),
-          paste('-/+, n=', length(shortuncorr), sep=''),
-          paste('-/-, n=', length(shortcorr), sep='')), col='grey')
-title(ylab="Last intron fraction")
-title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
+
 dev.off()
-
 
 
 
@@ -127,41 +171,51 @@ delays.clipped[delays.clipped > 120] <- 121
 h <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
 h$counts[1] <- h$counts[1]-1500
 
-plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
-axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-
-pdf('delay_histogram.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
-par(mar=c(2, 2, 0, 0)+0.4)
-par(mgp=c(1.5, 0.5, 0))
-plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
-axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-dev.off()
-
-
 delays.clipped <- delays[J,'delay.y']
 delays.clipped[delays.clipped > 120] <- 121
 h2 <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
 h2$counts[1] <- h2$counts[1]-1500
 
-plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+par(mfrow=c(1, 2))
+plot(h, axes=FALSE, main="Pol II - mRNA delays", xlab="Delay (min)", ylab="# of genes")
+axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
+axis.break(2,120,style="zigzag")
+axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+plot(h2, axes=FALSE, main="pre-mRNA - mRNA delays", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 
-pdf('delay_histogram_premrna.pdf', width=87/25.4, height=70/25.4)
+pdf('delay_histogram.pdf', width=178/25.4, height=70/25.4)
 par(ps=8, cex=1)
-par(mar=c(2, 2, 0, 0)+0.4)
+par(mar=c(2, 2, 1, 0)+0.4)
 par(mgp=c(1.5, 0.5, 0))
-plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+par(mfrow=c(1, 2))
+plot(h, axes=FALSE, main="Pol II - mRNA delays", xlab="Delay (min)", ylab="# of genes")
+axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
+axis.break(2,120,style="zigzag")
+axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+plot(h2, axes=FALSE, main="pre-mRNA - mRNA delays", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 dev.off()
+
+
+## plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+## axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
+## axis.break(2,120,style="zigzag")
+## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+
+## pdf('delay_histogram_premrna.pdf', width=87/25.4, height=70/25.4)
+## par(ps=8, cex=1)
+## par(mar=c(2, 2, 0, 0)+0.4)
+## par(mgp=c(1.5, 0.5, 0))
+## plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+## axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
+## axis.break(2,120,style="zigzag")
+## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+## dev.off()
 
 
 
@@ -171,7 +225,7 @@ dev.off()
 ## ##glm.longest <- glm(formula=longestLast ~ corr + delay, family=binomial)
 ## glm.longest <- glm(formula=longestLast ~ corr + delay + corr*delay, family=binomial)
 mydelays2 = mydelays
-mydelays2[,'delay.x'] = mydelays2[,'delay.x']/60
+##mydelays2[,'delay.x'] = mydelays2[,'delay.x']/60
 mydelays2[,'maxmaxLastIntrons'] = mydelays2[,'maxmaxLastIntrons'] * sd(mydelays2[,'lastProportion']) / sd(mydelays2[,'maxmaxLastIntrons'])
 ##mydelays2[,'maxmaxLastIntrons'] = mydelays2[,'maxmaxLastIntrons']/1000
 
@@ -205,22 +259,12 @@ blm.delay4 <- bayesglm(formula=delay.x ~ maxmaxLastIntrons,
 blm.delay5 <- bayesglm(formula=delay.x ~ lastProportion + maxmaxLastIntrons +
                        lastProportion*maxmaxLastIntrons,
                        data=mydelays2)
+blm.delay5b <- bayesglm(formula=delay.x ~ lastProportion + maxTrLengths +
+                       lastProportion*maxTrLengths,
+                       data=mydelays2)
 blm.delay6 <- bayesglm(formula=delay.x ~ lastProportion + maxmaxLastIntrons +
                        lastProportion*maxmaxLastIntrons + corr,
                        data=mydelays2)
-
-
-##coefplot(blm.longest2, varnames=expression(Delta, rho), main="")
-par(ps=8, cex=1)
-par(mar=c(0, 0, 0, 0)+0.4)
-coefplot(blm.longest2, varnames=expression(1, rho, Delta), xlab=expression("Regression coefficient for ", lambda), main="")
-
-pdf('regression_coefs.pdf', width=87/25.4, height=50/25.4)
-par(ps=8, cex=1)
-par(mar=c(0, 0, 0, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
-coefplot(blm.longest2, varnames=expression(1, rho, Delta), xlab=expression("Regression coefficient for ", lambda), main="")
-dev.off()
 
 
 blm.corr <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons + delay.x,
@@ -237,6 +281,24 @@ blm.corr5 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons +
 blm.corr6 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons +
                       lastProportion*maxmaxLastIntrons + delay.x,
                       data=mydelays2)
+
+
+##coefplot(blm.longest2, varnames=expression(Delta, rho), main="")
+par(mfrow=c(2, 1))
+par(ps=8, cex=1)
+par(mar=c(0, 0, 0, 0)+0.4)
+coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
+coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
+
+pdf('regression_coefs.pdf', width=87/25.4, height=80/25.4)
+par(mfrow=c(2, 1))
+par(ps=8, cex=1)
+par(mar=c(0, 0, 0, 0)+0.4)
+##par(mgp=c(1.5, 0.5, 0))
+coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
+coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
+dev.off()
+
 
 
 
