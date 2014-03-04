@@ -13,13 +13,15 @@ n[grep('corr.x', n)] <- 'corr'
 n[grep('gene.x', n)] <- 'gene'
 names(delays.orig) <- n
 
-t <- readLines('intron_lengths.txt.lengths')
+t <- readLines('intron_lengths.txt.lengths2')
 l <- strsplit(t, '\t')
 names(l) <- sapply(l, function(x) x[1])
-introns <- lapply(l, function(x) as.integer(x[-1:-4]))
+introns <- lapply(l, function(x) as.integer(x[-1:-6]))
 strands <- sapply(l, function(x) x[2])
 termpos <- sapply(l, function(x) as.integer(x[3]))
 lengths <- sapply(l, function(x) as.integer(x[4]))
+exonlen5 <- sapply(l, function(x) as.integer(x[5]))
+exonlen3 <- sapply(l, function(x) as.integer(x[6]))
 
 ## t <- readLines('intron_lengths.txt')
 ## l <- strsplit(t, '\t')
@@ -32,6 +34,8 @@ introns <- introns[numIntrons > 0]
 termpos <- termpos[numIntrons > 0]
 strands <- strands[numIntrons > 0]
 lengths <- lengths[numIntrons > 0]
+exonlen5 <- exonlen5[numIntrons > 0]
+exonlen3 <- exonlen3[numIntrons > 0]
 numIntrons <- numIntrons[numIntrons > 0]
 
 lastIntronsTr <- unlist(sapply(introns, function(x) x[length(x)]))
@@ -47,11 +51,17 @@ maxmaxLastIntrons <- maxmaxLastIntrons[names(maxmaxLastIntrons) %in% row.names(d
 maxTrLengths <- sapply(split(lengths, substr(names(lengths), 1, 15)), max)
 maxTrLengths <- maxTrLengths[names(maxTrLengths) %in% row.names(delays.orig)]
 
+maxExon3Lengths <- sapply(split(exonlen3, substr(names(exonlen3), 1, 15)), max)
+maxExon3Lengths <- maxExon3Lengths[names(maxExon3Lengths) %in% row.names(delays.orig)]
+
+maxExon5Lengths <- sapply(split(exonlen5, substr(names(exonlen5), 1, 15)), max)
+maxExon5Lengths <- maxExon5Lengths[names(maxExon5Lengths) %in% row.names(delays.orig)]
+
 longestLast <- (maxmaxLastIntrons == maxmaxIntrons)
 lastProportion <- (maxmaxLastIntrons / maxmaxIntrons)
 myfact <- rep(0, length(lastProportion))
 
-delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, longestLast, maxTrLengths, lastProportion, myfact), by=0)
+delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, longestLast, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, myfact), by=0)
 row.names(delays) <- delays[,1]
 delays <- delays[,-1]
 I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'delay.x'] < 120) #& (delays[,'corr'] > 0.5)
@@ -265,6 +275,15 @@ blm.delay5b <- bayesglm(formula=delay.x ~ lastProportion + maxTrLengths +
 blm.delay6 <- bayesglm(formula=delay.x ~ lastProportion + maxmaxLastIntrons +
                        lastProportion*maxmaxLastIntrons + corr,
                        data=mydelays2)
+blm.delay7 <- bayesglm(formula=delay.x ~ lastProportion + maxmaxLastIntrons +
+                       maxTrLengths,
+                       data=mydelays2)
+
+blm.delay8 <- bayesglm(formula=delay.x ~ lastProportion + maxmaxLastIntrons +
+                       maxTrLengths + maxExon3Lengths + maxExon5Lengths,
+                       data=mydelays2)
+blm.delay8a <- bayesglm(formula=delay.x ~ maxExon3Lengths + maxExon5Lengths,
+                        data=mydelays2)
 
 
 blm.corr <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons + delay.x,
