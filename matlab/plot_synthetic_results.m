@@ -18,7 +18,7 @@ for k=1:length(DELAYS),
     my_x = 2*(l + 6*(k-1));
     v = sigmoidabTransform(squeeze(samples{l,k,DATASET}(:, DELAYIND, :)), 'atox', settings{DELAYIND});
     boxmat(:, my_x/2, 1) = v(:);
-    [f, xi] = ksdensity(v(:));
+    [f, xi] = ksdensity(v(:), 'bandwidth', 5);
     f_scaled = 0.95 * f / max(f);
     plot(my_x - f_scaled, xi)
     hold on
@@ -33,7 +33,8 @@ end
 axis([0 50 -5 80])
 ylabel('\Delta (min)')
 set(gca, 'XTick', 2:2:48)
-set(gca, 'XTickLabel', [1:6, 1:6, 1:6, 1:6])
+set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]))
+xlabel('t_{1/2} (min)')
 hold off
 print -deps2 synthetic_delays_violins_2014-05-05
 
@@ -61,26 +62,33 @@ end
 axis([0 50 -5 80])
 ylabel('t_{1/2} (min)')
 set(gca, 'XTick', 2:2:48)
-set(gca, 'XTickLabel', [1:4, 1:4, 1:4, 1:4, 1:4, 1:4])
+set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]))
+xlabel('\Delta (min)')
 hold off
 print -deps2 synthetic_halflives_violins_2014-05-05
 
 figure(3);
-boxplot(boxmat(:, :, 1), 'symbol', '');
+boxplot(boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
 ylabel('\Delta (min)')
-axis([0.5, 24.5, -2, 80])
+axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(DELAYS),
   plot(6*(k-1)+[0.5, 6.5], DELAYS(k)*[1, 1], 'k', 'LineWidth', 2)
 end
+hold off
+%set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]))
+xlabel('t_{1/2} (min)')
 print -depsc2 synthetic_delays_2014-05-05
 
 figure(4);
-boxplot(boxmat(:, :, 2), 'symbol', '');
+boxplot(boxmat(:, :, 2), 'symbol', '', 'labels', repmat([0 10 20 30], [1 6]));
 ylabel('t_{1/2} (min)')
-axis([0.5, 24.5, -2, 80])
+axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(HALFLIFES),
   plot(4*(k-1)+[0.5, 4.5], HALFLIFES(k)*[1, 1], 'k', 'LineWidth', 2)
 end
+hold off
+%set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]))
+xlabel('\Delta (min)')
 print -depsc2 synthetic_halflives_2014-05-05
