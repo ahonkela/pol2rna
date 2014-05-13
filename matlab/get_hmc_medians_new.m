@@ -1,4 +1,5 @@
 % analyse_hmc_new
+id = '2013-08-30';
 
 %parI = [1:4, 6, 8:10];
 
@@ -6,15 +7,15 @@
 trsets = gpnddisimExtractParamTransformSettings(r.m);
 trsets = trsets(parI);
 paramnames = paramnames(parI);
-genemeans = means;
-truemeans = zeros(size(genemeans));
+genemedians = medians;
+truemedians = zeros(size(genemedians));
 for k=1:length(trsets),
-  truemeans(:, k) = sigmoidabTransform(genemeans(:, k), 'atox', trsets{k});
+  truemedians(:, k) = sigmoidabTransform(genemedians(:, k), 'atox', trsets{k});
 end
 
 load('~/projects/pol2rnaseq/data/aliases.mat');
 
-profiles = load('~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_2013-08-30.mat');
+profiles = load(['~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_' id '.mat']);
 
 %t_pred = (((0:100)/100*sqrt(1280)).^2)';
 T_MIN = 300;
@@ -53,26 +54,26 @@ begdev30 = begdev30(B);
 
 assert(all(strcmp(mygenes, profiles.genes(B))));
 
-goodI = ~all(means==0, 2);
+goodI = ~all(medians==0, 2);
 goodgenes = genes(goodI);
-goodmeans = truemeans(goodI, :);
+goodmedians = truemedians(goodI, :);
 
 [~, A2, B2] = intersect(goodgenes, profiles.genes(B));
 assert(all(B2' == 1:length(B)));
 assert(all(strcmp(mygenes, goodgenes(A2))));
 
-delaymeans = goodmeans(A2, 5);
+delaymedians = goodmedians(A2, 5);
 
-fid = fopen('pol2max_and_delays_2013-08-30.txt', 'w');
-fprintf(fid, 'ENSG\tgene\ttmax\tdelay\tcorr\tbegdev10\tbegdev30\n');
+fid = fopen(['pol2max_and_meddelays_' id '.txt'], 'w');
+fprintf(fid, 'ENSG\tgene\ttmax\tmeddelay\tcorr\tbegdev10\tbegdev30\n');
 for k=1:length(mygenes),
   if ~isfinite(pol2intcorr(k)),
     continue;
   end
   if isfield(aliases, mygenes{k}),
-    fprintf(fid, '%s\t%s\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, aliases.(mygenes{k}), poltmax(k), delaymeans(k), pol2intcorr(k), begdev10(k), begdev30(k));
+    fprintf(fid, '%s\t%s\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, aliases.(mygenes{k}), poltmax(k), delaymedians(k), pol2intcorr(k), begdev10(k), begdev30(k));
   else
-    fprintf(fid, '%s\tNA\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, poltmax(k), delaymeans(k), pol2intcorr(k), begdev10(k), begdev30(k));
+    fprintf(fid, '%s\tNA\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, poltmax(k), delaymedians(k), pol2intcorr(k), begdev10(k), begdev30(k));
   end
 end
 fclose(fid);

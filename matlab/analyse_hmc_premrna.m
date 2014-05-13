@@ -36,6 +36,7 @@ mygene = '';
 genes = cell(length(filenames), 1);
 means = zeros(length(filenames), length(parI));
 stds = zeros(length(filenames), length(parI));
+medians = zeros(length(filenames), length(parI));
 thetameans = zeros(length(filenames), 1);
 prcts = zeros(length(filenames), length(parI), length(MYP));
 curI = 1:length(Isampl_thin);
@@ -53,6 +54,7 @@ for k=1:length(filenames),
     hk = reshape(hk, [sz(1)*sz(2), sz(3)]);
     prcts(k, :, :) = prctile(hk, MYP)';
     means(k, :) = mean(hk);
+    medians(k, :) = median(hk);
     stds(k, :) = std(hk);
   end
 end

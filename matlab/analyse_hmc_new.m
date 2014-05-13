@@ -1,7 +1,9 @@
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
+id = '2013-08-30';
+%id = '2013-11-05';
 %resultdir = '/share/synergy/analyses/hmc_results/joint/';
 
-d = dir([resultdir '*_samples_2013-08-30_unif0.mat']);
+d = dir([resultdir '*_samples_' id '_unif0.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
@@ -34,6 +36,7 @@ mygene = '';
 genes = cell(length(filenames), 1);
 means = zeros(length(filenames), length(parI));
 stds = zeros(length(filenames), length(parI));
+medians = zeros(length(filenames), length(parI));
 thetameans = zeros(length(filenames), 1);
 prcts = zeros(length(filenames), length(parI), length(MYP));
 curI = 1:length(Isampl_thin);
@@ -51,6 +54,7 @@ for k=1:length(filenames),
     hk = reshape(hk, [sz(1)*sz(2), sz(3)]);
     prcts(k, :, :) = prctile(hk, MYP)';
     means(k, :) = mean(hk);
+    medians(k, :) = median(hk);
     stds(k, :) = std(hk);
   end
 end
@@ -110,9 +114,9 @@ end
 %   % pause
 % end
 
-save result_summary_2013-08-30 means stds prcts genes
+save(['result_summary_' id], 'means', 'stds', 'prcts', 'genes');
 
-pr = load('early_profiles_2013-08-30.mat');
+pr = load(['early_profiles_' id '.mat']);
 diff1 = max(pr.mu(:, 1:20), [], 2) - min(pr.mu(:, 1:20), [], 2);
 diff2 = max(pr.mu(:, 21:30), [], 2) - min(pr.mu(:, 21:30), [], 2);
 qrtl = prctile(diff1-diff2, [25, 75]);
@@ -125,7 +129,7 @@ early_devs = zeros(length(genes), 1);
 early_devs(A) = early_dev;
 
 delaypcts = sigmoidabTransform(squeeze(prcts(:,5,:)), 'atox', [0, 299]);
-fp = fopen('hmc_results_to_browser_latest.txt', 'w');
+fp = fopen(['hmc_results_to_browser_' id '.txt'], 'w');
 fprintf(fp, 'gene 2.5%% 25%% 50%% 75%% 97.5%% begdev\n');
 for k=1:length(genes),
   fprintf(fp, '%s %f %f %f %f %f %f\n', genes{k}, delaypcts(k,:), early_devs(k));

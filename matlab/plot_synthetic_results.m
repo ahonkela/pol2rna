@@ -1,5 +1,8 @@
 % analyse_synthetic_new3
 
+FONTSIZE = 6;
+LABELSHIFT = 10;
+
 DATASET = 1;
 
 DECAYIND = 3;
@@ -36,7 +39,7 @@ set(gca, 'XTick', 2:2:48)
 set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]))
 xlabel('t_{1/2} (min)')
 hold off
-print -deps2 synthetic_delays_violins_2014-05-05
+%print -deps2 synthetic_delays_violins_2014-05-05
 
 
 figure(2);
@@ -65,22 +68,31 @@ set(gca, 'XTick', 2:2:48)
 set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]))
 xlabel('\Delta (min)')
 hold off
-print -deps2 synthetic_halflives_violins_2014-05-05
+%print -deps2 synthetic_halflives_violins_2014-05-05
 
 figure(3);
-boxplot(boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
+h = axes;
+set(h, 'FontSize', FONTSIZE)
+boxplot(h, boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
 ylabel('\Delta (min)')
 axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(DELAYS),
-  plot(6*(k-1)+[0.5, 6.5], DELAYS(k)*[1, 1], 'k', 'LineWidth', 2)
+  plot(h, 6*(k-1)+[0.5, 6.5], DELAYS(k)*[1, 1], 'k', 'LineWidth', 2)
 end
 hold off
+set(h, 'FontSize', FONTSIZE)
+set(findobj(h,'Type','text'),'FontSize',FONTSIZE);
+%set(findobj(h,'Type','text'),'VerticalAlignment','top');
 %set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]))
 xlabel('t_{1/2} (min)')
-print -depsc2 synthetic_delays_2014-05-05
+set(gcf, 'PaperUnits', 'centimeters')
+set(gcf,'PaperPositionMode','auto')
+set(gcf, 'PaperPosition', [0 0 8.7, 7.0])
+print -depsc2 synthetic_delays
 
 figure(4);
+set(gca, 'FontSize', FONTSIZE)
 boxplot(boxmat(:, :, 2), 'symbol', '', 'labels', repmat([0 10 20 30], [1 6]));
 ylabel('t_{1/2} (min)')
 axis([0.5, 24.5, -1, 80])
@@ -89,6 +101,11 @@ for k=1:length(HALFLIFES),
   plot(4*(k-1)+[0.5, 4.5], HALFLIFES(k)*[1, 1], 'k', 'LineWidth', 2)
 end
 hold off
+set(gca, 'FontSize', FONTSIZE)
+set(findobj(gca,'Type','text'),'FontSize',FONTSIZE);
 %set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]))
 xlabel('\Delta (min)')
-print -depsc2 synthetic_halflives_2014-05-05
+set(gcf, 'PaperUnits', 'centimeters')
+set(gcf,'PaperPositionMode','auto')
+set(gcf, 'PaperPosition', [0 0 8.7, 7.0])
+print -depsc2 synthetic_halflives
