@@ -86,6 +86,102 @@ longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'lastPr
 shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 
+lencos <- c(0.5, 0.75, 0.9, 0.95)
+pdf('delay_survival.pdf')
+for (l in seq_along(lencos)) {
+  lenco <- lencos[l]
+
+  shortlast <- mydelays[mydelays['lastProportion']<lenco,'meddelay.x']
+  longlast <- mydelays[mydelays['lastProportion']>lenco,'meddelay.x']
+
+  T <- seq(0, 80)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast > T[k])
+    longfreq[k] <- mean(longlast > T[k])
+    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 0.22), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
+  lines(T, longfreq, col='red')
+  legend('topright',
+         legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
+           sprintf("f>%.2f, N=%d", lenco, length(longlast))),
+         col=c('blue', 'red'), lty=1)
+}
+
+lencos <- c(1e4, 3e4, 1e5)
+for (l in seq_along(lencos)) {
+  lenco <- lencos[l]
+
+  shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'meddelay.x']
+  longlast <- mydelays[mydelays['maxTrLengths']>lenco,'meddelay.x']
+
+  T <- seq(0, 80)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast > T[k])
+    longfreq[k] <- mean(longlast > T[k])
+    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 0.22), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
+  lines(T, longfreq, col='red')
+  legend('topright',
+         legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
+           sprintf("m>%.0f, N=%d", lenco, length(longlast))),
+         col=c('blue', 'red'), lty=1)
+}
+dev.off()
+
+
+lencos <- c(0.5, 0.75, 0.9, 0.95)
+pdf('corr_survival.pdf')
+for (l in seq_along(lencos)) {
+  lenco <- lencos[l]
+
+  shortlast <- mydelays[mydelays['lastProportion']<lenco,'corr']
+  longlast <- mydelays[mydelays['lastProportion']>lenco,'corr']
+
+  T <- seq(-1, 1, len=100)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast < T[k])
+    longfreq[k] <- mean(longlast < T[k])
+    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
+  lines(T, longfreq, col='red')
+  legend('topright',
+         legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
+           sprintf("f>%.2f, N=%d", lenco, length(longlast))),
+         col=c('blue', 'red'), lty=1)
+}
+
+lencos <- c(1e4, 3e4, 1e5)
+for (l in seq_along(lencos)) {
+  lenco <- lencos[l]
+
+  shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'corr']
+  longlast <- mydelays[mydelays['maxTrLengths']>lenco,'corr']
+
+  T <- seq(-1, 1, len=100)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast < T[k])
+    longfreq[k] <- mean(longlast < T[k])
+    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
+  lines(T, longfreq, col='red')
+  legend('topright',
+         legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
+           sprintf("m>%.0f, N=%d", lenco, length(longlast))),
+         col=c('blue', 'red'), lty=1)
+}
+dev.off()
 
 
 ## cat(c(sum(longcorr), sum(!longcorr), sum(shortcorr), sum(!shortcorr)), '\n')
@@ -266,32 +362,27 @@ require(arm)
 ## blm.longest4 <- bayesglm(formula=lastProportion ~ meddelay.x,
 ##                          data=mydelays2)
 
-blm.delay <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons + corr,
-                      data=mydelays2)
-blm.delay2 <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons,
-                      data=mydelays2)
-blm.delay3 <- bayesglm(formula=meddelay.x ~ lastProportion,
-                      data=mydelays2)
-blm.delay4 <- bayesglm(formula=meddelay.x ~ maxmaxLastIntrons,
-                      data=mydelays2)
-blm.delay5 <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                       lastProportion*maxmaxLastIntrons,
-                       data=mydelays2)
-blm.delay5b <- bayesglm(formula=meddelay.x ~ lastProportion + maxTrLengths +
-                       lastProportion*maxTrLengths,
-                       data=mydelays2)
-blm.delay6 <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                       lastProportion*maxmaxLastIntrons + corr,
-                       data=mydelays2)
-blm.delay7 <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                       maxTrLengths,
-                       data=mydelays2)
+formulas.delay <- c(meddelay.x ~ lastProportion + maxmaxLastIntrons,
+                    meddelay.x ~ lastProportion,
+                    meddelay.x ~ maxmaxLastIntrons,
+                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
+                    lastProportion*maxmaxLastIntrons,
+                    meddelay.x ~ lastProportion + maxTrLengths,
+                    meddelay.x ~ lastProportion + maxTrLengths +
+                    lastProportion*maxTrLengths,
+                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
+                    maxTrLengths,
+                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
+                    maxTrLengths + maxExon3Lengths + maxExon5Lengths,
+                    meddelay.x ~ maxExon3Lengths + maxExon5Lengths)
 
-blm.delay8 <- bayesglm(formula=meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                       maxTrLengths + maxExon3Lengths + maxExon5Lengths,
-                       data=mydelays2)
-blm.delay8a <- bayesglm(formula=meddelay.x ~ maxExon3Lengths + maxExon5Lengths,
-                        data=mydelays2)
+blms.delay <- lapply(formulas.delay, bayesglm, family=gaussian(), data=mydelays2)
+aics.delay <- sapply(blms.delay, function(x) x$aic)
+
+x <- predict(blms.delay[[5]])
+y <- resid(blms.delay[[5]])
+sigma <- sigma.hat(blms.delay[[5]])
+residual.plot(x, y, sigma)
 
 
 blm.corr <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons + meddelay.x,
@@ -311,20 +402,20 @@ blm.corr6 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons +
 
 
 ##coefplot(blm.longest2, varnames=expression(Delta, rho), main="")
-par(mfrow=c(2, 1))
-par(ps=8, cex=1)
-par(mar=c(0, 0, 0, 0)+0.4)
-coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
-coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
+## par(mfrow=c(2, 1))
+## par(ps=8, cex=1)
+## par(mar=c(0, 0, 0, 0)+0.4)
+## coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
+## coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
 
-pdf('regression_coefs_med.pdf', width=87/25.4, height=80/25.4)
-par(mfrow=c(2, 1))
-par(ps=8, cex=1)
-par(mar=c(0, 0, 0, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
-coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
-coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
-dev.off()
+## pdf('regression_coefs_med.pdf', width=87/25.4, height=80/25.4)
+## par(mfrow=c(2, 1))
+## par(ps=8, cex=1)
+## par(mar=c(0, 0, 0, 0)+0.4)
+## ##par(mgp=c(1.5, 0.5, 0))
+## coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
+## coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
+## dev.off()
 
 
 
