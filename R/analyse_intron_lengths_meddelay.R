@@ -87,7 +87,12 @@ shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastPro
 shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 
 lencos <- c(0.5, 0.75, 0.9, 0.95)
-pdf('delay_survival.pdf')
+pdf('delay_survival.pdf', width=87/25.4, height=70/25.4)
+par(ps=8, cex=1)
+par(mar=c(2, 2, 0, 2)+0.4)
+par(mgp=c(1.2, 0.4, 0))
+NORM <- 10
+MAXVAL <- 0.2
 for (l in seq_along(lencos)) {
   lenco <- lencos[l]
 
@@ -97,20 +102,34 @@ for (l in seq_along(lencos)) {
   T <- seq(0, 80)
   shortfreq <- rep(0, length(T))
   longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
   for (k in seq_along(T)) {
     shortfreq[k] <- mean(shortlast > T[k])
     longfreq[k] <- mean(longlast > T[k])
-    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
   }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 0.22), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
+  plot(T, shortfreq, type='l', col='blue', ylim=c(0, 0.2), xlim=c(0, 80), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
   lines(T, longfreq, col='red')
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=1.2)
   legend('topright',
          legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
-           sprintf("f>%.2f, N=%d", lenco, length(longlast))),
-         col=c('blue', 'red'), lty=1)
+           sprintf("f>%.2f, N=%d", lenco, length(longlast)),
+           'p-value'),
+         col=c('blue', 'red', 'black'), lty=1)
 }
 
 lencos <- c(1e4, 3e4, 1e5)
+NORM <- 10
+MAXVAL <- 0.2
 for (l in seq_along(lencos)) {
   lenco <- lencos[l]
 
@@ -120,23 +139,40 @@ for (l in seq_along(lencos)) {
   T <- seq(0, 80)
   shortfreq <- rep(0, length(T))
   longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
   for (k in seq_along(T)) {
     shortfreq[k] <- mean(shortlast > T[k])
     longfreq[k] <- mean(longlast > T[k])
-    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
   }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 0.22), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
+  plot(T, shortfreq, type='l', col='blue', ylim=c(0, 0.2), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
   lines(T, longfreq, col='red')
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=1.2)
   legend('topright',
          legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
-           sprintf("m>%.0f, N=%d", lenco, length(longlast))),
-         col=c('blue', 'red'), lty=1)
+           sprintf("m>%.0f, N=%d", lenco, length(longlast)),
+           'p-value'),
+         col=c('blue', 'red', 'black'), lty=1)
 }
 dev.off()
 
 
 lencos <- c(0.5, 0.75, 0.9, 0.95)
-pdf('corr_survival.pdf')
+pdf('corr_survival.pdf', width=87/25.4, height=70/25.4)
+par(ps=8, cex=1)
+par(mar=c(2, 2, 0, 2)+0.4)
+par(mgp=c(1.2, 0.4, 0))
+NORM <- 10
+MAXVAL <- 1
 for (l in seq_along(lencos)) {
   lenco <- lencos[l]
 
@@ -146,20 +182,34 @@ for (l in seq_along(lencos)) {
   T <- seq(-1, 1, len=100)
   shortfreq <- rep(0, length(T))
   longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
   for (k in seq_along(T)) {
     shortfreq[k] <- mean(shortlast < T[k])
     longfreq[k] <- mean(longlast < T[k])
-    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
   }
   plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
   lines(T, longfreq, col='red')
-  legend('topright',
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=1.2)
+  legend('topleft',
          legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
-           sprintf("f>%.2f, N=%d", lenco, length(longlast))),
-         col=c('blue', 'red'), lty=1)
+           sprintf("f>%.2f, N=%d", lenco, length(longlast)),
+           'p-value'),
+         col=c('blue', 'red', 'black'), lty=1)
 }
 
 lencos <- c(1e4, 3e4, 1e5)
+NORM <- 30
+MAXVAL <- 1
 for (l in seq_along(lencos)) {
   lenco <- lencos[l]
 
@@ -169,17 +219,29 @@ for (l in seq_along(lencos)) {
   T <- seq(-1, 1, len=100)
   shortfreq <- rep(0, length(T))
   longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
   for (k in seq_along(T)) {
     shortfreq[k] <- mean(shortlast < T[k])
     longfreq[k] <- mean(longlast < T[k])
-    cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
   }
   plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
   lines(T, longfreq, col='red')
-  legend('topright',
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(4, seq(0, MAXVAL, len=7), seq(0, NORM, by=5))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=1.2)
+  legend('topleft',
          legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
-           sprintf("m>%.0f, N=%d", lenco, length(longlast))),
-         col=c('blue', 'red'), lty=1)
+           sprintf("m>%.0f, N=%d", lenco, length(longlast)),
+           'p-value'),
+         col=c('blue', 'red', 'black'), lty=1)
 }
 dev.off()
 
@@ -325,110 +387,3 @@ dev.off()
 ## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 ## dev.off()
 
-
-
-##library(ggplot2)
-##qplot(factor(myfact), lastProportion, data=mydelays, geom = "violin")
-
-## ##glm.longest <- glm(formula=longestLast ~ corr + delay, family=binomial)
-## glm.longest <- glm(formula=longestLast ~ corr + delay + corr*delay, family=binomial)
-mydelays2 = delays[I2,]
-fields <- c('lastProportion', 'maxmaxLastIntrons', 'maxTrLengths', 'maxExon3Lengths', 'maxExon5Lengths', 'maxmaxIntrons')
-for (k in fields) {
-  mydelays2[,k] <- mydelays2[,k] - mean(mydelays2[,k])
-  mydelays2[,k] <- mydelays2[,k] / (2*sd(mydelays2[,k]))
-}
-##mydelays2[,'meddelay.x'] = mydelays2[,'meddelay.x']/60
-##mydelays2[,'maxmaxLastIntrons'] = mydelays2[,'maxmaxLastIntrons'] * sd(mydelays2[,'lastProportion']) / sd(mydelays2[,'maxmaxLastIntrons'])
-##mydelays2[,'maxmaxLastIntrons'] = mydelays2[,'maxmaxLastIntrons'] * sd(mydelays2[,'lastProportion']) / sd(mydelays2[,'maxmaxLastIntrons'])
-##mydelays2[,'maxmaxLastIntrons'] = mydelays2[,'maxmaxLastIntrons']/1000
-
-## lm.longest <- lm(formula=lastProportion ~ corr + meddelay.x + corr*meddelay.x, data=mydelays2)
-## summary(lm.longest)
-## anova(lm.longest)
-
-require(arm)
-##blm.length <- bayesglm(formula=maxmaxLastIntrons ~ corr + meddelay.x + corr*meddelay.x,
-##                       data=mydelays2)
-##summary(blm.length)
-##anova(blm.length)
-
-## blm.longest <- bayesglm(formula=lastProportion ~ corr + meddelay.x + corr*meddelay.x,
-##                         data=mydelays2)
-## blm.longest2 <- bayesglm(formula=lastProportion ~ corr + meddelay.x,
-##                          data=mydelays2)
-## blm.longest3 <- bayesglm(formula=lastProportion ~ corr,
-##                          data=mydelays2)
-## blm.longest4 <- bayesglm(formula=lastProportion ~ meddelay.x,
-##                          data=mydelays2)
-
-formulas.delay <- c(meddelay.x ~ lastProportion + maxmaxLastIntrons,
-                    meddelay.x ~ lastProportion,
-                    meddelay.x ~ maxmaxLastIntrons,
-                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                    lastProportion*maxmaxLastIntrons,
-                    meddelay.x ~ lastProportion + maxTrLengths,
-                    meddelay.x ~ lastProportion + maxTrLengths +
-                    lastProportion*maxTrLengths,
-                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                    maxTrLengths,
-                    meddelay.x ~ lastProportion + maxmaxLastIntrons +
-                    maxTrLengths + maxExon3Lengths + maxExon5Lengths,
-                    meddelay.x ~ maxExon3Lengths + maxExon5Lengths)
-
-blms.delay <- lapply(formulas.delay, bayesglm, family=gaussian(), data=mydelays2)
-aics.delay <- sapply(blms.delay, function(x) x$aic)
-
-x <- predict(blms.delay[[5]])
-y <- resid(blms.delay[[5]])
-sigma <- sigma.hat(blms.delay[[5]])
-residual.plot(x, y, sigma)
-
-
-blm.corr <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons + meddelay.x,
-                      data=mydelays2)
-blm.corr2 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons,
-                      data=mydelays2)
-blm.corr3 <- bayesglm(formula=corr ~ lastProportion,
-                      data=mydelays2)
-blm.corr4 <- bayesglm(formula=corr ~ maxmaxLastIntrons,
-                      data=mydelays2)
-blm.corr5 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons +
-                      lastProportion*maxmaxLastIntrons,
-                      data=mydelays2)
-blm.corr6 <- bayesglm(formula=corr ~ lastProportion + maxmaxLastIntrons +
-                      lastProportion*maxmaxLastIntrons + meddelay.x,
-                      data=mydelays2)
-
-
-##coefplot(blm.longest2, varnames=expression(Delta, rho), main="")
-## par(mfrow=c(2, 1))
-## par(ps=8, cex=1)
-## par(mar=c(0, 0, 0, 0)+0.4)
-## coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
-## coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
-
-## pdf('regression_coefs_med.pdf', width=87/25.4, height=80/25.4)
-## par(mfrow=c(2, 1))
-## par(ps=8, cex=1)
-## par(mar=c(0, 0, 0, 0)+0.4)
-## ##par(mgp=c(1.5, 0.5, 0))
-## coefplot(blm.delay2, varnames=expression("1", beta[f], beta[m]), main="Regression of mean delay")
-## coefplot(blm.corr2, varnames=expression("1", beta[f], beta[m]), main="Regression of Pol II-pre-mRNA correlation")
-## dev.off()
-
-
-
-
-## blm.length <- bayesglm(formula=maxmaxLastIntrons ~ corr + meddelay.x + corr*meddelay.x,
-##                        data=mydelays2)
-## blm.length2 <- bayesglm(formula=maxmaxLastIntrons ~ corr + meddelay.x,
-##                         data=mydelays2)
-## blm.length3 <- bayesglm(formula=maxmaxLastIntrons ~ corr,
-##                         data=mydelays2)
-## blm.length4 <- bayesglm(formula=maxmaxLastIntrons ~ meddelay.x,
-##                         data=mydelays2)
-## summary(blm.length)
-## summary(blm.length2)
-## summary(blm.length3)
-## summary(blm.length4)
