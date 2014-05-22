@@ -387,3 +387,4 @@ dev.off()
 ## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 ## dev.off()
 
+## write.table(delays[,c('maxTrLengths', 'lastProportion')], file='gene_structures.txt', sep='\t', quote=FALSE)
