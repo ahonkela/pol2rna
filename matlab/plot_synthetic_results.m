@@ -32,8 +32,12 @@ end
 
 figure(1);
 set(gca, 'FontSize', FONTSIZE)
-boxplot(boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
+%boxplot(boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
+bplot(boxmat(:, :, 1), 'nomean', 'linewidth', 1);
+set(gca, 'FontSize', FONTSIZE)
 ylabel('\Delta (min)')
+set(gca, 'XTick', 1:24);
+set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]));
 axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(DELAYS),
@@ -41,7 +45,7 @@ for k=1:length(DELAYS),
 end
 hold off
 set(gca, 'FontSize', FONTSIZE)
-set(findobj(gca,'Type','text'),'FontSize',FONTSIZE);
+%set(findobj(gca,'Type','text'),'FontSize',FONTSIZE);
 %set(findobj(h,'Type','text'),'VerticalAlignment','top');
 %set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]))
 xlabel('t_{1/2} (min)')
@@ -52,8 +56,11 @@ print -depsc2 synthetic_delays
 
 figure(2);
 set(gca, 'FontSize', FONTSIZE)
-boxplot(boxmat(:, :, 2), 'symbol', '', 'labels', repmat([0 10 20 30], [1 6]));
+bplot(boxmat(:, :, 2), 'nomean', 'linewidth', 1);
+set(gca, 'FontSize', FONTSIZE)
 ylabel('t_{1/2} (min)')
+set(gca, 'XTick', 1:24);
+set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]));
 axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(HALFLIFES),
@@ -61,7 +68,7 @@ for k=1:length(HALFLIFES),
 end
 hold off
 set(gca, 'FontSize', FONTSIZE)
-set(findobj(gca,'Type','text'),'FontSize',FONTSIZE);
+%set(findobj(gca,'Type','text'),'FontSize',FONTSIZE);
 %set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]))
 xlabel('\Delta (min)')
 set(gcf, 'PaperUnits', 'centimeters')

@@ -341,31 +341,18 @@ delays.clipped[delays.clipped > 120] <- 121
 h <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
 h$counts[1] <- h$counts[1]-1500
 
-delays.clipped <- delays[J,'meddelay.y']
-delays.clipped[delays.clipped > 120] <- 121
-h2 <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
-h2$counts[1] <- h2$counts[1]-1500
-
-par(mfrow=c(1, 2))
-plot(h, axes=FALSE, main="Pol II - mRNA delays", xlab="Delay (min)", ylab="# of genes")
-axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-plot(h2, axes=FALSE, main="pre-mRNA - mRNA delays", xlab="Delay (min)", ylab="# of genes")
+par(mfrow=c(1, 1))
+plot(h, axes=FALSE, main="Posterior median delays", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 
-pdf('delay_histogram_med.pdf', width=178/25.4, height=70/25.4)
+pdf('delay_histogram_med.pdf', width=87/25.4, height=70/25.4)
 par(ps=8, cex=1)
 par(mar=c(2, 2, 1, 0)+0.4)
 par(mgp=c(1.5, 0.5, 0))
-par(mfrow=c(1, 2))
-plot(h, axes=FALSE, main="Pol II - mRNA delays", xlab="Delay (min)", ylab="# of genes")
-axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-plot(h2, axes=FALSE, main="pre-mRNA - mRNA delays", xlab="Delay (min)", ylab="# of genes")
+par(mfrow=c(1, 1))
+plot(h, axes=FALSE, main="Posterior median delays", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
