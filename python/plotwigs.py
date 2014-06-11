@@ -100,13 +100,24 @@ def plot_wigs(v, genes, savepath=None):
     for g in genes:
         plt.close()
         try:
-            u = v[g + '_unspliced']
+            u = v[g]
         except:
             print "Plotting gene", g, "failed (no data?)"
-        if savepath is not None:
-            plot_one(u, g, savepath+'/'+g+'_premrna.png')
         else:
-            plot_one(u, g)
+            if savepath is not None:
+                plot_one(u, g, savepath+'/'+g+'_premrna.png')
+            else:
+                plot_one(u, g)
+
+def remove_zeros(d):
+    return {k:v[np.sum(v, 1) != 0,] for k, v in d.items()}
+
+def summarise_halves(d):
+    return {k: (sum(v[(v.shape[0]/2):], 0)) / (sum(v, 0) + 1)
+            for k, v in d.items() if v.shape[0] > 1}
+
+def summarise_halves2(d):
+    return {k: np.mean(v[5:8]) - np.mean(v[2:5]) for k,v in d.items()}
 
 def do_polyfit(v):
     fits = {k: np.polyfit(np.arange(u.shape[0]), u, 1) for k, u in v.items()}
@@ -117,6 +128,11 @@ def save_fits(fits2, fname):
     with open(fname, 'w') as f:
         for k, v in sorted(fits2.items()):
             f.write('%s\t%f\n' % (k, v[0]))
+
+def save_fits2(fits2, fname):
+    with open(fname, 'w') as f:
+        for k, v in sorted(fits2.items()):
+            f.write('%s\t%f\n' % (k, v))
 
 def shorten_keys(d):
     return {k[0:15]: v for k, v in d.items()}

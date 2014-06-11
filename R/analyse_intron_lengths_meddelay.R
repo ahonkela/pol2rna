@@ -1,6 +1,6 @@
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
 delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
-premrna.fits <- read.table('../python/premrna_polyfits_2014-06-10.txt', row.names=1, header=FALSE)
+premrna.fits <- read.table('../python/premrna_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
 names(premrna.fits) <- 'premrna_trend'
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 delays.orig <- delays.pol2
