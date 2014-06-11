@@ -1,7 +1,12 @@
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
 delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
-premrna.fits <- read.table('../python/premrna_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
-names(premrna.fits) <- 'premrna_trend'
+premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
+names(premrna.fits0) <- 'premrna_trend'
+pol2.fits <- read.table('../python/pol2_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
+names(pol2.fits) <- 'pol2_trend'
+premrna.fits <- merge(premrna.fits0, pol2.fits, by=0)
+row.names(premrna.fits) <- premrna.fits[,'Row.names']
+premrna.fits <- premrna.fits[!names(premrna.fits) %in% c('Row.names')]
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 delays.orig <- delays.pol2
 delays.joint <- merge(delays.pol2, delays.premrna, by=0)
@@ -410,6 +415,41 @@ plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation 
 MAXVAL <- 0.03
 NORM <- 3
 plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue')
+lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
+axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
+lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=1.2)
+dev.off()
+
+
+t <- 0:60
+v <- t
+pvals <- t
+for (i in seq_along(t)) {
+  v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"pol2_trend"])
+  if (i > 1)
+    pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'pol2_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'pol2_trend'])$p.value
+}
+
+MAXVAL <- 0.03
+NORM <- 3
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue')
+lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
+axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
+lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=1.2)
+
+pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
+par(ps=8, cex=1)
+par(mar=c(2, 2, 0, 2)+0.4)
+par(mgp=c(1.2, 0.4, 0))
+##par(mar=c(2, 2, 1, 0)+0.4)
+##par(mgp=c(1.5, 0.5, 0))
+par(mfrow=c(1, 1))
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l')
+MAXVAL <- 0.03
+NORM <- 3
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue')
 lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
 axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
 lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
