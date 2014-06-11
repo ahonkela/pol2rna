@@ -381,3 +381,37 @@ dev.off()
 ## dev.off()
 
 ## write.table(delays[,c('maxTrLengths', 'lastProportion')], file='gene_structures.txt', sep='\t', quote=FALSE)
+
+t <- 0:60
+v <- t
+pvals <- t
+for (i in seq_along(t)) {
+  v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"premrna_trend"])
+  if (i > 1)
+    pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'premrna_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'premrna_trend'])$p.value
+}
+
+MAXVAL <- 0.03
+NORM <- 3
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue')
+lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
+axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
+lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=1.2)
+
+pdf('premrna_halfdiff.pdf', width=87/25.4, height=70/25.4)
+par(ps=8, cex=1)
+par(mar=c(2, 2, 0, 2)+0.4)
+par(mgp=c(1.2, 0.4, 0))
+##par(mar=c(2, 2, 1, 0)+0.4)
+##par(mgp=c(1.5, 0.5, 0))
+par(mfrow=c(1, 1))
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l')
+MAXVAL <- 0.03
+NORM <- 3
+plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue')
+lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
+axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
+lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=1.2)
+dev.off()
