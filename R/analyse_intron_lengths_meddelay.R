@@ -1,5 +1,7 @@
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
 delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
+premrna.fits <- read.table('../python/premrna_polyfits_2014-06-10.txt', row.names=1, header=FALSE)
+names(premrna.fits) <- 'premrna_trend'
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 delays.orig <- delays.pol2
 delays.joint <- merge(delays.pol2, delays.premrna, by=0)
@@ -12,6 +14,10 @@ n <- names(delays.orig)
 n[grep('corr.x', n)] <- 'corr'
 n[grep('gene.x', n)] <- 'gene'
 names(delays.orig) <- n
+delays2 <- merge(delays.orig, premrna.fits, by=0)
+row.names(delays2) <- delays2[,'Row.names']
+delays2 <- delays2[!names(delays2) %in% c('Row.names')]
+delays.orig <- delays2
 
 t <- readLines('intron_lengths.txt.lengths2')
 l <- strsplit(t, '\t')

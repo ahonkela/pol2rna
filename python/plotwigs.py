@@ -3,9 +3,11 @@ import re
 import numpy as np
 import math
 import cPickle
+import matplotlib
+matplotlib.use("AGG")
 from matplotlib import pyplot as plt
 
-SAVEPATH="/share/synergy/analyses/premrna/"
+SAVEPATH=os.path.expanduser("~/projects/pol2rnaseq/")
 DATAPATH="/cs/taatto/group/mlb/synergy/data/2012-03_RNA"
 PREMRNA_RE=re.compile(r""".*unspliced""")
 READLEN=35.0
@@ -99,19 +101,31 @@ def plot_wigs(v, genes, savepath=None):
         plt.close()
         try:
             u = v[g + '_unspliced']
-            if savepath is not None:
-                plot_one(u, g, savepath+'/'+g+'_premrna.png')
-            else:
-                plot_one(u, g)
         except:
             print "Plotting gene", g, "failed (no data?)"
+        if savepath is not None:
+            plot_one(u, g, savepath+'/'+g+'_premrna.png')
+        else:
+            plot_one(u, g)
 
+def do_polyfit(v):
+    fits = {k: np.polyfit(np.arange(u.shape[0]), u, 1) for k, u in v.items()}
+    fits2 = {k: np.polyfit(np.arange(10), u[0,], 1) for k, u in fits.items()}
+    return fits, fits2
 
-w = load_wigs()
-v = combine_wigs(w)
+def save_fits(fits2, fname):
+    with open(fname, 'w') as f:
+        for k, v in sorted(fits2.items()):
+            f.write('%s\t%f\n' % (k, v[0]))
 
-PLOTPATH="/share/synergy/analyses/premrna"
+def shorten_keys(d):
+    return {k[0:15]: v for k, v in d.items()}
+
 with open(os.path.expanduser('~/Dropbox/projects/pol2rnaseq/interesting_genes.txt'), 'r') as f:
     genes = [x.strip() for x in f.readlines()]
 
-plot_wigs(v, genes, PLOTPATH)
+def runme():
+    w = load_wigs()
+    v = combine_wigs(w)
+    PLOTPATH=os.path.expanduser("~/public_html/synergy/premrna_plots/")
+    plot_wigs(v, genes, PLOTPATH)

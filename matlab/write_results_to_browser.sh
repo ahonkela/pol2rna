@@ -29,6 +29,7 @@ insert_results.py -f "$SUPPFILE2" --log-likelihood-column=3 "$DBFILE" "pol2rnase
 insert_figures.py -d ',' "$DBFILE" "pol2tmax" "$REGNAME" "pol2rnaseq" <<EOF
 http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_2013-08-30.png, Pol II model, , 3
 http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots_2013-11-05/\${probe_name}_hmc_2013-11-05.png, pre-mRNA model, , 2
+http://www.cs.helsinki.fi/u/ahonkela/synergy/premrna_plots/\${probe_name}_premrna.png, pre-mRNA data, , 1
 EOF
 
 
@@ -63,6 +64,7 @@ insert_results.py -f "$SUPPFILE2" --log-likelihood-column=3 "$DBFILE" "pol2rnase
 insert_figures.py -d ',' "$DBFILE" "pol2tmax" "$REGNAME" "pol2rnaseq" <<EOF
 http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_2013-08-30.png, Pol II model, , 2
 http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots_2013-11-05/\${probe_name}_hmc_2013-11-05.png, pre-mRNA model, , 3
+http://www.cs.helsinki.fi/u/ahonkela/synergy/premrna_plots/\${probe_name}_premrna.png, pre-mRNA data, , 1
 EOF
 
 
