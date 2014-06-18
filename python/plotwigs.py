@@ -4,6 +4,7 @@ import numpy as np
 import math
 import cPickle
 import matplotlib
+import h5py
 matplotlib.use("AGG")
 from matplotlib import pyplot as plt
 
@@ -133,6 +134,12 @@ def save_fits2(fits2, fname):
     with open(fname, 'w') as f:
         for k, v in sorted(fits2.items()):
             f.write('%s\t%f\n' % (k, v))
+
+def save_data(data, fname):
+    h = h5py.File(fname, 'w')
+    for k, v in data.items():
+        h.create_dataset(k, data=np.array(v, dtype=v.dtype))
+    h.close()
 
 def shorten_keys(d):
     return {k[0:15]: v for k, v in d.items()}
