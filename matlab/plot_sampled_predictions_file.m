@@ -1,4 +1,4 @@
-function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME, FILESPEC, PLOTPREMRNA, PREMRNAMODEL),
+function plot_sampled_predictions_file(gene, sampledir, filestem, format, SQRTTIME, FILESPEC, PLOTPREMRNA, PREMRNAMODEL, SHORTHIST),
 
 if nargin < 4,
   format = 'png';
@@ -14,6 +14,10 @@ end
 
 if nargin < 8,
   PREMRNAMODEL = 0;
+end
+
+if nargin < 9,
+  SHORTHIST = 0;
 end
 
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
@@ -84,15 +88,15 @@ end
 
 if PREMRNAMODEL,
   if PLOTPREMRNA,
-    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_pol2)
+    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_pol2, SHORTHIST)
   else
-    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
+    plot_sampled_predictions_premrna(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, [], SHORTHIST)
   end
 else
   if PLOTPREMRNA,
-    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_premrna)
+    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, my_premrna, SHORTHIST)
   else
-    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME)
+    plot_sampled_predictions(r.m, mysamples, gene, NODELAYHIST, SQRTTIME, [], SHORTHIST)
   end
 end
 

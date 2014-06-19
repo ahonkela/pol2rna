@@ -1,4 +1,4 @@
-function plot_sampled_predictions(m, HMCsamples, gene_name, NODELAYHIST, SQRTTIME, premrnadata),
+function plot_sampled_predictions(m, HMCsamples, gene_name, NODELAYHIST, SQRTTIME, premrnadata, SHORTHIST),
 
 if nargin < 4,
   NODELAYHIST=0;
@@ -11,7 +11,15 @@ end
 if nargin < 6,
   PLOTPREMRNA=0;
 else
-  PLOTPREMRNA=1;
+  if isempty(premrnadata),
+    PLOTPREMRNA=0;
+  else
+    PLOTPREMRNA=1;
+  end
+end
+
+if nargin < 7,
+  SHORTHIST = 0;
 end
 
 if PLOTPREMRNA,
@@ -149,10 +157,10 @@ if ~NODELAYHIST,
   subplot(PLOTROWS, PLOTCOLS, PLOTCOLS*(1:PLOTROWS));
   vals = sigmoidabTransform(HMCsamples(:, delayI), 'atox', settings{delayI});
   [n, x] = hist(vals, 5:10:295);
-  if x(max(find(n))) < 100,
+  if x(max(find(n))) < 100 | SHORTHIST,
     %V = axis;
     %axis([0 100 V(3:4)]);
-    bar(x(1:10),n(1:10)/sum(n),settings{delayI},'hist');
+    bar(x(1:10),n(1:10)/sum(n),[0, 100],'hist');
     axis([0 100 0 1]);
     xmax = 100;
   else
