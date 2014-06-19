@@ -105,7 +105,7 @@ longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'lastPr
 shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 
-lencos <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 0.9, 0.95)
+lencos <- c(0.2, 0.3, 0.4, 0.5)
 pdf('delay_survival.pdf', width=87/25.4, height=70/25.4)
 par(ps=8, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
@@ -397,16 +397,21 @@ dev.off()
 
 t <- 0:60
 v <- t
+v2 <- v
+v2[1] <- NA
 pvals <- t
 for (i in seq_along(t)) {
   v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"premrna_trend"])
-  if (i > 1)
+  if (i > 1) {
+    v2[i] <- mean(mydelays[mydelays["meddelay.x"]<t[i],"premrna_trend"])
     pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'premrna_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'premrna_trend'])$p.value
+  }
 }
 
 MAXVAL <- 0.025
 NORM <- 5
-plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue')
+plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
+lines(t, v2, type='l', col='red')
 lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
 axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
 lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
@@ -419,10 +424,15 @@ par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
 ##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
-plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l')
+plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
+lines(t, v2, type='l', col='red')
+legend('right',
+       legend=c(expression(Delta > x), expression(Delta < x)),
+       col=c('blue', 'red'), lty=1)
 MAXVAL <- 0.025
 NORM <- 5
-plot(t, v, xlab="Delay lower bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue')
+plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
+lines(t, v2, type='l', col='red')
 lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
 axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
 lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
@@ -432,16 +442,21 @@ dev.off()
 
 t <- 0:60
 v <- t
+v2 <- v
+v2[1] <- NA
 pvals <- t
 for (i in seq_along(t)) {
   v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"pol2_trend"])
-  if (i > 1)
+  if (i > 1) {
+    v2[i] <- mean(mydelays[mydelays["meddelay.x"]<t[i],"pol2_trend"])
     pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'pol2_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'pol2_trend'])$p.value
+  }
 }
 
 MAXVAL <- 0.03
 NORM <- 5
-plot(t, -v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
+plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
+lines(t, -v2, col='red')
 lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
 axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
 lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
@@ -454,10 +469,12 @@ par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
 ##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
-plot(t, -v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l')
+plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
+lines(t, -v2, col='red')
 MAXVAL <- 0.03
 NORM <- 3
-plot(t, -v, xlab="Delay lower bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue')
+plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
+lines(t, -v2, col='red')
 lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
 axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
 lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
