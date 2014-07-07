@@ -92,90 +92,97 @@ I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'
 I2 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 80) #& (delays[,'corr'] > 0.5)
 I3 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 60) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
-##lastProportion <- mydelays[,'maxmaxLastIntrons']/mydelays[,'maxTrLengths']
-lastProportion <- mydelays[,'lastProportion']/mydelays[,'maxmaxIntrons']
-longcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'lastProportion']
-longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'lastProportion']
-shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastProportion']
-shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 
-lencos <- c(0.2, 0.3, 0.4, 0.5)
-pdf('delay_survival.pdf', width=87/25.4, height=70/25.4)
+
+
+pdf('delay_survival.pdf', width=87/25.4, height=50/25.4)
 par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(mfrow=c(1, 2))
+par(tck=-0.03)
+
 NORM <- 10
-MAXVAL <- 0.2
-for (l in seq_along(lencos)) {
-  lenco <- lencos[l]
+MAXVAL <- 0.25
+lenco <- 1e4
 
-  shortlast <- mydelays[mydelays['lastProportion']<lenco,'meddelay.x']
-  longlast <- mydelays[mydelays['lastProportion']>lenco,'meddelay.x']
+shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'meddelay.x']
+longlast <- mydelays[mydelays['maxTrLengths']>lenco,'meddelay.x']
 
-  T <- seq(0, 80)
-  shortfreq <- rep(0, length(T))
-  longfreq <- rep(0, length(T))
-  counts <- matrix(0, length(T), 4)
-  pvals <- rep(1, length(T))
-  for (k in seq_along(T)) {
-    shortfreq[k] <- mean(shortlast > T[k])
-    longfreq[k] <- mean(longlast > T[k])
-    counts[k, 1] <- sum(shortlast < T[k])
-    counts[k, 2] <- sum(shortlast >= T[k])
-    counts[k, 3] <- sum(longlast < T[k])
-    counts[k, 4] <- sum(longlast >= T[k])
-    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-  }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(0, 0.2), xlim=c(0, 80), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
-  lines(T, longfreq, col='red')
-  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
-  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-  mtext(expression(-log[10](p-value)), side=4, line=1.2)
-  legend('topright',
-         legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
-           sprintf("f>%.2f, N=%d", lenco, length(longlast)),
-           'p-value'),
-         col=c('blue', 'red', 'black'), lty=1)
+T <- seq(0, 80)
+shortfreq <- rep(0, length(T))
+longfreq <- rep(0, length(T))
+counts <- matrix(0, length(T), 4)
+pvals <- rep(1, length(T))
+for (k in seq_along(T)) {
+  shortfreq[k] <- mean(shortlast > T[k])
+  longfreq[k] <- mean(longlast > T[k])
+  counts[k, 1] <- sum(shortlast < T[k])
+  counts[k, 2] <- sum(shortlast >= T[k])
+  counts[k, 3] <- sum(longlast < T[k])
+  counts[k, 4] <- sum(longlast >= T[k])
+  pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+  ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
 }
+plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), ylab=NA, xlab=NA, axes=FALSE)
+lines(T, longfreq, col='red')
+lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+axis(side=1, labels = NA)
+axis(side=1, lwd = 0, line = -.3)
+mtext("t (min)", side=1, line=0.3)
+axis(side=2, labels = NA)
+axis(side=2, lwd = 0, line = 0)
+mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
+axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
+lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=0.3)
+leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, length(shortlast)),
+         sprintf("m>%.0f\n(N=%d)", lenco, length(longlast)),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1)
 
-lencos <- c(1e4, 3e4, 1e5)
 NORM <- 10
-MAXVAL <- 0.2
-for (l in seq_along(lencos)) {
-  lenco <- lencos[l]
+MAXVAL <- 0.25
+lenco <- 0.2
 
-  shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'meddelay.x']
-  longlast <- mydelays[mydelays['maxTrLengths']>lenco,'meddelay.x']
+shortlast <- mydelays[mydelays['lastProportion']<lenco,'meddelay.x']
+longlast <- mydelays[mydelays['lastProportion']>lenco,'meddelay.x']
 
-  T <- seq(0, 80)
-  shortfreq <- rep(0, length(T))
-  longfreq <- rep(0, length(T))
-  counts <- matrix(0, length(T), 4)
-  pvals <- rep(1, length(T))
-  for (k in seq_along(T)) {
-    shortfreq[k] <- mean(shortlast > T[k])
-    longfreq[k] <- mean(longlast > T[k])
-    counts[k, 1] <- sum(shortlast < T[k])
-    counts[k, 2] <- sum(shortlast >= T[k])
-    counts[k, 3] <- sum(longlast < T[k])
-    counts[k, 4] <- sum(longlast >= T[k])
-    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-  }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(0, 0.2), ylab=expression("Fraction of genes with" ~ Delta > t), xlab="t (min)")
-  lines(T, longfreq, col='red')
-  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
-  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-  mtext(expression(-log[10](p-value)), side=4, line=1.2)
-  legend('topright',
-         legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
-           sprintf("m>%.0f, N=%d", lenco, length(longlast)),
-           'p-value'),
-         col=c('blue', 'red', 'black'), lty=1)
+T <- seq(0, 80)
+shortfreq <- rep(0, length(T))
+longfreq <- rep(0, length(T))
+counts <- matrix(0, length(T), 4)
+pvals <- rep(1, length(T))
+for (k in seq_along(T)) {
+  shortfreq[k] <- mean(shortlast > T[k])
+  longfreq[k] <- mean(longlast > T[k])
+  counts[k, 1] <- sum(shortlast < T[k])
+  counts[k, 2] <- sum(shortlast >= T[k])
+  counts[k, 3] <- sum(longlast < T[k])
+  counts[k, 4] <- sum(longlast >= T[k])
+  pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+  ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
 }
+plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), xlim=c(0, 80), ylab=NA, xlab=NA, axes=FALSE)
+lines(T, longfreq, col='red')
+lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+axis(side=1, labels = NA)
+axis(side=1, lwd = 0, line = -.3)
+mtext("t (min)", side=1, line=0.3)
+axis(side=2, labels = NA)
+axis(side=2, lwd = 0, line = 0)
+mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
+axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
+lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+mtext(expression(-log[10](p-value)), side=4, line=0.3)
+leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, length(shortlast)),
+         sprintf("f>%.2f\n(N=%d)", lenco, length(longlast)),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
 dev.off()
 
 
@@ -184,6 +191,7 @@ pdf('corr_survival.pdf', width=87/25.4, height=70/25.4)
 par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
+par(mfrow=c(1, 1))
 NORM <- 10
 MAXVAL <- 1
 for (l in seq_along(lencos)) {
@@ -259,22 +267,7 @@ for (l in seq_along(lencos)) {
 dev.off()
 
 
-## cat(c(sum(longcorr), sum(!longcorr), sum(shortcorr), sum(!shortcorr)), '\n')
-## cat(c(sum(longuncorr), sum(!longuncorr), sum(shortuncorr), sum(!shortuncorr)), '\n')
-## cat(c(sum(longcorr) / length(longcorr), sum(shortcorr)/length(shortcorr)), '\n')
-## cat(c(sum(longuncorr) / length(longuncorr), sum(shortuncorr)/length(shortuncorr)), '\n')
-## fisher.test(matrix(c(sum(longcorr), sum(!longcorr), sum(shortcorr), sum(!shortcorr)), 2))
-## fisher.test(matrix(c(sum(longuncorr), sum(!longuncorr), sum(shortcorr), sum(!shortcorr)), 2))
-
-## fisher.test(matrix(c(sum(longuncorr) + sum(longcorr),
-##                      sum(!longuncorr) + sum(!longcorr),
-##                      sum(shortcorr) + sum(shortuncorr),
-##                      sum(!shortcorr) + sum(!shortuncorr)), 2))
-
-## boxplot(list(longuncorr=longuncorr, longcorr=longcorr, shortuncorr=shortuncorr, shortcorr=shortcorr))
-
 library(vioplot)
-##vioplot(longuncorr, longcorr, shortuncorr, shortcorr, names=expression(Delta > 15 ~ "min," ~ rho < 0.5, Delta > 15 ~ "min," ~ rho > 0.5, Delta < 15 ~ "min," ~ rho < 0.5, Delta < 15 ~ "min," ~ rho > 0.5))
 
 pdf('intron_lengths_med.pdf', width=178/25.4, height=70/25.4)
 par(mfrow=c(1, 3))
