@@ -3,6 +3,12 @@
 FONTSIZE = 6;
 LABELSHIFT = 10;
 
+FIGWIDTH = 8.7;
+FIGHEIGHT = 4.5;
+
+BOXLINEWIDTH=0.5;
+TRUELINEWIDTH=1;
+
 DATASET = 1;
 
 DECAYIND = 3;
@@ -33,7 +39,7 @@ end
 figure(1);
 set(gca, 'FontSize', FONTSIZE)
 %boxplot(boxmat(:, :, 1), 'symbol', '', 'labels', repmat([2 4 8 16 32 64], [1 4]));
-bplot(boxmat(:, :, 1), 'nomean', 'linewidth', 1);
+bplot(boxmat(:, :, 1), 'nomean', 'linewidth', BOXLINEWIDTH);
 set(gca, 'FontSize', FONTSIZE)
 ylabel('\Delta (min)')
 set(gca, 'XTick', 1:24);
@@ -41,7 +47,7 @@ set(gca, 'XTickLabel', repmat([2 4 8 16 32 64], [1 4]));
 axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(DELAYS),
-  plot(6*(k-1)+[0.5, 6.5], DELAYS(k)*[1, 1], 'k', 'LineWidth', 2)
+  plot(6*(k-1)+[0.5, 6.5], DELAYS(k)*[1, 1], 'k', 'LineWidth', TRUELINEWIDTH)
 end
 hold off
 set(gca, 'FontSize', FONTSIZE)
@@ -51,12 +57,12 @@ set(gca, 'FontSize', FONTSIZE)
 xlabel('t_{1/2} (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
-set(gcf, 'PaperPosition', [0 0 8.7, 7.0])
+set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
 print -depsc2 synthetic_delays
 
 figure(2);
 set(gca, 'FontSize', FONTSIZE)
-bplot(boxmat(:, :, 2), 'nomean', 'linewidth', 1);
+bplot(boxmat(:, :, 2), 'nomean', 'linewidth', BOXLINEWIDTH);
 set(gca, 'FontSize', FONTSIZE)
 ylabel('t_{1/2} (min)')
 set(gca, 'XTick', 1:24);
@@ -64,7 +70,7 @@ set(gca, 'XTickLabel', repmat([0 10 20 30], [1 6]));
 axis([0.5, 24.5, -1, 80])
 hold on
 for k=1:length(HALFLIFES),
-  plot(4*(k-1)+[0.5, 4.5], HALFLIFES(k)*[1, 1], 'k', 'LineWidth', 2)
+  plot(4*(k-1)+[0.5, 4.5], HALFLIFES(k)*[1, 1], 'k', 'LineWidth', TRUELINEWIDTH)
 end
 hold off
 set(gca, 'FontSize', FONTSIZE)
@@ -73,5 +79,5 @@ set(gca, 'FontSize', FONTSIZE)
 xlabel('\Delta (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
-set(gcf, 'PaperPosition', [0 0 8.7, 7.0])
+set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
 print -depsc2 synthetic_halflives
