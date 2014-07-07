@@ -1,3 +1,10 @@
+# FIGURE PARAMETERS
+FONTSIZE=6
+
+HISTWIDTH=62/25.4
+HISTHEIGHT=45/25.4
+
+
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
 delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
 premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-18.txt', row.names=1, header=FALSE)
@@ -22,7 +29,7 @@ names(delays.orig) <- n
 delays2 <- merge(delays.orig, premrna.fits, by=0)
 row.names(delays2) <- delays2[,'Row.names']
 delays2 <- delays2[!names(delays2) %in% c('Row.names')]
-delays.orig <- delays2
+##delays.orig <- delays2
 
 t <- readLines('intron_lengths.txt.lengths2')
 l <- strsplit(t, '\t')
@@ -75,31 +82,18 @@ maxExon3Lengths <- maxExon3Lengths[names(maxExon3Lengths) %in% row.names(delays.
 maxExon5Lengths <- sapply(split(exonlen5, substr(names(exonlen5), 1, 15)), max)
 maxExon5Lengths <- maxExon5Lengths[names(maxExon5Lengths) %in% row.names(delays.orig)]
 
-longestLast <- (maxmaxLastIntrons == maxmaxIntrons)
 ##lastProportion <- (maxmaxLastIntrons / maxmaxIntrons)
 lastProportion <- (maxTrLastIntrons / maxTrLengths)
-myfact <- rep(0, length(lastProportion))
 
-delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, longestLast, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, myfact), by=0)
+delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths), by=0)
 row.names(delays) <- delays[,1]
 delays <- delays[,-1]
 I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 120) #& (delays[,'corr'] > 0.5)
 I2 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 80) #& (delays[,'corr'] > 0.5)
 I3 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 60) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
-mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'myfact'] <- 1
-mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'myfact'] <- 2
-mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'myfact'] <- 3
-mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'myfact'] <- 4
-longestLast <- mydelays[,'longestLast']
 ##lastProportion <- mydelays[,'maxmaxLastIntrons']/mydelays[,'maxTrLengths']
 lastProportion <- mydelays[,'lastProportion']/mydelays[,'maxmaxIntrons']
-##long <- longestLast[mydelays['meddelay.x']>15,]
-##short <- longestLast[mydelays['meddelay.x']<15,]
-##longcorr <- longestLast[mydelays['corr']>0.5 & mydelays['meddelay.x']>15]
-##longuncorr <- longestLast[mydelays['corr']<0.5 & mydelays['meddelay.x']>15]
-##shortcorr <- longestLast[mydelays['corr']>0.5 & mydelays['meddelay.x']<15]
-##shortuncorr <- longestLast[mydelays['corr']<0.5 & mydelays['meddelay.x']<15]
 longcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'lastProportion']
 longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'lastProportion']
 shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastProportion']
@@ -107,7 +101,7 @@ shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastP
 
 lencos <- c(0.2, 0.3, 0.4, 0.5)
 pdf('delay_survival.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 NORM <- 10
@@ -187,7 +181,7 @@ dev.off()
 
 lencos <- c(0.5, 0.75, 0.9, 0.95)
 pdf('corr_survival.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 NORM <- 10
@@ -291,7 +285,7 @@ shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'max
 shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'maxTrLengths']) / log(10)
 
 plot.new()
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(3, 3, 0, 0)+0.4)
 par(mgp=c(2, 1, 0))
 plot.window(xlim=c(0.5, 4.5), ylim=c(2.8, 6.1))
@@ -312,7 +306,7 @@ shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'max
 shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'maxmaxLastIntrons']) / log(10)
 
 plot.new()
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(3, 3, 0, 0)+0.4)
 par(mgp=c(2, 1, 0))
 plot.window(xlim=c(0.5, 4.5), ylim=c(1.7, 5.7))
@@ -334,7 +328,7 @@ shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastPro
 shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
 
 plot.new()
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(3, 3, 0, 0)+0.4)
 par(mgp=c(2, 1, 0))
 plot.window(xlim=c(0.5, 4.5), ylim=c(-0.02, 1.02))
@@ -361,17 +355,17 @@ h <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
 h$counts[1] <- h$counts[1]-1500
 
 par(mfrow=c(1, 1))
-plot(h, axes=FALSE, main="Posterior median delays", xlab="Delay (min)", ylab="# of genes")
+plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 
-pdf('delay_histogram_med.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
-par(mar=c(2, 2, 1, 0)+0.4)
-par(mgp=c(1.5, 0.5, 0))
+pdf('delay_histogram_med.pdf', width=HISTWIDTH, height=HISTHEIGHT)
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.5, 1.2, 0, 0)+0.4)
+par(mgp=c(1, 0.4, 0))
 par(mfrow=c(1, 1))
-plot(h, axes=FALSE, main="Posterior median delays", xlab="Delay (min)", ylab="# of genes")
+plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
@@ -384,7 +378,7 @@ dev.off()
 ## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 
 ## pdf('delay_histogram_premrna.pdf', width=87/25.4, height=70/25.4)
-## par(ps=8, cex=1)
+## par(ps=FONTSIZE, cex=1)
 ## par(mar=c(2, 2, 0, 0)+0.4)
 ## par(mgp=c(1.5, 0.5, 0))
 ## plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
@@ -395,16 +389,20 @@ dev.off()
 
 ## write.table(delays[,c('maxTrLengths', 'lastProportion')], file='gene_structures.txt', sep='\t', quote=FALSE)
 
+I <- (delays2[,'tmax.x'] < 160) & (delays2[,'tmax.x'] > 1) & (delays2[,'begdev10.x'] < 12) & (delays2[,'meddelay.x'] < 120) #& (delays2[,'corr'] > 0.5)
+mydelays2 <- delays2[I,]
+
+
 t <- 0:60
 v <- t
 v2 <- v
 v2[1] <- NA
 pvals <- t
 for (i in seq_along(t)) {
-  v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"premrna_trend"])
+  v[i] <- mean(mydelays2[mydelays2["meddelay.x"]>t[i],"premrna_trend"])
   if (i > 1) {
-    v2[i] <- mean(mydelays[mydelays["meddelay.x"]<t[i],"premrna_trend"])
-    pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'premrna_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'premrna_trend'])$p.value
+    v2[i] <- mean(mydelays2[mydelays2["meddelay.x"]<t[i],"premrna_trend"])
+    pvals[i] <- wilcox.test(mydelays2[mydelays2['meddelay.x'] < t[i], 'premrna_trend'], mydelays2[mydelays2['meddelay.x'] > t[i], 'premrna_trend'])$p.value
   }
 }
 
@@ -418,7 +416,7 @@ lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
 mtext(expression(-log[10](p-value)), side=4, line=1.2)
 
 pdf('premrna_halfdiff.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
@@ -446,10 +444,10 @@ v2 <- v
 v2[1] <- NA
 pvals <- t
 for (i in seq_along(t)) {
-  v[i] <- mean(mydelays[mydelays["meddelay.x"]>t[i],"pol2_trend"])
+  v[i] <- mean(mydelays2[mydelays2["meddelay.x"]>t[i],"pol2_trend"])
   if (i > 1) {
-    v2[i] <- mean(mydelays[mydelays["meddelay.x"]<t[i],"pol2_trend"])
-    pvals[i] <- wilcox.test(mydelays[mydelays['meddelay.x'] < t[i], 'pol2_trend'], mydelays[mydelays['meddelay.x'] > t[i], 'pol2_trend'])$p.value
+    v2[i] <- mean(mydelays2[mydelays2["meddelay.x"]<t[i],"pol2_trend"])
+    pvals[i] <- wilcox.test(mydelays2[mydelays2['meddelay.x'] < t[i], 'pol2_trend'], mydelays2[mydelays2['meddelay.x'] > t[i], 'pol2_trend'])$p.value
   }
 }
 
@@ -463,7 +461,7 @@ lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
 mtext(expression(-log[10](p-value)), side=4, line=1.2)
 
 pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
@@ -487,31 +485,31 @@ dev.off()
 
 
 pdf('premrna_halfdiff2.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
 ##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
 for (scale in c(20, 10, 5, 1)) {
-  J <- round(mydelays["meddelay.x"]/scale)
+  J <- round(mydelays2["meddelay.x"]/scale)
   N <- tabulate(J[,1]+1)
-  v <- sapply(split(mydelays[c("meddelay.x", "premrna_trend")], J), colMeans)
+  v <- sapply(split(mydelays2[c("meddelay.x", "premrna_trend")], J), colMeans)
   plot(v[1,], v[2,], xlab="Delay (min)", ylab="Mean pre-mRNA end accumulation index", type='l')
 }
 dev.off()
 
 
 pdf('pol2_halfdiff2.pdf', width=87/25.4, height=70/25.4)
-par(ps=8, cex=1)
+par(ps=FONTSIZE, cex=1)
 par(mar=c(2, 2, 0, 2)+0.4)
 par(mgp=c(1.2, 0.4, 0))
 ##par(mar=c(2, 2, 1, 0)+0.4)
 ##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
 for (scale in c(20, 10, 5, 1)) {
-  J <- round(mydelays["meddelay.x"]/scale)
-  v <- sapply(split(mydelays[c("meddelay.x", "pol2_trend")], J), colMeans)
+  J <- round(mydelays2["meddelay.x"]/scale)
+  v <- sapply(split(mydelays2[c("meddelay.x", "pol2_trend")], J), colMeans)
   plot(v[1,], -v[2,], xlab="Delay (min)", ylab="Mean Pol-II end accumulation index", type='l')
 }
 dev.off()
