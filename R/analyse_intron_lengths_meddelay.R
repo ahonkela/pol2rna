@@ -210,7 +210,7 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
     v2 = -v2
   }
   
-  MAXVAL <- 0.03
+  MAXVAL <- 0.04
   MINVAL <- -0.01
   NORM <- 7
   plot(t, v, xlab=NA, ylab=NA, type='l', col='blue', ylim=c(MINVAL, MAXVAL), axes=FALSE)
@@ -242,7 +242,7 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
 par(mfrow=c(1, 1))
 plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
 
-pdf('premrna_halfdiff.pdf', width=87/25.4, height=70/25.4)
+pdf('premrna_halfdiff.pdf', width=43/25.4, height=50/25.4)
 par(mfrow=c(1, 1))
 plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
 dev.off()

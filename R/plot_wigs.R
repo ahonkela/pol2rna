@@ -43,13 +43,14 @@ for (k in seq(10)) {
   mydata[1:dim(data)[1]] <- data[,k]
   tracks[[k+1]] <- DataTrack(data=mydata, start=starts-200, width=200,
                              strand=mystrand, chromosome=mychr, genome="hg19",
-                             name=paste(T[k], "min"))
+                             name=paste(T[k], "min"), size=2)
 }
 plotTracks(tracks[c(1, seq(4, 9))], type='l', reverseStrand=TRUE)
 
 ##dtrack <- DataTrack(data=t(data), start=starts[1:dim(data)[1]]-200, width=200, strand=mystrand, chromosome=mychr, genome="hg19")
 ##plotTracks(dtrack)
 
-pdf('dlx3_premrna.pdf', width=87/25.4, height=87/25.4)
+pdf('dlx3_premrna.pdf', width=87/25.4, height=100/25.4)
+gpar(fontsize=12)
 plotTracks(tracks[c(1, seq(4, 9))], type='l', reverseStrand=TRUE)
 dev.off()
