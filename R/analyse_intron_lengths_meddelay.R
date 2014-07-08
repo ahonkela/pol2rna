@@ -89,9 +89,44 @@ delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLength
 row.names(delays) <- delays[,1]
 delays <- delays[,-1]
 I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 120) #& (delays[,'corr'] > 0.5)
-I2 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 80) #& (delays[,'corr'] > 0.5)
-I3 <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 60) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
+
+
+plot_delay_survival <- function(mydelays, key, lenco) {
+  NORM <- 10
+  MAXVAL <- 0.25
+
+  shortlast <- mydelays[mydelays[key]<lenco,'meddelay.x']
+  longlast <- mydelays[mydelays[key]>lenco,'meddelay.x']
+
+  T <- seq(0, 80)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast > T[k])
+    longfreq[k] <- mean(longlast > T[k])
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), ylab=NA, xlab=NA, axes=FALSE)
+  lines(T, longfreq, col='red')
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(side=1, labels = NA)
+  axis(side=1, lwd = 0, line = -.3)
+  mtext("t (min)", side=1, line=0.3)
+  axis(side=2, labels = NA)
+  axis(side=2, lwd = 0, line = 0)
+  mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
+  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=0.3)
+  return (c(short=length(shortlast), long=length(longlast)))
+}
 
 
 
@@ -102,239 +137,23 @@ par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
-NORM <- 10
-MAXVAL <- 0.25
 lenco <- 1e4
-
-shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'meddelay.x']
-longlast <- mydelays[mydelays['maxTrLengths']>lenco,'meddelay.x']
-
-T <- seq(0, 80)
-shortfreq <- rep(0, length(T))
-longfreq <- rep(0, length(T))
-counts <- matrix(0, length(T), 4)
-pvals <- rep(1, length(T))
-for (k in seq_along(T)) {
-  shortfreq[k] <- mean(shortlast > T[k])
-  longfreq[k] <- mean(longlast > T[k])
-  counts[k, 1] <- sum(shortlast < T[k])
-  counts[k, 2] <- sum(shortlast >= T[k])
-  counts[k, 3] <- sum(longlast < T[k])
-  counts[k, 4] <- sum(longlast >= T[k])
-  pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-  ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-}
-plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), ylab=NA, xlab=NA, axes=FALSE)
-lines(T, longfreq, col='red')
-lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-axis(side=1, labels = NA)
-axis(side=1, lwd = 0, line = -.3)
-mtext("t (min)", side=1, line=0.3)
-axis(side=2, labels = NA)
-axis(side=2, lwd = 0, line = 0)
-mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
-axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
-lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=0.3)
+Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco)
 leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
-       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, length(shortlast)),
-         sprintf("m>%.0f\n(N=%d)", lenco, length(longlast)),
+       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
          'p-value'),
        col=c('blue', 'red', 'black'), lty=1,
        x.intersp=0.5, y.intersp=1, seg.len=1)
 
-NORM <- 10
-MAXVAL <- 0.25
 lenco <- 0.2
-
-shortlast <- mydelays[mydelays['lastProportion']<lenco,'meddelay.x']
-longlast <- mydelays[mydelays['lastProportion']>lenco,'meddelay.x']
-
-T <- seq(0, 80)
-shortfreq <- rep(0, length(T))
-longfreq <- rep(0, length(T))
-counts <- matrix(0, length(T), 4)
-pvals <- rep(1, length(T))
-for (k in seq_along(T)) {
-  shortfreq[k] <- mean(shortlast > T[k])
-  longfreq[k] <- mean(longlast > T[k])
-  counts[k, 1] <- sum(shortlast < T[k])
-  counts[k, 2] <- sum(shortlast >= T[k])
-  counts[k, 3] <- sum(longlast < T[k])
-  counts[k, 4] <- sum(longlast >= T[k])
-  pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-  ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-}
-plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), xlim=c(0, 80), ylab=NA, xlab=NA, axes=FALSE)
-lines(T, longfreq, col='red')
-lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-axis(side=1, labels = NA)
-axis(side=1, lwd = 0, line = -.3)
-mtext("t (min)", side=1, line=0.3)
-axis(side=2, labels = NA)
-axis(side=2, lwd = 0, line = 0)
-mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
-axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
-lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=0.3)
+Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco)
 leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
-       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, length(shortlast)),
-         sprintf("f>%.2f\n(N=%d)", lenco, length(longlast)),
+       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
          'p-value'),
        col=c('blue', 'red', 'black'), lty=1,
        x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
-dev.off()
-
-
-lencos <- c(0.5, 0.75, 0.9, 0.95)
-pdf('corr_survival.pdf', width=87/25.4, height=70/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
-par(mfrow=c(1, 1))
-NORM <- 10
-MAXVAL <- 1
-for (l in seq_along(lencos)) {
-  lenco <- lencos[l]
-
-  shortlast <- mydelays[mydelays['lastProportion']<lenco,'corr']
-  longlast <- mydelays[mydelays['lastProportion']>lenco,'corr']
-
-  T <- seq(-1, 1, len=100)
-  shortfreq <- rep(0, length(T))
-  longfreq <- rep(0, length(T))
-  counts <- matrix(0, length(T), 4)
-  pvals <- rep(1, length(T))
-  for (k in seq_along(T)) {
-    shortfreq[k] <- mean(shortlast < T[k])
-    longfreq[k] <- mean(longlast < T[k])
-    counts[k, 1] <- sum(shortlast < T[k])
-    counts[k, 2] <- sum(shortlast >= T[k])
-    counts[k, 3] <- sum(longlast < T[k])
-    counts[k, 4] <- sum(longlast >= T[k])
-    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-  }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
-  lines(T, longfreq, col='red')
-  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2))
-  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-  mtext(expression(-log[10](p-value)), side=4, line=1.2)
-  legend('topleft',
-         legend=c(sprintf("f<%.2f, N=%d", lenco, length(shortlast)),
-           sprintf("f>%.2f, N=%d", lenco, length(longlast)),
-           'p-value'),
-         col=c('blue', 'red', 'black'), lty=1)
-}
-
-lencos <- c(1e4, 3e4, 1e5)
-NORM <- 30
-MAXVAL <- 1
-for (l in seq_along(lencos)) {
-  lenco <- lencos[l]
-
-  shortlast <- mydelays[mydelays['maxTrLengths']<lenco,'corr']
-  longlast <- mydelays[mydelays['maxTrLengths']>lenco,'corr']
-
-  T <- seq(-1, 1, len=100)
-  shortfreq <- rep(0, length(T))
-  longfreq <- rep(0, length(T))
-  counts <- matrix(0, length(T), 4)
-  pvals <- rep(1, length(T))
-  for (k in seq_along(T)) {
-    shortfreq[k] <- mean(shortlast < T[k])
-    longfreq[k] <- mean(longlast < T[k])
-    counts[k, 1] <- sum(shortlast < T[k])
-    counts[k, 2] <- sum(shortlast >= T[k])
-    counts[k, 3] <- sum(longlast < T[k])
-    counts[k, 4] <- sum(longlast >= T[k])
-    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
-    ##cat(sum(shortlast > T[k]) + sum(longlast > T[k]), '\n')
-  }
-  plot(T, shortfreq, type='l', col='blue', ylim=c(-0.005, 1.005), ylab=expression("Fraction of genes with" ~ rho < r), xlab="r")
-  lines(T, longfreq, col='red')
-  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
-  axis(4, seq(0, MAXVAL, len=7), seq(0, NORM, by=5))
-  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-  mtext(expression(-log[10](p-value)), side=4, line=1.2)
-  legend('topleft',
-         legend=c(sprintf("m<%.0f, N=%d", lenco, length(shortlast)),
-           sprintf("m>%.0f, N=%d", lenco, length(longlast)),
-           'p-value'),
-         col=c('blue', 'red', 'black'), lty=1)
-}
-dev.off()
-
-
-library(vioplot)
-
-pdf('intron_lengths_med.pdf', width=178/25.4, height=70/25.4)
-par(mfrow=c(1, 3))
-
-longcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'maxTrLengths']) / log(10)
-longuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'maxTrLengths']) / log(10)
-shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'maxTrLengths']) / log(10)
-shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'maxTrLengths']) / log(10)
-
-plot.new()
-par(ps=FONTSIZE, cex=1)
-par(mar=c(3, 3, 0, 0)+0.4)
-par(mgp=c(2, 1, 0))
-plot.window(xlim=c(0.5, 4.5), ylim=c(2.8, 6.1))
-axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
-                     paste('+/-\nn=', length(longcorr), sep=''),
-                     paste('-/+\nn=', length(shortuncorr), sep=''),
-                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
-axis(2, at=log(c(1000, 10000, 100000, 1000000))/log(10),
-     labels=c(1, 10, 100, 1000))
-vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
-title(ylab="Max transcript length (kb)")
-title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
-
-
-longcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'maxmaxLastIntrons']) / log(10)
-longuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'maxmaxLastIntrons']) / log(10)
-shortcorr <- log(mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'maxmaxLastIntrons']) / log(10)
-shortuncorr <- log(mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'maxmaxLastIntrons']) / log(10)
-
-plot.new()
-par(ps=FONTSIZE, cex=1)
-par(mar=c(3, 3, 0, 0)+0.4)
-par(mgp=c(2, 1, 0))
-plot.window(xlim=c(0.5, 4.5), ylim=c(1.7, 5.7))
-axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
-                     paste('+/-\nn=', length(longcorr), sep=''),
-                     paste('-/+\nn=', length(shortuncorr), sep=''),
-                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
-axis(2, at=log(c(100, 1000, 10000, 100000, 500000))/log(10),
-       labels=c(0.1, 1, 10, 100, 500))
-vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
-title(ylab="Max last intron length (kb)")
-title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
-
-
-
-longcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']>15, 'lastProportion']
-longuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']>15, 'lastProportion']
-shortcorr <- mydelays[mydelays['corr']>0.5 & mydelays['meddelay.x']<15, 'lastProportion']
-shortuncorr <- mydelays[mydelays['corr']<0.5 & mydelays['meddelay.x']<15, 'lastProportion']
-
-plot.new()
-par(ps=FONTSIZE, cex=1)
-par(mar=c(3, 3, 0, 0)+0.4)
-par(mgp=c(2, 1, 0))
-plot.window(xlim=c(0.5, 4.5), ylim=c(-0.02, 1.02))
-axis(1, at=seq(4), labels=c(paste('+/+\nn=', length(longuncorr), sep=''),
-                     paste('+/-\nn=', length(longcorr), sep=''),
-                     paste('-/+\nn=', length(shortuncorr), sep=''),
-                     paste('-/-\nn=', length(shortcorr), sep='')), cex.axis=0.9)
-axis(2, at=c(0, 0.2, 0.4, 0.6, 0.8, 1))
-vioplot(longuncorr, longcorr, shortuncorr, shortcorr, col='grey', add=TRUE)
-title(ylab="Last intron fraction")
-title(xlab=expression(Delta > 15 ~ "min /" ~ rho < 0.5))
-
-
 dev.off()
 
 
@@ -365,144 +184,71 @@ axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
 dev.off()
 
 
-## plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
-## axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-## axis.break(2,120,style="zigzag")
-## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-
-## pdf('delay_histogram_premrna.pdf', width=87/25.4, height=70/25.4)
-## par(ps=FONTSIZE, cex=1)
-## par(mar=c(2, 2, 0, 0)+0.4)
-## par(mgp=c(1.5, 0.5, 0))
-## plot(h2, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
-## axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
-## axis.break(2,120,style="zigzag")
-## axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
-## dev.off()
-
-## write.table(delays[,c('maxTrLengths', 'lastProportion')], file='gene_structures.txt', sep='\t', quote=FALSE)
-
-I <- (delays2[,'tmax.x'] < 160) & (delays2[,'tmax.x'] > 1) & (delays2[,'begdev10.x'] < 12) & (delays2[,'meddelay.x'] < 120) #& (delays2[,'corr'] > 0.5)
-mydelays2 <- delays2[I,]
+I2 <- (delays2[,'tmax.x'] < 160) & (delays2[,'tmax.x'] > 1) & (delays2[,'begdev10.x'] < 12) & (delays2[,'meddelay.x'] < 120) #& (delays2[,'corr'] > 0.5)
+mydelays2 <- delays2[I2,]
 
 
-t <- 0:60
-v <- t
-v2 <- v
-v2[1] <- NA
-pvals <- t
-for (i in seq_along(t)) {
-  v[i] <- mean(mydelays2[mydelays2["meddelay.x"]>t[i],"premrna_trend"])
-  if (i > 1) {
-    v2[i] <- mean(mydelays2[mydelays2["meddelay.x"]<t[i],"premrna_trend"])
-    pvals[i] <- wilcox.test(mydelays2[mydelays2['meddelay.x'] < t[i], 'premrna_trend'], mydelays2[mydelays2['meddelay.x'] > t[i], 'premrna_trend'])$p.value
+plot_halfdiff <- function(mydelays2, key, response, ylab) {
+  par(ps=FONTSIZE, cex=1)
+  par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+  par(mgp=c(0.6, 0.1, 0))
+  par(tck=-0.015)
+
+  t <- 5:60
+  v <- t
+  v2 <- v
+  v2[1] <- NA
+  pvals <- t
+  for (i in seq_along(t)) {
+    v[i] <- mean(mydelays2[mydelays2[key]>t[i],response])
+    v2[i] <- mean(mydelays2[mydelays2[key]<t[i],response])
+    pvals[i] <- wilcox.test(mydelays2[mydelays2[key] < t[i], response], mydelays2[mydelays2[key] > t[i], response])$p.value
+  }
+  ## Pol-II data has a different sign
+  if (response == "pol2_trend") {
+    v = -v
+    v2 = -v2
+  }
+  
+  MAXVAL <- 0.03
+  MINVAL <- -0.01
+  NORM <- 7
+  plot(t, v, xlab=NA, ylab=NA, type='l', col='blue', ylim=c(MINVAL, MAXVAL), axes=FALSE)
+  lines(t, v2, type='l', col='red')
+  lines(t, rep(-log(0.05)/log(10)/NORM*(MAXVAL-MINVAL)+MINVAL, length(t)), col='black', lty=2)
+  lines(t, -log(pvals)/log(10)/NORM*(MAXVAL-MINVAL)+MINVAL, col='black')
+  axis(side=1, labels = NA)
+  axis(side=1, lwd = 0, line = -.3)
+  mtext("Delay bound (min)", side=1, line=0.3)
+  axis(side=2, labels = NA)
+  axis(side=2, lwd = 0, line = 0)
+  mtext(ylab, side=2, line=0.5)
+  axis(4, seq(MINVAL, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1), mgp=c(-0.6, -0.2, 0))
+  mtext(expression(-log[10](p-value)), side=4, line=0.3)
+  if (response == "pol2_trend") {
+    legend('right',
+           legend=c(expression(Delta > x), expression(Delta < x), 'p-value'),
+           col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
+           seg.len=1, inset=0.01)
+  } else {
+    legend('topleft',
+           legend=c(expression(Delta > x), expression(Delta < x), 'p-value'),
+           col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
+           seg.len=1, inset=0.01)
   }
 }
 
-MAXVAL <- 0.025
-NORM <- 5
-plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
-lines(t, v2, type='l', col='red')
-lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
-axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
-lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=1.2)
+
+par(mfrow=c(1, 1))
+plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
 
 pdf('premrna_halfdiff.pdf', width=87/25.4, height=70/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
-##par(mar=c(2, 2, 1, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
-plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
-lines(t, v2, type='l', col='red')
-legend('right',
-       legend=c(expression(Delta > x), expression(Delta < x)),
-       col=c('blue', 'red'), lty=1)
-MAXVAL <- 0.025
-NORM <- 5
-plot(t, v, xlab="Delay bound (min)", ylab="Mean pre-mRNA end accumulation index", type='l', col='blue', ylim=c(-0.01, 0.03))
-lines(t, v2, type='l', col='red')
-lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
-axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
-lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=1.2)
+plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
 dev.off()
 
-
-t <- 0:60
-v <- t
-v2 <- v
-v2[1] <- NA
-pvals <- t
-for (i in seq_along(t)) {
-  v[i] <- mean(mydelays2[mydelays2["meddelay.x"]>t[i],"pol2_trend"])
-  if (i > 1) {
-    v2[i] <- mean(mydelays2[mydelays2["meddelay.x"]<t[i],"pol2_trend"])
-    pvals[i] <- wilcox.test(mydelays2[mydelays2['meddelay.x'] < t[i], 'pol2_trend'], mydelays2[mydelays2['meddelay.x'] > t[i], 'pol2_trend'])$p.value
-  }
-}
-
-MAXVAL <- 0.03
-NORM <- 5
-plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
-lines(t, -v2, col='red')
-lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
-axis(4, seq(0, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1))
-lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=1.2)
 
 pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
-##par(mar=c(2, 2, 1, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
 par(mfrow=c(1, 1))
-plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
-lines(t, -v2, col='red')
-MAXVAL <- 0.03
-NORM <- 3
-plot(t, -v, xlab="Delay bound (min)", ylab="Mean Pol-II end accumulation index", type='l', col='blue', ylim=c(-0.001, 0.031))
-lines(t, -v2, col='red')
-lines(t, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(t)), col='black', lty=2)
-axis(4, seq(0, MAXVAL, len=4), seq(0, NORM, by=1))
-lines(t, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
-mtext(expression(-log[10](p-value)), side=4, line=1.2)
-dev.off()
-
-
-##I <- rank(mydelays["meddelay.x"])
-##J <- floor(((I-1) * 20 / length(I)))
-
-
-pdf('premrna_halfdiff2.pdf', width=87/25.4, height=70/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
-##par(mar=c(2, 2, 1, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
-par(mfrow=c(1, 1))
-for (scale in c(20, 10, 5, 1)) {
-  J <- round(mydelays2["meddelay.x"]/scale)
-  N <- tabulate(J[,1]+1)
-  v <- sapply(split(mydelays2[c("meddelay.x", "premrna_trend")], J), colMeans)
-  plot(v[1,], v[2,], xlab="Delay (min)", ylab="Mean pre-mRNA end accumulation index", type='l')
-}
-dev.off()
-
-
-pdf('pol2_halfdiff2.pdf', width=87/25.4, height=70/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(2, 2, 0, 2)+0.4)
-par(mgp=c(1.2, 0.4, 0))
-##par(mar=c(2, 2, 1, 0)+0.4)
-##par(mgp=c(1.5, 0.5, 0))
-par(mfrow=c(1, 1))
-for (scale in c(20, 10, 5, 1)) {
-  J <- round(mydelays2["meddelay.x"]/scale)
-  v <- sapply(split(mydelays2[c("meddelay.x", "pol2_trend")], J), colMeans)
-  plot(v[1,], -v[2,], xlab="Delay (min)", ylab="Mean Pol-II end accumulation index", type='l')
-}
+plot_halfdiff(mydelays2, "meddelay.x", "pol2_trend", "Mean Pol-II end accumulation index")
 dev.off()
