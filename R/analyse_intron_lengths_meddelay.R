@@ -85,7 +85,12 @@ maxExon5Lengths <- maxExon5Lengths[names(maxExon5Lengths) %in% row.names(delays.
 ##lastProportion <- (maxmaxLastIntrons / maxmaxIntrons)
 lastProportion <- (maxTrLastIntrons / maxTrLengths)
 
-delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths), by=0)
+exskips <- read.csv('skipped_exons.csv', header=FALSE, colClasses=c(NA, 'logical'))
+exonskips <- exskips[,2]
+names(exonskips) <- exskips[,1]
+exonskips <- exonskips[names(maxmaxIntrons)]
+
+delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0)
 row.names(delays) <- delays[,1]
 delays <- delays[,-1]
 I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 120) #& (delays[,'corr'] > 0.5)
@@ -156,6 +161,23 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
        x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
 dev.off()
 
+
+pdf('delay_survival_exonskip.pdf', width=87/25.4, height=50/25.4)
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(mfrow=c(1, 2))
+par(tck=-0.03)
+
+Nlast <- plot_delay_survival(mydelays, 'exonskips', 0.5)
+leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("no skips\n(N=%d)", Nlast['short']),
+         sprintf("skips\n(N=%d)", Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1)
+
+dev.off()
 
 
 library(plotrix)
