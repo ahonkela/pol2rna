@@ -97,12 +97,12 @@ I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'
 mydelays <- delays[I,]
 
 
-plot_delay_survival <- function(mydelays, key, lenco) {
+plot_delay_survival <- function(mydelays, key, lenco, delaykey='meddelay.x') {
   NORM <- 10
   MAXVAL <- 0.25
 
-  shortlast <- mydelays[mydelays[key]<lenco,'meddelay.x']
-  longlast <- mydelays[mydelays[key]>lenco,'meddelay.x']
+  shortlast <- mydelays[mydelays[key]<lenco,delaykey]
+  longlast <- mydelays[mydelays[key]>lenco,delaykey]
 
   T <- seq(0, 80)
   shortfreq <- rep(0, length(T))
@@ -162,14 +162,49 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-pdf('delay_survival_exonskip.pdf', width=87/25.4, height=50/25.4)
+pdf('delay_survival_premrna.pdf', width=87/25.4, height=50/25.4)
 par(ps=FONTSIZE, cex=1)
 par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
+lenco <- 1e4
+Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, 'meddelay.y')
+leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1)
+
+lenco <- 0.2
+Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco, 'meddelay.y')
+leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
+dev.off()
+
+
+pdf('delay_survival_exonskip.pdf', width=87/25.4, height=50/25.4)
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(mfrow=c(1, 1))
+par(tck=-0.03)
+
 Nlast <- plot_delay_survival(mydelays, 'exonskips', 0.5)
+leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("no skips\n(N=%d)", Nlast['short']),
+         sprintf("skips\n(N=%d)", Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1)
+
+Nlast <- plot_delay_survival(mydelays, 'exonskips', 0.5, 'meddelay.y')
 leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
        legend=c(sprintf("no skips\n(N=%d)", Nlast['short']),
          sprintf("skips\n(N=%d)", Nlast['long']),
