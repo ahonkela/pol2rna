@@ -6,13 +6,13 @@ rm -f "$DBFILE"
 
 #    python insert_supplementary_data.py -t 0 -f "$f" -c 2 --tf="$reg" database.sqlite "ischip"
 
-SUPPFILE="pol2max_and_delays_2013-08-30.txt"
+SUPPFILE="results/pol2max_and_delays_2013-08-30.txt"
 SUPPFILE2="../R/gene_structures.txt"
 
 FIGNAME_POL2="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_2013-08-30.png"
 FIGNAME_PREMRNA="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots_2013-11-05/\${probe_name}_hmc_2013-11-05.png"
 
-RESULTFILE="hmc_results_to_browser_2013-08-30.txt"
+RESULTFILE="results/hmc_results_to_browser_2013-08-30.txt"
 FIGNAME=$FIGNAME_POL
 REGNAME="pol2"
 
@@ -33,7 +33,7 @@ http://www.cs.helsinki.fi/u/ahonkela/synergy/premrna_plots/\${probe_name}_premrn
 EOF
 
 
-RESULTFILE="hmc_results_to_browser_2013-09-04.txt"
+RESULTFILE="results/hmc_results_to_browser_2013-09-04.txt"
 FIGNAME="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots_2013-09-04/\${probe_name}_hmc_2013-09-04.png"
 REGNAME="pol2-norm"
 
@@ -47,7 +47,7 @@ insert_results.py -f "$SUPPFILE" --log-likelihood-column=5 "$DBFILE" "pol2rnaseq
 
 
 
-RESULTFILE="hmc_results_to_browser_2013-11-05.txt"
+RESULTFILE="results/hmc_results_to_browser_2013-11-05.txt"
 FIGNAME=$FIGNAME_PREMRNA
 REGNAME="pre-mRNA"
 

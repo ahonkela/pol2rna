@@ -9,26 +9,18 @@ filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
 %filenames = filenames(cellfun('length', filenames) == 44);
 
-%N_GOOD = 5;
+find_good_pol2;
+[~, A, B] = intersect(pol2ensg, cellfun(@(x) x(1:15), filenames, 'UniformOutput', false));
+filenames = filenames(B);
 
-ids = zeros(size(filenames));
-for k=1:length(filenames),
-  ids(k) = str2num(filenames{k}(5:15));
-end
+%N_GOOD = 5;
 
 Isampl = 501:1000;
 Isampl_thin = 501:10:1000;
 
 MYP = [2.5 25 50 75 97.5];
 
-if 0,
-  load('~/mlprojects/pol2rnaseq/matlab/difficult_gene_files.mat');
-  s = struct2cell(genefiles);
-  filenames = [filenames; cat(1, s{:})];
-  numgenes = length(filenames);
-else
-  numgenes = length(filenames);
-end
+numgenes = length(filenames);
 
 %parI = [1:4, 6, 8:10];
 parI = [1:6, 8:10];
@@ -114,24 +106,34 @@ end
 %   % pause
 % end
 
-save(['result_summary_' id], 'means', 'stds', 'prcts', 'genes');
+save(['results/result_summary_' id], 'means', 'stds', 'prcts', 'genes');
 
-pr = load(['early_profiles_' id '.mat']);
+pr = load(['results/early_profiles_' id '.mat']);
 diff1 = max(pr.mu(:, 1:20), [], 2) - min(pr.mu(:, 1:20), [], 2);
 diff2 = max(pr.mu(:, 21:30), [], 2) - min(pr.mu(:, 21:30), [], 2);
 qrtl = prctile(diff1-diff2, [25, 75]);
 bound = qrtl(2) + 1.5 * (qrtl(2) - qrtl(1));
 early_dev = (diff1 - diff2 - qrtl(2)) / (qrtl(2) - qrtl(1));
 
+diff1 = (max(pr.mu(:, 1:20), [], 2) - ...
+         min(pr.mu(:, 1:20), [], 2)) ./ max(pr.mu, [], 2);
+diff2 = (max(pr.mu(:, 21:30), [], 2) - ...
+         min(pr.mu(:, 21:30), [], 2)) ./ max(pr.mu, [], 2);
+begdev10b = diff1 - diff2;
+
 [~, A, B] = intersect(genes, pr.genes);
-assert(all(strcmp(genes(A), pr.genes)));
+assert(all(strcmp(genes(A), pr.genes(B))));
 early_devs = zeros(length(genes), 1);
-early_devs(A) = early_dev;
+early_devs(A) = early_dev(B);
+begdevs = zeros(length(genes), 1);
+begdevs(A) = begdev10b(B);
 
 delaypcts = sigmoidabTransform(squeeze(prcts(:,5,:)), 'atox', [0, 299]);
-fp = fopen(['hmc_results_to_browser_' id '.txt'], 'w');
+fp = fopen(['results/hmc_results_to_browser_' id '.txt'], 'w');
 fprintf(fp, 'gene 2.5%% 25%% 50%% 75%% 97.5%% begdev\n');
 for k=1:length(genes),
-  fprintf(fp, '%s %f %f %f %f %f %f\n', genes{k}, delaypcts(k,:), early_devs(k));
+  if ~all(delaypcts(k,:) == 149.5),
+    fprintf(fp, '%s %f %f %f %f %f %f\n', genes{k}, delaypcts(k,:), begdevs(k));
+  end
 end
 fclose(fp);
