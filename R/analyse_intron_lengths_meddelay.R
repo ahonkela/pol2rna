@@ -1,12 +1,13 @@
 # FIGURE PARAMETERS
 FONTSIZE=6
+DEVBOUND <- 0.05
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
 
 
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
-delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
+##delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
 premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-18.txt', row.names=1, header=FALSE)
 names(premrna.fits0) <- 'premrna_trend'
 pol2.fits <- read.table('../python/pol2_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
@@ -16,16 +17,6 @@ row.names(premrna.fits) <- premrna.fits[,'Row.names']
 premrna.fits <- premrna.fits[!names(premrna.fits) %in% c('Row.names')]
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 delays.orig <- delays.pol2
-delays.joint <- merge(delays.pol2, delays.premrna, by=0)
-row.names(delays.joint) <- delays.joint[,'Row.names']
-F <- as.character(delays.joint[,'gene.x']) == as.character(delays.joint[,'gene.y'])
-stopifnot(all(F[!is.na(F)]))
-stopifnot(all(delays.joint['corr.x'] == delays.joint['corr.y']))
-delays.orig <- delays.joint[!names(delays.joint) %in% c('Row.names', 'gene.y', 'corr.y')]
-n <- names(delays.orig)
-n[grep('corr.x', n)] <- 'corr'
-n[grep('gene.x', n)] <- 'gene'
-names(delays.orig) <- n
 delays2 <- merge(delays.orig, premrna.fits, by=0)
 row.names(delays2) <- delays2[,'Row.names']
 delays2 <- delays2[!names(delays2) %in% c('Row.names')]
@@ -93,14 +84,11 @@ exonskips <- exonskips[names(maxmaxIntrons)]
 delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0)
 row.names(delays) <- delays[,1]
 delays <- delays[,-1]
-I <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12) & (delays[,'meddelay.x'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
-plot_delay_survival <- function(mydelays, key, lenco, delaykey='meddelay.x') {
-  NORM <- 10
-  MAXVAL <- 0.25
-
+plot_delay_survival <- function(mydelays, key, lenco, delaykey='meddelay', MAXVAL=0.25, NORM=10) {
   shortlast <- mydelays[mydelays[key]<lenco,delaykey]
   longlast <- mydelays[mydelays[key]>lenco,delaykey]
 
@@ -127,7 +115,7 @@ plot_delay_survival <- function(mydelays, key, lenco, delaykey='meddelay.x') {
   axis(side=2, labels = NA)
   axis(side=2, lwd = 0, line = 0)
   mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.5)
-  axis(4, seq(0, MAXVAL, len=6), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
+  axis(4, seq(0, MAXVAL, len=(NORM/2)+1), seq(0, NORM, by=2), mgp=c(-0.6, -0.2, 0))
   lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
   mtext(expression(-log[10](p-value)), side=4, line=0.3)
   return (c(short=length(shortlast), long=length(longlast)))
@@ -142,9 +130,13 @@ par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
+for (DBOUND in c(0.05, 0.1, 0.01)) {
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+mydelays <- delays[I,]
+
 lenco <- 1e4
-Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco)
-leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, MAXVAL=0.3, NORM=12)
+leg2 <- legend(x=c(30, 83.2), y=c(0.18, 0.31),
        legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
          sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
          'p-value'),
@@ -159,35 +151,11 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
          'p-value'),
        col=c('blue', 'red', 'black'), lty=1,
        x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
+}
 dev.off()
 
-
-pdf('delay_survival_premrna.pdf', width=87/25.4, height=50/25.4)
-par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
-par(mgp=c(0.6, 0.1, 0))
-par(mfrow=c(1, 2))
-par(tck=-0.03)
-
-lenco <- 1e4
-Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, 'meddelay.y')
-leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
-       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
-         sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
-         'p-value'),
-       col=c('blue', 'red', 'black'), lty=1,
-       x.intersp=0.5, y.intersp=1, seg.len=1)
-
-lenco <- 0.2
-Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco, 'meddelay.y')
-leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
-       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
-         sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
-         'p-value'),
-       col=c('blue', 'red', 'black'), lty=1,
-       x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
-dev.off()
-
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+mydelays <- delays[I,]
 
 pdf('delay_survival_exonskip.pdf', width=87/25.4, height=50/25.4)
 par(ps=FONTSIZE, cex=1)
@@ -204,30 +172,22 @@ leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
        col=c('blue', 'red', 'black'), lty=1,
        x.intersp=0.5, y.intersp=1, seg.len=1)
 
-Nlast <- plot_delay_survival(mydelays, 'exonskips', 0.5, 'meddelay.y')
-leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
-       legend=c(sprintf("no skips\n(N=%d)", Nlast['short']),
-         sprintf("skips\n(N=%d)", Nlast['long']),
-         'p-value'),
-       col=c('blue', 'red', 'black'), lty=1,
-       x.intersp=0.5, y.intersp=1, seg.len=1)
-
 dev.off()
 
 
 library(plotrix)
-J <- (delays[,'tmax.x'] < 160) & (delays[,'tmax.x'] > 1) & (delays[,'begdev10.x'] < 12)
+J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND)
 
-delays.clipped <- delays[J,'meddelay.x']
+delays.clipped <- delays[J,'meddelay']
 delays.clipped[delays.clipped > 120] <- 121
 h <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
-h$counts[1] <- h$counts[1]-1500
+h$counts[1] <- h$counts[1]-1350
 
 par(mfrow=c(1, 1))
 plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 
 pdf('delay_histogram_med.pdf', width=HISTWIDTH, height=HISTHEIGHT)
 par(ps=FONTSIZE, cex=1)
@@ -237,11 +197,11 @@ par(mfrow=c(1, 1))
 plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
-axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1650, 1700))
+axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 dev.off()
 
 
-I2 <- (delays2[,'tmax.x'] < 160) & (delays2[,'tmax.x'] > 1) & (delays2[,'begdev10.x'] < 12) & (delays2[,'meddelay.x'] < 120) #& (delays2[,'corr'] > 0.5)
+I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'meddelay'] < 120) #& (delays2[,'corr'] > 0.5)
 mydelays2 <- delays2[I2,]
 
 
@@ -297,15 +257,15 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
 
 
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
+plot_halfdiff(mydelays2, "meddelay", "premrna_trend", "Mean pre-mRNA end accumulation index")
 
 pdf('premrna_halfdiff.pdf', width=43/25.4, height=50/25.4)
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "meddelay.x", "premrna_trend", "Mean pre-mRNA end accumulation index")
+plot_halfdiff(mydelays2, "meddelay", "premrna_trend", "Mean pre-mRNA end accumulation index")
 dev.off()
 
 
 pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "meddelay.x", "pol2_trend", "Mean Pol-II end accumulation index")
+plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index")
 dev.off()

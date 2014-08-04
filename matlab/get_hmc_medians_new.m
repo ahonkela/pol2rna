@@ -24,27 +24,11 @@ realt = find(t_pred >= 0);
 [~, polmax] = max(profiles.mu(:, realt), [], 2);
 poltmax = t_pred(realt(polmax));
 
-diff1 = max(profiles.mu(:, 1:20), [], 2) - ...
-        min(profiles.mu(:, 1:20), [], 2);
-diff2 = max(profiles.mu(:, 21:30), [], 2) - ...
-        min(profiles.mu(:, 21:30), [], 2);
-qrtl = prctile(diff1-diff2, [25, 75]);
-bound = qrtl(2) + 1.5 * (qrtl(2) - qrtl(1));
-begdev10 = (diff1 - diff2 - qrtl(2)) / (qrtl(2) - qrtl(1));
-
 diff1 = (max(profiles.mu(:, 1:20), [], 2) - ...
          min(profiles.mu(:, 1:20), [], 2)) ./ max(profiles.mu, [], 2);
 diff2 = (max(profiles.mu(:, 21:30), [], 2) - ...
          min(profiles.mu(:, 21:30), [], 2)) ./ max(profiles.mu, [], 2);
-qrtl = prctile(diff1-diff2, [25, 75]);
-bound = qrtl(2) + 1.5 * (qrtl(2) - qrtl(1));
-begdev10b = diff1 - diff2;
-
-diff1 = max(profiles.mu(:, 1:20), [], 2) - min(profiles.mu(:, 1:20), [], 2);
-diff2 = max(profiles.mu(:, 21:36), [], 2) - min(profiles.mu(:, 21:36), [], 2);
-qrtl = prctile(diff1-diff2, [25, 75]);
-bound = qrtl(2) + 1.5 * (qrtl(2) - qrtl(1));
-begdev30 = (diff1 - diff2 - qrtl(2)) / (qrtl(2) - qrtl(1));
+begdev = diff1 - diff2;
 
 corrs = load('~/projects/pol2rnaseq/data/pol2intronicrna_correlation.mat');
 %I = corrs.pol2intronicrna_correlation > 0.5;
@@ -59,8 +43,7 @@ end
 mygenes = corrs.genes(A);
 pol2intcorr = corrs.pol2intronicrna_correlation(A);
 poltmax = poltmax(B);
-begdev10 = begdev10(B);
-begdev30 = begdev30(B);
+begdev = begdev(B);
 
 assert(all(strcmp(mygenes, profiles.genes(B))));
 
@@ -69,21 +52,27 @@ goodgenes = genes(goodI);
 goodmedians = truemedians(goodI, :);
 
 [~, A2, B2] = intersect(goodgenes, profiles.genes(B));
-assert(all(B2' == 1:length(B)));
-assert(all(strcmp(mygenes, goodgenes(A2))));
+%assert(all(B2' == 1:length(B)));
+%assert(all(strcmp(mygenes, goodgenes(A2))));
 
 delaymedians = goodmedians(A2, 5);
 
+mygenes = mygenes(B2);
+pol2intcorr = pol2intcorr(B2);
+poltmax = poltmax(B2);
+begdev = begdev(B2);
+
+
 fid = fopen(['results/pol2max_and_meddelays_' id '.txt'], 'w');
-fprintf(fid, 'ENSG\tgene\ttmax\tmeddelay\tcorr\tbegdev10\tbegdev10b\n');
+fprintf(fid, 'ENSG\tgene\ttmax\tmeddelay\tcorr\tbegdev10\n');
 for k=1:length(mygenes),
   %if ~isfinite(pol2intcorr(k)),
   %  continue;
   %end
   if isfield(aliases, mygenes{k}),
-    fprintf(fid, '%s\t%s\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, aliases.(mygenes{k}), poltmax(k), delaymedians(k), pol2intcorr(k), begdev10(k), begdev10b(k));
+    fprintf(fid, '%s\t%s\t%f\t%f\t%f\t%f\n', mygenes{k}, aliases.(mygenes{k}), poltmax(k), delaymedians(k), pol2intcorr(k), begdev(k));
   else
-    fprintf(fid, '%s\tNA\t%f\t%f\t%f\t%f\t%f\n', mygenes{k}, poltmax(k), delaymedians(k), pol2intcorr(k), begdev10(k), begdev10b(k));
+    fprintf(fid, '%s\tNA\t%f\t%f\t%f\t%f\n', mygenes{k}, poltmax(k), delaymedians(k), pol2intcorr(k), begdev(k));
   end
 end
 fclose(fid);
