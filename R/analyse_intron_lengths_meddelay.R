@@ -209,6 +209,7 @@ leg2 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 
 dev.off()
 
+write.table(row.names(mydelays), file='analysed_genes.txt', quote=FALSE, row.names=FALSE, col.names=FALSE)
 
 library(plotrix)
 J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND)
