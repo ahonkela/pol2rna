@@ -1,1 +1,1 @@
-file_predictions_config_pol2.txt
+file_predictions_config_pol2_paper.txt
