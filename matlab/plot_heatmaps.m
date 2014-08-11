@@ -4,6 +4,14 @@
 % GP POSTERIORS
 % -----------------------------------------------------------------
 
+highlight_genes = {'ENSG00000162949',
+		   'ENSG00000168140',
+		   'ENSG00000117298',
+		   'ENSG00000166483',
+		   'ENSG00000181026'};
+
+highlight_labels = {'c', 'e', 'd', 'a', 'b'};
+
 id = '2013-08-30';
 
 profiles = load(['~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_' id '.mat']);
@@ -21,7 +29,11 @@ dataVals1 = profiles.mu(B, realt);
 dataVals2 = profiles.mu(B, realt + length(profiles.t_pred));
 dataVals1(dataVals1(:) < 0) = 0;
 
-I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, 'plots/profiles');
+[~, Ahigh, Bhigh] = intersect(mygenes(A), highlight_genes);
+assert(length(Bhigh) == length(highlight_genes))
+
+I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, 'plots/profiles', [], ...
+			   struct('I', {Ahigh}, 'txt', {highlight_labels(Bhigh)}));
 
 % -----------------------------------------------------------------
 % DATA
