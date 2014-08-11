@@ -1,4 +1,4 @@
-function save_sampled_predictions_file(gene, sampledir, filestem, FILESPEC),
+function save_sampled_predictions_file(gene, sampledir, filestem, FILESPEC, SQRTTIME),
 
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/';
 savedir = '~/projects/pol2rnaseq/analyses/hmc_results/profiles/';
@@ -9,6 +9,8 @@ if exist(savefile, 'file'),
   fprintf('Image %s exists, exitting...\n', savefile);
   return;
 end
+
+fprintf('Finding result: %s\n', [resultdir sampledir gene FILESPEC]);
 
 d = dir([resultdir sampledir gene FILESPEC]);
 filenames = {};
@@ -36,7 +38,15 @@ mysamples = permute(mysamples, [1 3 2]);
 sz = size(mysamples);
 mysamples = reshape(mysamples, [sz(1)*sz(2), sz(3)]);
 
-t_pred = [(200:5:295)'; (((0:100)/100*sqrt(1280)).^2 + 300)'];
+switch SQRTTIME,
+  case 0,
+    t_pred0 = [linspace(0, 157.5, 64), exp(linspace(log(160), log(1280), 61))]';
+    t_pred = [(200:5:295)'; (t_pred0 + 300)];
+  case 1,
+    t_pred = [(200:5:295)'; (((0:100)/100*sqrt(1280)).^2 + 300)'];
+  otherwise,
+    error('Unsupported SQRTTIME')
+end
 
 r = gpnddisimSamplePredictions(r.m, mysamples, t_pred, 500);
 p = prctile(r, [2.5 97.5]);
