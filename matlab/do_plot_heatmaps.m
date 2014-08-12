@@ -1,6 +1,6 @@
-function I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, name, Iextra, highlights),
+function I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, T, name, Iextra, highlights),
 
-if nargin < 5,
+if nargin < 6,
   highlights = [];
 end
 
@@ -32,7 +32,7 @@ dataVals2 = dataVals2 ./ repmat(max(dataVals2, [], 2), [1, sz(2)]);
 % print('-depsc2', PRINTSTYLE, [name, '_heatmap_pmeansort.eps']);
 
 [~, I] = sort(1000*peak1 + peak2);
-plot_with_order(dataVals1, dataVals2, I, highlights);
+plot_with_order(dataVals1, dataVals2, T, I, highlights);
 print('-depsc2', PRINTSTYLE, [name, '_heatmap_pcombsort.eps']);
 
 I_pcomb = I;
@@ -52,32 +52,48 @@ I_pcomb = I;
 % plot_with_order(dataVals1, dataVals2, order);
 % print('-depsc2', PRINTSTYLE, [name, '_heatmap_hclustsort.eps']);
 
-if nargin > 3 && ~isempty(Iextra),
-  plot_with_order(dataVals1, dataVals2, Iextra, highlights);
+if nargin > 4 && ~isempty(Iextra),
+  plot_with_order(dataVals1, dataVals2, T, Iextra, highlights);
   print('-depsc2', PRINTSTYLE, [name, '_heatmap_extrasort.eps']);
 end
 
 
 
-function plot_with_order(dataVals1, dataVals2, I, highlights)
+function plot_with_order(dataVals1, dataVals2, T, I, highlights)
 
 FONTSIZE = 6;
 set(gcf, 'PaperPositionMode', 'auto');
-set(gcf, 'PaperPosition', [0, 0, 60/25.4, 100/25.4])
+set(gcf, 'PaperUnits', 'centimeters');
+set(gcf, 'PaperPosition', [0, 0, 6.0, 10.0])
 
-assert(size(dataVals1, 2) == 101);
-t_tick = [0, 20, 80, 320, 640, 1280];
-x_tick = sqrt(t_tick) * 100 / sqrt(1280) + 1;
+switch size(dataVals1, 2),
+  case 101,
+    t_tick = [0, 20, 80, 320, 640, 1280];
+    x_tick = sqrt(t_tick) * 100 / sqrt(1280) + 1;
+  case 125,
+    t_tick = [0, 40, 80, 160, 320, 640, 1280];
+    x_tick = zeros(size(t_tick));
+    for k=1:length(t_tick),
+      [~, x_tick(k)] = min(abs(T - t_tick(k)));
+    end
+  otherwise,
+    error('Unknown data format (unknown size)');
+end
 
 colormap('hot')
 subplot(1, 2, 1);
 imagesc(dataVals1(I, :))
 set(gca, 'FontSize', FONTSIZE);
 if nargin > 3 && ~isempty(highlights),
-  [J, JJ] = sort(I(highlights.I));
+  [~, Iinv] = sort(I);
+  [J, JJ] = sort(Iinv(highlights.I));
   labels = highlights.txt(JJ);
   set(gca, 'YTick', J);
-  set(gca, 'YTickLabel', labels);
+  set(gca, 'YTickLabel', []);
+  J2 = J;
+  J2(1) = J(1) - 20;
+  J2(2) = J(2) + 20;
+  t = text(-10*ones(size(J)), J2, labels, 'FontSize', FONTSIZE);
 else
   set(gca, 'YTick', [])
 end

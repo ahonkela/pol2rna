@@ -10,9 +10,10 @@ highlight_genes = {'ENSG00000162949',
 		   'ENSG00000166483',
 		   'ENSG00000181026'};
 
-highlight_labels = {'c', 'e', 'd', 'a', 'b'};
+highlight_labels = {'c', 'b', 'd', 'a', 'e'};
 
-id = '2013-08-30';
+%id = '2013-08-30';
+id = 'final';
 
 profiles = load(['~/projects/pol2rnaseq/analyses/hmc_results/profiles/all_profiles_' id '.mat']);
 
@@ -32,7 +33,8 @@ dataVals1(dataVals1(:) < 0) = 0;
 [~, Ahigh, Bhigh] = intersect(mygenes(A), highlight_genes);
 assert(length(Bhigh) == length(highlight_genes))
 
-I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, 'plots/profiles', [], ...
+I_pcomb = do_plot_heatmaps(dataVals1, dataVals2, t_pred(realt), ...
+                           'plots/profiles', [], ...
 			   struct('I', {Ahigh}, 'txt', {highlight_labels(Bhigh)}));
 
 % -----------------------------------------------------------------
@@ -74,10 +76,11 @@ dataVals1=pol2_summaryseries(interestinggenes_pol2,:);
 dataVals2=r.mu(interestinggenes_rna,:) ./ repmat(normfacts', [length(interestinggenes_rna), 1]);
 
 t_data = [0, 5, 10, 20, 40, 80, 160, 320, 640, 1280];
-t_plot = linspace(0, sqrt(1280), 101).^2;
-[foo, J] = min(bsxfun(@(x, y) abs(x-y), t_data, t_plot'), [], 2);
+%t_plot = linspace(0, sqrt(1280), 101).^2;
+t_plot = t_pred(realt);
+[foo, J] = min(bsxfun(@(x, y) abs(x-y), t_data, t_plot(:)), [], 2);
 
 dataVals1 = dataVals1(:, J);
 dataVals2 = dataVals2(:, J);
 
-do_plot_heatmaps(dataVals1, dataVals2, 'plots/data', I_pcomb);
+do_plot_heatmaps(dataVals1, dataVals2, t_plot, 'plots/data', I_pcomb);

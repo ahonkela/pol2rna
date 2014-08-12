@@ -1,7 +1,8 @@
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/profiles/';
 
 %id = '2013-08-30';
-id = '2013-11-05';
+%id = '2013-11-05';
+id = 'final';
 
 d = dir([resultdir 'ENSG*' id '.mat']);
 
