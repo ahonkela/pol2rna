@@ -91,8 +91,8 @@ if nargin > 3 && ~isempty(highlights),
   set(gca, 'YTick', J);
   set(gca, 'YTickLabel', []);
   J2 = J;
-  J2(1) = J(1) - 20;
-  J2(2) = J(2) + 20;
+  %J2(1) = J(1) - 20;
+  %J2(2) = J(2) + 20;
   t = text(-10*ones(size(J)), J2, labels, 'FontSize', FONTSIZE);
 else
   set(gca, 'YTick', [])
