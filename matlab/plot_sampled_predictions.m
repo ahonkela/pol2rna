@@ -39,7 +39,7 @@ linecols = {'r', 'g', 'b'};
 FONTSIZE=6;
 LINEWIDTH=1.5;
 
-titles = {'Pol II', 'mRNA', 'pre-mRNA'};
+titles = {'Pol II', 'mRNA (FPKM)', 'pre-mRNA'};
 
 delayI = 5;
 settings = gpnddisimExtractParamTransformSettings(m);
@@ -100,7 +100,7 @@ for k=1:2,
   switch k,
     case 1,
       minbound = 0;
-      maxbound = 1.2*(max(m.y(J)) + 1e-3);
+      maxbound = 1.2*(max([max(m.y(J)), max(mu(I))]) + 1e-3);
     case 2,
       minbound = 0;
       maxbound = ceil(1.1 * max(m.y(J) ...
@@ -133,9 +133,11 @@ for k=1:2,
     set(gca, 'XTickLabel', []);
   end
   set(gca, 'FontSize', FONTSIZE);
-  ylabel(titles{k});
+  v = axis;
+  text(v(1)-0.22*(v(2)-v(1)), mean(v(3:4)), titles{k}, 'HorizontalAlignment','center', 'Rotation', 90, 'FontSize', FONTSIZE)
   if k==2,
-    xlabel('t (min)');
+    v = axis;
+    text(mean(v(1:2)), v(3)-0.26*(v(4)-v(3)), 't (min)', 'HorizontalAlignment','center', 'FontSize', FONTSIZE);
   end
 end
 
@@ -150,7 +152,8 @@ if PLOTPREMRNA,
   set(gca, 'XTick', t_tickplot);
   set(gca, 'XTickLabel', [])
   set(gca, 'FontSize', FONTSIZE);
-  ylabel(titles{3});
+  v = axis;
+  text(v(1)-0.22*(v(2)-v(1)), mean(v(3:4)), titles{3}, 'HorizontalAlignment','center', 'Rotation', 90, 'FontSize', FONTSIZE)
 end
 
 if ~NODELAYHIST,
@@ -176,7 +179,8 @@ if ~NODELAYHIST,
     set(gca, 'XTick', 0:100:xmax);
     set(gca, 'XTickLabel', 0:100:xmax);
   end
-  xlabel('Delay (min)')
+  v = axis;
+  text(mean(v(1:2)), v(3)-0.10*(v(4)-v(3)), 'Delay (min)', 'HorizontalAlignment','center', 'FontSize', FONTSIZE);
 end
 
 if nargin > 2,
