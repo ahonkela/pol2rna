@@ -183,3 +183,36 @@ for (scale in c(20, 10, 5, 1)) {
   plot(v[1,], -v[2,], xlab="Delay (min)", ylab="Mean Pol-II end accumulation index", type='l')
 }
 dev.off()
+
+
+pdf('delay_survival_devbounds.pdf', width=87/25.4, height=50/25.4)
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(mfrow=c(1, 2))
+par(tck=-0.03)
+
+for (DBOUND in c(0.05, 0.1, 0.01)) {
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+mydelays <- delays[I,]
+
+lenco <- 1e4
+Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, MAXVAL=0.3, NORM=12)
+leg2 <- legend(x=c(30, 83.2), y=c(0.18, 0.31),
+       legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1)
+
+lenco <- 0.2
+Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco)
+leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
+       legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
+         sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
+         'p-value'),
+       col=c('blue', 'red', 'black'), lty=1,
+       x.intersp=0.5, y.intersp=1, seg.len=1, xjust=0.5, yjust=0.5)
+}
+dev.off()
+
