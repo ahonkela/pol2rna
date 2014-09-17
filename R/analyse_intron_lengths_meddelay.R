@@ -153,19 +153,57 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-pdf('delay_survival_lenfiltered.pdf', width=87/25.4, height=50/25.4)
+plot_delay_survival_titled <- function(mydelays, key, lenco, delaykey='meddelay', MAXVAL=0.25, NORM=10, title="") {
+  shortlast <- mydelays[mydelays[key]<lenco,delaykey]
+  longlast <- mydelays[mydelays[key]>lenco,delaykey]
+
+  T <- seq(0, 80)
+  shortfreq <- rep(0, length(T))
+  longfreq <- rep(0, length(T))
+  counts <- matrix(0, length(T), 4)
+  pvals <- rep(1, length(T))
+  for (k in seq_along(T)) {
+    shortfreq[k] <- mean(shortlast > T[k])
+    longfreq[k] <- mean(longlast > T[k])
+    counts[k, 1] <- sum(shortlast < T[k])
+    counts[k, 2] <- sum(shortlast >= T[k])
+    counts[k, 3] <- sum(longlast < T[k])
+    counts[k, 4] <- sum(longlast >= T[k])
+    pvals[k] <- fisher.test(matrix(counts[k,],2))$p.value
+  }
+  plot(T, shortfreq, type='l', col='blue', ylim=c(0, MAXVAL), ylab=NA, xlab=NA, axes=FALSE, main=title)
+  lines(T, longfreq, col='red')
+  lines(T, rep(-log(0.05)/log(10)/NORM*MAXVAL, length(T)), col='black', lty=2)
+  axis(side=1, labels = NA)
+  axis(side=1, lwd = 0, line = -.2)
+  mtext("t (min)", side=1, line=0.5)
+  axis(side=2, labels = NA)
+  axis(side=2, lwd = 0, line = 0.1)
+  mtext(expression("Fraction of genes with" ~ Delta > t), side=2, line=0.7)
+  axis(4, seq(0, MAXVAL, len=(NORM/2)+1), seq(0, NORM, by=2), mgp=c(-0.6, -0.1, 0))
+  lines(T, -log(pvals)/log(10)/NORM*MAXVAL, col='black')
+  mtext(expression(-log[10](p-value)), side=4, line=0.7)
+  return (c(short=length(shortlast), long=length(longlast)))
+}
+
+
+
+pdf('delay_survival_lenfiltered.pdf', width=130/25.4, height=50/25.4)
 par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mar=c(1.3, 1.3, 0.7, 1.3)+0.4)
 par(mgp=c(0.6, 0.1, 0))
-par(mfrow=c(1, 1))
+par(mfrow=c(1, 3))
 par(tck=-0.03)
 
-for (LBOUND in c(10000, 30000, 50000)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & (delays[,'maxTrLengths'] > LBOUND) #& (delays[,'corr'] > 0.5)
+LBOUNDS <- c(-1, 10000, 30000)
+TITLES <- c("All genes", "m > 10 kb", "m > 30 kb")
+
+for (k in seq_along(LBOUNDS)) {
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 0.2
-Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco)
+Nlast <- plot_delay_survival_titled(mydelays, 'lastProportion', lenco, title=TITLES[k])
 leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
        legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
          sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
