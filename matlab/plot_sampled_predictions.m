@@ -180,6 +180,12 @@ if ~NODELAYHIST,
     set(gca, 'XTickLabel', 0:100:xmax);
   end
   v = axis;
+  y_tick = [0, .2, .4, .6, .8, 1];
+  y_ticktext = {'0', '0.2', '0.4', '0.6', '0.8', '1'};
+  set(gca, 'YTick', y_tick);
+  set(gca, 'YTickLabel', []);
+  text((v(1) - 0.01*(v(2)-v(1)))*ones(size(y_tick)), y_tick, ...
+       y_ticktext, 'HorizontalAlignment', 'right', 'FontSize', FONTSIZE)
   text(mean(v(1:2)), v(3)-0.10*(v(4)-v(3)), 'Delay (min)', 'HorizontalAlignment','center', 'FontSize', FONTSIZE);
 end
 
