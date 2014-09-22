@@ -98,14 +98,37 @@ else
   set(gca, 'YTick', [])
 end
 set(gca, 'XTick', x_tick)
-set(gca, 'XTickLabel', t_tick)
+set(gca, 'XTickLabel', [])
+v = axis;
+figheight = v(4)-v(3);
+for k=1:length(x_tick),
+  text(x_tick(k), v(4)+0.02*figheight*(mod(k+1, 2)+0.8), ...
+       sprintf('%d', t_tick(k)), 'FontSize', FONTSIZE, ...
+       'HorizontalAlignment', 'center');
+end
 xlabel('t (min)')
+h = get(gca, 'XLabel');
+pos = get(h, 'Position');
+pos2 = pos; pos2(2) = pos(2) + 0.033*figheight; set(h, 'Position', pos2);
+%set(gca, 'XTickLabel', t_tick)
 title('Pol-II')
 subplot(1, 2, 2);
 imagesc(dataVals2(I, :))
 set(gca, 'FontSize', FONTSIZE);
 set(gca, 'YTick', [])
 set(gca, 'XTick', x_tick)
-set(gca, 'XTickLabel', t_tick)
+set(gca, 'XTick', x_tick)
+set(gca, 'XTickLabel', [])
+v = axis;
+figheight = v(4)-v(3);
+for k=1:length(x_tick),
+  text(x_tick(k), v(4)+0.02*figheight*(mod(k+1, 2)+0.8), ...
+       sprintf('%d', t_tick(k)), 'FontSize', FONTSIZE, ...
+       'HorizontalAlignment', 'center');
+end
 xlabel('t (min)')
+h = get(gca, 'XLabel');
+pos = get(h, 'Position');
+pos2 = pos; pos2(2) = pos(2) + 0.033*figheight; set(h, 'Position', pos2);
+%set(gca, 'XTickLabel', t_tick)
 title('mRNA')
