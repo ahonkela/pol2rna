@@ -5,21 +5,26 @@ DEVBOUND <- 0.05
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
 
+cleanup_merge <- function(tbl) {
+  row.names(tbl) <- tbl[,'Row.names']
+  tbl[!names(tbl) %in% c('Row.names')]
+}
+
 
 delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
 ##delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
+quantiles <- read.table('../matlab/results/hmc_results_to_browser_2013-08-30.txt', row.names=1, header=TRUE)
+delays.orig <- cleanup_merge(merge(delays.pol2, quantiles, by=0))
+stopifnot(all(delays.orig[,'meddelay'] == delays.orig[,'X50.']))
+
 premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-18.txt', row.names=1, header=FALSE)
 names(premrna.fits0) <- 'premrna_trend'
 pol2.fits <- read.table('../python/pol2_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
 names(pol2.fits) <- 'pol2_trend'
-premrna.fits <- merge(premrna.fits0, pol2.fits, by=0)
-row.names(premrna.fits) <- premrna.fits[,'Row.names']
-premrna.fits <- premrna.fits[!names(premrna.fits) %in% c('Row.names')]
+premrna.fits <- cleanup_merge(merge(premrna.fits0, pol2.fits, by=0))
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
-delays.orig <- delays.pol2
-delays2 <- merge(delays.orig, premrna.fits, by=0)
-row.names(delays2) <- delays2[,'Row.names']
-delays2 <- delays2[!names(delays2) %in% c('Row.names')]
+##delays.orig <- delays.pol2
+delays2 <- cleanup_merge(merge(delays.orig, premrna.fits, by=0))
 ##delays.orig <- delays2
 
 t <- readLines('intron_lengths.txt.lengths2')
@@ -81,9 +86,7 @@ exonskips <- exskips[,2]
 names(exonskips) <- exskips[,1]
 exonskips <- exonskips[names(maxmaxIntrons)]
 
-delays <- merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0)
-row.names(delays) <- delays[,1]
-delays <- delays[,-1]
+delays <- cleanup_merge(merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0))
 I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
@@ -308,11 +311,14 @@ J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DE
 
 delays.clipped <- delays[J,'meddelay']
 delays.clipped[delays.clipped > 120] <- 121
-h <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
-h$counts[1] <- h$counts[1]-1350
+h.med <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
+h.med$counts[1] <- h.med$counts[1]-1350
+
+h.p25 <- hist(mydelays[,'X25.'], breaks=c(seq(0,120,by=10)), plot=FALSE)
+h.p25$counts[1] <- h.p25$counts[1]-1575
 
 par(mfrow=c(1, 1))
-plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+plot(h.med, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
@@ -322,10 +328,14 @@ par(ps=FONTSIZE, cex=1)
 par(mar=c(1.5, 1.2, 0, 0)+0.4)
 par(mgp=c(1, 0.4, 0))
 par(mfrow=c(1, 1))
-plot(h, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
+plot(h.med, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
+plot(h.p25, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes", ylim=c(0, 100))
+axis(1, at=seq(0, 120, by=40), labels=seq(0, 120, by=40))
+axis.break(2,60,style="zigzag")
+axis(2, at=c(0, 25, 50, 75, 100), labels=c(0, 25, 50, 75+1575, 100+1575))
 dev.off()
 
 
@@ -396,4 +406,17 @@ dev.off()
 pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
 par(mfrow=c(1, 1))
 plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index")
+dev.off()
+
+
+pdf('delay_comparison.pdf', width=50/25.4, height=50/25.4)
+par(mfrow=c(1, 1))
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(tck=-0.015)
+smoothScatter(log(mydelays[,'meddelay'])/log(10), log(mydelays[,'maxTrLengths']/4/1000)/log(10), axes=FALSE, xlab=expression("RNA processing delay" ~ Delta ~ "(min)"), ylab="Transcriptional delay (min)")
+axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2), labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
+axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2), labels=c(1, 3, 10, 30, 100))
+lines(c(-1, 3), c(-1, 3))
 dev.off()
