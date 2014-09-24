@@ -332,10 +332,10 @@ plot(h.med, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
-plot(h.p25, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes", ylim=c(0, 100))
-axis(1, at=seq(0, 120, by=40), labels=seq(0, 120, by=40))
-axis.break(2,60,style="zigzag")
-axis(2, at=c(0, 25, 50, 75, 100), labels=c(0, 25, 50, 75+1575, 100+1575))
+## plot(h.p25, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes", ylim=c(0, 100))
+## axis(1, at=seq(0, 120, by=40), labels=seq(0, 120, by=40))
+## axis.break(2,60,style="zigzag")
+## axis(2, at=c(0, 25, 50, 75, 100), labels=c(0, 25, 50, 75+1575, 100+1575))
 dev.off()
 
 
@@ -415,8 +415,14 @@ par(ps=FONTSIZE, cex=1)
 par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
 par(tck=-0.015)
-smoothScatter(log(mydelays[,'meddelay'])/log(10), log(mydelays[,'maxTrLengths']/4/1000)/log(10), axes=FALSE, xlab=expression("RNA processing delay" ~ Delta ~ "(min)"), ylab="Transcriptional delay (min)")
-axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2), labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
-axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2), labels=c(1, 3, 10, 30, 100))
+smoothScatter(log(mydelays[,'meddelay'])/log(10),
+              log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
+              axes=FALSE,
+              xlab=expression("RNA processing delay" ~ Delta ~ "(min)"),
+              ylab="Transcriptional delay (min)")
+axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
+     labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
+axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
+     labels=c(1, 3, 10, 30, 100))
 lines(c(-1, 3), c(-1, 3))
 dev.off()
