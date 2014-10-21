@@ -58,7 +58,7 @@ xlabel('t_{1/2} (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
 set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
-print -depsc2 synthetic_delays
+print('-depsc2',sprintf('plots/synthetic_delays%d.eps', DATASET))
 
 figure(2);
 set(gca, 'FontSize', FONTSIZE)
@@ -80,4 +80,4 @@ xlabel('\Delta (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
 set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
-print -depsc2 synthetic_halflives
+print('-depsc2',sprintf('plots/synthetic_halflives%d.eps', DATASET))
