@@ -11,8 +11,8 @@ TIPIND = find(bininfo(:, 5) == ensg2int(TIPARP));
 t = [0, 5, 10, 20, 40, 80, 160, 320, 640, 1280];
 t_test = 0:2.5:1280;
 t_gen = {[0, 5, 10, 20, 40, 80, 160, 320, 640, 1280], ...
-        [0 5 10:10:240 280:40:640], ...
-        [0, 10, 20, 40, 60, 80, 120, 160, 240, 320]};
+         [0, 5, 10, 20, 40, 60, 80, 120, 160, 240, 320, 400, 480, 560, 640], ...
+         [0, 5, 10, 20:20:160 200:40:400 480:80:640]};
 
 if ~exist('r', 'var'),
   r = load([datapath, 'info_gene_mean_var.mat']);
@@ -95,4 +95,4 @@ for k=1:length(t_gen),
   rnadata{k} = rnadata{k} + repmat(rnanoise, [size(rnadata{k}, 1), size(rnadata{k}, 2), 1]);
 end
 
-save simulated_data_2013-08-09.mat pol2data rnadata Dvals Deltavals t_gen
+save simulated_data_2014-10-21.mat pol2data rnadata Dvals Deltavals t_gen
