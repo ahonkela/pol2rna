@@ -13,7 +13,7 @@ if m.uniformPriors,
     goodeps = options.epsilon;
     for myeps = 1:length(EPS_SCHEDULE),
       fprintf('Running with epsilon=%f\n', options.epsilon);
-      [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, 0, 100, options);
+      [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, options.verbose, 100, options);
       %keyboard;
       if mean(all(diff(burninHMCsamples) == 0, 2)) > 0.2,
         break;
@@ -39,7 +39,7 @@ if m.uniformPriors,
         myscale = myscale * 2;
         options.scales(I(k)) = myscale;
         fprintf('Variable %d/%d: scale %f\n', I(k), length(oldparams), myscale);
-        [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, 0, 20, options);
+        [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, options.verbose, 20, options);
         %keyboard;
         %disp(g_mean)
         accrate = 1 - mean(all(diff(burninHMCsamples) == 0, 2));
@@ -63,7 +63,7 @@ if m.uniformPriors,
         myscale = myscale * 2;
         options.scales(I(k)) = myscale;
         fprintf('Variable %d/%d: scale %f\n', I(k), length(oldparams), myscale);
-        [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, 0, 20, options);
+        [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, options.verbose, 20, options);
         %keyboard;
         %disp(g_mean)
         accrate = 1 - mean(all(diff(burninHMCsamples) == 0, 2));
@@ -89,12 +89,14 @@ goodeps = options.epsilon;
 options.scales = goodscales;
 for myeps = 1:length(EPS_SCHEDULE),
   fprintf('Running with epsilon=%f\n', options.epsilon);
-  [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, 0, 100, options);
+  [burninHMCsamples, Ehist] = gpnddisimSampleHMC(m, options.verbose, 100, options);
   %keyboard;
-  if mean(all(diff(burninHMCsamples) == 0, 2)) > 0.2,
-    fprintf('Too high rejection rate, backtracking eps schedule...\n');
+  rejrate = mean(all(diff(burninHMCsamples) == 0, 2));
+  if rejrate > 0.2,
+    fprintf('Too high rejection rate (%.1f%%), backtracking eps schedule...\n', 100*rejrate);
     options.epsilon = goodeps;
   else
+    fprintf('Good rejection rate (%.1f%%)\n', 100*rejrate);
     goodeps = options.epsilon;
     options.epsilon = EPS_SCHEDULE(find(EPS_SCHEDULE==goodeps)+1);
   end
