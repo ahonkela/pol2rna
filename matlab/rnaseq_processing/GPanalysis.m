@@ -68,7 +68,7 @@ for i=1:N
 end
 
 output_fileName='GP_summary';
-result=[LS BF likli0 likli1];
+result=[BF LS likli0 likli1];
 dlmwrite(output_fileName, result, 'delimiter','\t')
 
 end
