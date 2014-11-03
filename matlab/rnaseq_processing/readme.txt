@@ -26,7 +26,7 @@ V=[];
 for t=1:10
 	filename=[time_point{t},'.rpkm'];
 	f0=fopen(filename)
-	t0=textscan(f0,repmat('%f',1,500)'CommentStyle','#');
+	t0=textscan(f0,repmat('%f',1,500),'CommentStyle','#');
 	fclose(f0)
 	tr_mcmc_samples=cell2mat(t0);
 
