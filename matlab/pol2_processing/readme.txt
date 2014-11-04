@@ -2,7 +2,7 @@ To generate the necessary data files for GP modeling, use the following steps.
 Note: you may need to edit file paths mentioned in the code to correspond to 
 locations where you have stored the code and data files.
 
-1. Get the data files transcript_counts.txt and transcript_exonpos.txt
+1. Get the data files active_transcripts.txt and transcript_exonpos.txt
 
 2. Run convert_exonpos.m to generate transcript_exonpos.mat
 
