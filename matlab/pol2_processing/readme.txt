@@ -15,9 +15,9 @@ header lines) into genes_dec2012_all.txt
 --------------------------------------------------------------------
 Part 2: editing gene areas to correspond to active mRNA transcripts 
 --------------------------------------------------------------------
-2a. Get the data files transcript_counts.txt and transcript_exonpos.txt as follows:
+2a. Get the data files active_transcripts.txt and transcript_exonpos.txt as follows:
 
-   The data file transcript_counts.txt is a processed form of mRNA activity 
+   The data file active_transcripts.txt is a processed form of mRNA activity 
    and is provided as a supplement to the manuscript.
 
    The file transcript_exonpos.txt can be generated from Biomart
