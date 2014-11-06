@@ -374,7 +374,7 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
   lines(t, -log(pvals)/log(10)/NORM*(MAXVAL-MINVAL)+MINVAL, col='black')
   axis(side=1, labels = NA)
   axis(side=1, lwd = 0, line = -.3)
-  mtext("Delay bound (min)", side=1, line=0.3)
+  mtext("x (min)", side=1, line=0.3)
   axis(side=2, labels = NA)
   axis(side=2, lwd = 0, line = 0)
   mtext(ylab, side=2, line=0.5)
