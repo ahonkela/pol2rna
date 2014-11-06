@@ -374,7 +374,7 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
   lines(t, -log(pvals)/log(10)/NORM*(MAXVAL-MINVAL)+MINVAL, col='black')
   axis(side=1, labels = NA)
   axis(side=1, lwd = 0, line = -.3)
-  mtext("x (min)", side=1, line=0.3)
+  mtext("t (min)", side=1, line=0.3)
   axis(side=2, labels = NA)
   axis(side=2, lwd = 0, line = 0)
   mtext(ylab, side=2, line=0.5)
@@ -382,12 +382,12 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
   mtext(expression(-log[10](p-value)), side=4, line=0.3)
   if (response == "pol2_trend") {
     legend('right',
-           legend=c(expression(Delta > x), expression(Delta < x), 'p-value'),
+           legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
            col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
            seg.len=1, inset=0.01)
   } else {
     legend('topleft',
-           legend=c(expression(Delta > x), expression(Delta < x), 'p-value'),
+           legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
            col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
            seg.len=1, inset=0.01)
   }
