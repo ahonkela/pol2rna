@@ -66,6 +66,17 @@ def load_wigs():
     w.sort(key=lambda x: x[0])
     return w
 
+def write_bin_wigs(w):
+    for mywig in w:
+        fname = 'MCF7_premRNA_%s.wig' % mywig[0].split('/')[-1].split('_')[2]
+        with open(fname, 'w') as f:
+            f.write('track type=wiggle_0 name="mywiggle" description="mywiggle" visibility=full\n')
+            for k in sorted(mywig[1].keys()):
+                gene = k.split('_')[0]
+                f.write('fixedStep chrom=%s start=1 step=200 span=200\n' % gene)
+                f.write('\n'.join([('%f' % x).replace('.000000', '') for x in mywig[1][k]]) + '\n')
+
+
 def combine_wigs(w):
     if len(w[0]) == 2:
         w = [x[1] for x in w]
