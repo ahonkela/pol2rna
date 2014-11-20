@@ -6,6 +6,17 @@ locations where you have stored the code and data files.
 --------------------------
 Part 1: getting gene areas
 --------------------------
+
+1pre. Get the gene positions as follows:
+   The file genepos.txt can be generated from Biomart
+   ( http://oct2012.archive.ensembl.org/biomart/martview ) with the following steps:
+   -> Choose database: Ensembl genes 69
+   -> Choose dataset: Homo sapiens
+   -> Attributes
+   -> Features
+   -> Gene; select: Ensembl Gene ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand
+   -> Results, format: CSV
+
 1a. Run create_newbininfo.R and concatenate the output text files (without the 
 header lines) into genes_dec2012_all.txt
 
