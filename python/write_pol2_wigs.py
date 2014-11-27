@@ -5,25 +5,83 @@ import os
 TIMES = ['0000', '0005', '0010', '0020', '0040',
          '0080', '0160', '0320', '0640', '1280']
 
-NORM = 36
+CHRS = {k:str(k) for k in range(1, 23)}
+CHRS[23] = 'X'
+CHRS[24] = 'Y'
+CHRS[25] = 'MT'
+CHRS[-1] = '-1'
+
+SPECIALS = (('ENSG00000206310','HSCHR6_MHC_QBL'),
+            ('ENSG00000223355','HSCHR6_MHC_MCF'),
+            ('ENSG00000225452','HSCHR6_MHC_MCF'),
+            ('ENSG00000226892','HSCHR6_MHC_DBB'),
+            ('ENSG00000227122','HSCHR6_MHC_MCF'),
+            ('ENSG00000227652','HSCHR6_MHC_DBB'),
+            ('ENSG00000229038','HSCHR6_MHC_QBL'),
+            ('ENSG00000229058','HSCHR6_MHC_MANN'),
+            ('ENSG00000229058','HSCHR6_MHC_MANN'),
+            ('ENSG00000229058','HSCHR6_MHC_MANN'),
+            ('ENSG00000229071','HSCHR6_MHC_COX'),
+            ('ENSG00000229252','HSCHR6_MHC_DBB'),
+            ('ENSG00000230209','HSCHR6_MHC_DBB'),
+            ('ENSG00000230514','HSCHR6_MHC_MCF'),
+            ('ENSG00000230907','HSCHR6_MHC_COX'),
+            ('ENSG00000231618','HSCHR6_MHC_MCF'),
+            ('ENSG00000234243','HSCHR6_MHC_MCF'),
+            ('ENSG00000234508','HSCHR6_MHC_SSTO'),
+            ('ENSG00000234539','HSCHR6_MHC_COX'),
+            ('ENSG00000234876','HSCHR6_MHC_SSTO'),
+            ('ENSG00000235171','HSCHR6_MHC_QBL'),
+            ('ENSG00000236697','HSCHR6_MHC_MANN'),
+            ('ENSG00000236697','HSCHR6_MHC_MANN'),
+            ('ENSG00000236697','HSCHR6_MHC_MANN'),
+            ('ENSG00000243492','HSCHR6_MHC_COX'),
+            ('ENSG00000254778','HSCHR6_MHC_COX'),
+            ('ENSG00000257276','HSCHR6_MHC_DBB'),
+            ('ENSG00000257297','HSCHR6_MHC_MANN'),
+            ('ENSG00000257297','HSCHR6_MHC_MANN'),
+            ('ENSG00000257297','HSCHR6_MHC_MANN'),
+            ('ENSG00000257469','HSCHR6_MHC_SSTO'),
+            ('ENSG00000257484','HSCHR6_MHC_QBL'),
+            ('ENSG00000257697','HSCHR6_MHC_MANN'),
+            ('ENSG00000257697','HSCHR6_MHC_MANN'),
+            ('ENSG00000257697','HSCHR6_MHC_MANN'),
+            ('ENSG00000258008','HSCHR6_MHC_QBL'),
+            ('ENSG00000258147','HSCHR6_MHC_DBB'),
+            ('ENSG00000258361','HSCHR6_MHC_SSTO'))
+
+SPECCHRS = {k:v for k,v in SPECIALS}
+
+NORM = 200
 
 def load_data(datapath=os.path.expanduser('~/projects/pol2rnaseq/')):
     bindata = scipy.io.loadmat(datapath + 'all_gene_pol2bins_2013_01_02.mat')
     bininfo = scipy.io.loadmat(datapath + 'bininfo_dec2012_corrected.mat')
-    genes = ['ENSG%011d' % x for x in bininfo['bininfo'][:,4]]
+    genes0 = ['ENSG%011d' % x for x in bininfo['bininfo'][:,4]]
+    genes = [''] * len(genes0)
+    for k in xrange(len(genes)):
+        info = bininfo['bininfo'][k,:]
+        if info[0] != -1:
+            genes[k] = 'ENSG%011d:chr%s:%d-%d:%c' % (info[4], CHRS[info[0]], info[1], info[2], '+' if info[5] > 0 else '-')
+        else:
+            genes[k] = 'ENSG%011d:%s:%d-%d:%c' % (info[4], SPECCHRS['ENSG%011d' % info[4]], info[1], info[2], '+' if info[5] > 0 else '-')
+    lens = {k:v for k, v in zip(genes, bininfo['bininfo'][:,2] - bininfo['bininfo'][:,1])}
     pol2bins = bindata['pol2bins']
     d = dict()
     for k in range(len(genes)):
         if pol2bins[k,0].shape[1] > 0:
             d[genes[k]] = np.hstack(pol2bins[k,:]/NORM)
-    return d
+    return (d, lens)
 
-def write_bin_wigs(w):
+def write_bin_wigs(w0):
+    w, lens = w0
     genes = sorted(w.keys())
     for i in range(len(TIMES)):
         fname = 'MCF7_PolII_t%smin.wig' % TIMES[i]
         with open(fname, 'w') as f:
             f.write('track type=wiggle_0 name="mywiggle" description="mywiggle" visibility=full\n')
             for gene in genes:
-                f.write('fixedStep chrom=%s start=1 step=200 span=200\n' % gene)
-                f.write('\n'.join([('%f' % x).rstrip('0').rstrip('.') for x in w[gene][:,i]]) + '\n')
+                myend = lens[gene]+2
+                steps = np.concatenate((np.array((1,)), np.arange(myend % 200, myend, 200)))
+                f.write('variableStep chrom=%s span=200\n' % gene)
+                f.write('\n'.join([('%d %f' % (y, x)).rstrip('0').rstrip('.') for x, y in zip(w[gene][::-1,i], steps)]) + '\n')
