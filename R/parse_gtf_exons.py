@@ -1,10 +1,11 @@
 import os.path
 import numpy as np
+import pandas as pd
 import gzip
 import re
 
 #fname = os.path.expanduser('~/Downloads/Homo_sapiens.GRCh37.72.gtf')
-fname = os.path.expanduser('~/data/genomes/Homo_sapiens.GRCh37.69.gtf.gz')
+fname = os.path.expanduser('~/data/genomes/Homo_sapiens.GRCh37.68.gtf.gz')
 
 def gtf_desc_to_dict(s):
     t = s.strip().split(';')
@@ -23,15 +24,13 @@ def read_exons(fname):
         t = l.strip().split('\t')
         if t[2] == 'exon':
             d = gtf_desc_to_dict(t[8])
+            d['exon_id']='EXON%s_%s' % (t[3], t[4])
             t[8] = d
             ense = '%s.%s' % (d['gene_id'], d['exon_id'])
             if d['gene_id'] in genes:
-                if d['exon_id'] in genes[d['gene_id']]:
-                    genes[d['gene_id']][d['exon_id']].append(t)
-                else:
-                    genes[d['gene_id']][d['exon_id']] = [t]
+                genes[d['gene_id']].append(d['exon_id'])
             else:
-                genes[d['gene_id']] = {d['exon_id']: [t]}
+                genes[d['gene_id']] = [d['exon_id']]
     return genes
 
 def read_transcripts(fname):
@@ -40,6 +39,7 @@ def read_transcripts(fname):
         t = l.strip().split('\t')
         if t[2] == 'exon':
             d = gtf_desc_to_dict(t[8])
+            d['exon_id']='EXON%s_%s' % (t[3], t[4])
             t[8] = d
             if d['gene_id'] in genes:
                 if d['transcript_id'] in genes[d['gene_id']]:
@@ -67,12 +67,16 @@ def find_skipped_exons(mytranscripts):
     return False
 
 if 'exons' not in locals():
+    print 'Reading exons'
     exons = read_exons(fname)
 
 if 'transcripts' not in locals():
+    print 'Reading transcripts'
     transcripts = read_transcripts(fname)
 
+print 'Finding skips'
 hasskips = [find_skipped_exons(k) for k in transcripts.values()]
 
 geneskips = pd.DataFrame(hasskips, index=transcripts.keys())
 geneskips = geneskips.sort_index()
+geneskips.to_csv('skipped_exons.csv')

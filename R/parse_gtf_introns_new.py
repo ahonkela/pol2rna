@@ -3,7 +3,7 @@ import numpy as np
 import gzip
 
 #fname = os.path.expanduser('~/Downloads/Homo_sapiens.GRCh37.72.gtf')
-fname = os.path.expanduser('~/data/genomes/Homo_sapiens.GRCh37.69.gtf.gz')
+fname = os.path.expanduser('~/data/genomes/Homo_sapiens.GRCh37.68.gtf.gz')
 
 def gtf_desc_to_dict(s):
     t = s.strip().split(';')
