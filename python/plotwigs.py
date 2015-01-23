@@ -155,10 +155,10 @@ def save_data(data, fname):
 def shorten_keys(d):
     return {k[0:15]: v for k, v in d.items()}
 
-with open(os.path.expanduser('~/Dropbox/projects/pol2rnaseq/interesting_genes.txt'), 'r') as f:
-    genes = [x.strip() for x in f.readlines()]
-
 def runme():
+    with open(os.path.expanduser('~/Dropbox/projects/pol2rnaseq/interesting_genes.txt'), 'r') as f:
+        genes = [x.strip() for x in f.readlines()]
+
     w = load_wigs()
     v = combine_wigs(w)
     PLOTPATH=os.path.expanduser("~/public_html/synergy/premrna_plots/")
