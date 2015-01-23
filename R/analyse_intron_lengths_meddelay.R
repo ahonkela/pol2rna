@@ -11,9 +11,8 @@ cleanup_merge <- function(tbl) {
 }
 
 
-delays.pol2 <- read.table('pol2max_and_meddelays_2013-08-30.txt', row.names=1, header=TRUE)
-##delays.premrna <- read.table('pol2max_and_meddelays_2013-11-05.txt', row.names=1, header=TRUE)
-quantiles <- read.table('../matlab/results/hmc_results_to_browser_2013-08-30.txt', row.names=1, header=TRUE)
+delays.pol2 <- read.table('../matlab/results/pol2max_and_meddelays_final.txt', row.names=1, header=TRUE)
+quantiles <- read.table('../matlab/results/hmc_results_to_browser_final.txt', row.names=1, header=TRUE)
 delays.orig <- cleanup_merge(merge(delays.pol2, quantiles, by=0))
 stopifnot(all(delays.orig[,'meddelay'] == delays.orig[,'X50.']))
 

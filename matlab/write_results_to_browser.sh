@@ -6,14 +6,14 @@ rm -f "$DBFILE"
 
 #    python insert_supplementary_data.py -t 0 -f "$f" -c 2 --tf="$reg" database.sqlite "ischip"
 
-SUPPFILE="results/pol2max_and_delays_2013-08-30.txt"
+SUPPFILE="results/pol2max_and_delays_final.txt"
 SUPPFILE2="../R/gene_structures.txt"
 
-FIGNAME_POL2="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_2013-08-30.png"
+FIGNAME_POL2="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_final.png"
 
-ORIGRESULTFILE="results/hmc_results_to_browser_2013-08-30.txt"
+ORIGRESULTFILE="results/hmc_results_to_browser_final.txt"
 GENEFILE="../R/analysed_genes.txt"
-RESULTFILE="results/hmc_results_to_browser_2013-08-30.filtered.txt"
+RESULTFILE="results/hmc_results_to_browser_final.filtered.txt"
 FIGNAME=$FIGNAME_POL
 REGNAME="pol2"
 
@@ -30,7 +30,7 @@ insert_results.py -f "$SUPPFILE" --log-likelihood-column=3 "$DBFILE" "pol2rnaseq
 insert_results.py -f "$SUPPFILE2" --log-likelihood-column=2 "$DBFILE" "pol2rnaseq" "maxTrLength" "$REGNAME"
 insert_results.py -f "$SUPPFILE2" --log-likelihood-column=3 "$DBFILE" "pol2rnaseq" "lastProportion" "$REGNAME"
 insert_figures.py -d ',' "$DBFILE" "pol2tmax" "$REGNAME" "pol2rnaseq" <<EOF
-http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_2013-08-30.png, Pol II model, , 2
+http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_final.png, Pol II model, , 2
 http://www.cs.helsinki.fi/u/ahonkela/synergy/premrna_plots/\${probe_name}_premrna.png, pre-mRNA data, , 1
 EOF
 

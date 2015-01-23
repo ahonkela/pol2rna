@@ -1,9 +1,10 @@
 resultdir = '~/projects/pol2rnaseq/analyses/hmc_results/joint/';
-id = '2013-08-30';
+inputid = '2013-08-30';
+id = 'final';
 %id = '2013-11-05';
 %resultdir = '/share/synergy/analyses/hmc_results/joint/';
 
-d = dir([resultdir '*_samples_' id '_unif0.mat']);
+d = dir([resultdir '*_samples_' inputid '_unif0.mat']);
 
 filenames = {};
 [filenames{1:length(d),1}] = deal(d.name);
@@ -13,6 +14,7 @@ find_good_pol2;
 [~, A, B] = intersect(pol2ensg, cellfun(@(x) x(1:15), filenames, 'UniformOutput', false));
 filenames = filenames(B);
 
+id = 'final';
 %N_GOOD = 5;
 
 Isampl = 501:1000;
@@ -105,6 +107,8 @@ end
 %   % end
 %   % pause
 % end
+
+disp(id)
 
 save(['results/result_summary_' id], 'means', 'stds', 'prcts', 'genes');
 
