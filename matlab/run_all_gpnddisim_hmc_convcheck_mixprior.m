@@ -50,8 +50,7 @@ cd(datadir)
 %load series_for_matti_ver3.mat
 %load('pol2_for_matti_ver3.mat', 'bininfo');
 %load('pol2_summaryseries_2012_09.mat');
-load('bininfo_nov2014_corrected.mat', 'bininfo_problemgenes');
-bininfo = bininfo_problemgenes;
+load('bininfo_nov2014_corrected.mat', 'bininfo');
 load('pol2_summaryseries_2014_11_19.mat');
 %r = load('rna_new_data4.mat');
 %act = importdata('activeGenes_new.txt');

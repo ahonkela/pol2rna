@@ -1,8 +1,8 @@
 
-load /triton/ics/project/synergy/data/Hande_codes/rpkm.mat
+load ~/projects/pol2rnaseq/data/rpkm.mat
 
-load /share/synergy/data_summaries/bininfo_dec2012_corrected.mat
-load /share/synergy/data_summaries/pol2_summaryseries_2013_01_02.mat
+load ~/projects/pol2rnaseq/data/bininfo_nov2014_corrected.mat
+load ~/projects/pol2rnaseq/data/pol2_summaryseries_2014_11_19.mat
 
 % Ensembl ids for Hande's genes as numbers
 hande_geneids = nan*ones(length(genes),1);
