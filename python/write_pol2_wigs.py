@@ -11,7 +11,7 @@ CHRS[24] = 'Y'
 CHRS[25] = 'MT'
 CHRS[-1] = '-1'
 
-NORM = 200
+NORM = 36
 
 def load_data(datapath=os.path.expanduser('~/projects/pol2rnaseq/data/')):
     bindata = scipy.io.loadmat(datapath + 'all_gene_pol2bins_2014_11_19.mat')
