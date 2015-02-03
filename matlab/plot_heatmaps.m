@@ -48,8 +48,8 @@ datadir = '~/projects/pol2rnaseq/data/';
 %load series_for_matti_ver3.mat
 %load('pol2_for_matti_ver3.mat', 'bininfo');
 %load('pol2_summaryseries_2012_09.mat');
-load([datadir, 'bininfo_dec2012_corrected.mat'], 'bininfo');
-load([datadir 'pol2_summaryseries_2013_01_02.mat']);
+load([datadir, 'bininfo_nov2014_corrected.mat'], 'bininfo');
+load([datadir 'pol2_summaryseries_2014_11_19.mat']);
 %r = load('rna_new_data4.mat');
 %act = importdata('activeGenes_new.txt');
 normfacts = importdata([datadir 'rna_norm_factors.txt']);
