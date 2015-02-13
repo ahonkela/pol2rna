@@ -38,6 +38,6 @@ def write_bin_wigs(w0):
             f.write('track type=wiggle_0 name="mywiggle" description="mywiggle" visibility=full\n')
             for gene in genes:
                 myend = lens[gene]+2
-                steps = np.concatenate((np.array((1,)), np.arange(myend % 200, myend, 200)))
+                steps = np.concatenate((np.array((1,)), np.arange((myend-2) % 200 + 2, myend, 200)))
                 f.write('variableStep chrom=%s span=200\n' % gene)
                 f.write('\n'.join([('%d %f' % (y, x)).rstrip('0').rstrip('.') for x, y in zip(w[gene][::-1,i], steps)]) + '\n')
