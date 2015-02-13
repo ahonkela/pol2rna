@@ -6,7 +6,7 @@ rm -f "$DBFILE"
 
 #    python insert_supplementary_data.py -t 0 -f "$f" -c 2 --tf="$reg" database.sqlite "ischip"
 
-SUPPFILE="results/pol2max_and_delays_final.txt"
+SUPPFILE="results/pol2max_and_meddelays_final.txt"
 SUPPFILE2="../R/gene_structures.txt"
 
 FIGNAME_POL2="http://www.cs.helsinki.fi/u/ahonkela/synergy/hmc_plots/\${probe_name}_hmc_final.png"
