@@ -155,14 +155,16 @@ for i=myI,
   boparams.log_filename = 'matbopt.log';
   
   % beta0, beta, alpha, Delta, m(0)
-  lb = [0, 0, 1, 0, 0];
-  ub = [1, 5, 300, 120, max(dataVals2)];
+  %lb = [0, 0, 1, 0, 0];
+  %ub = [1, 5, 300, 120, max(dataVals2)];
+  lb = [-5, -5, -5, -8, -5];
+  ub = [5, 5, 5, 0, 5];
   %[params, ll] = fminsearch(@(params) -odeLikelihood(dataVals1, dataVals2, rnaVars, timevector, params), params0, options);
-  [params, ll] = bayesoptcont(@(params) -odeLikelihoodUT(dataVals1, dataVals2, rnaVars, timevector, params), 5, boparams, lb, ub);
+  [params, ll] = bayesoptcont(@(params) -odeLikelihood(dataVals1, dataVals2, rnaVars, timevector, params), 5, boparams, lb, ub);
   fitparams{myindex} = params;
   lls(myindex) = ll;
   
   % plot
-  odeLikelihoodUT(dataVals1, dataVals2, rnaVars, timevector, params, 1)
+  odeLikelihood(dataVals1, dataVals2, rnaVars, timevector, params, 1)
   drawnow;
 end;
