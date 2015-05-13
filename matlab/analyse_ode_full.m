@@ -15,6 +15,7 @@ means = zeros(length(genes), length(seeds), 5);
 medians = zeros(length(genes), length(seeds), 5);
 stds = zeros(length(genes), length(seeds), 5);
 genemedians = zeros(length(genes), 5);
+genestds = zeros(length(genes), 5);
 geneprcts = zeros(length(genes), 5, length(MYP));
 for k=1:length(genes),
   if mod(k, 10) == 0
@@ -30,6 +31,7 @@ for k=1:length(genes),
     mysamples((1:100)+(l-1)*100, :) = res{k,l}.samples(101:end, :);
   end
   genemedians(k, :) = median(mysamples);
+  genestds(k, :) = std(mysamples);
   geneprcts(k, :, :) = prctile(mysamples, MYP)';
 end
 
@@ -47,7 +49,7 @@ end
 fp = fopen(sprintf('results/ctd_delays_%s.txt', id), 'w');
 fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\n');
 for k=1:length(genes),
-  fprintf(fp, '%s\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)));
+  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)));
 end
 fclose(fp);
 
