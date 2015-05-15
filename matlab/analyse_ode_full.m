@@ -8,7 +8,7 @@ for k=1:length(d),
   t = strsplit(d(k).name, '_');
   genes0{k} = t{1};
 end
-genes = unique(files);
+genes = unique(genes0);
 
 res = cell(length(genes), length(seeds));
 means = zeros(length(genes), length(seeds), 5);
@@ -17,11 +17,13 @@ stds = zeros(length(genes), length(seeds), 5);
 genemedians = zeros(length(genes), 5);
 genestds = zeros(length(genes), 5);
 geneprcts = zeros(length(genes), 5, length(MYP));
+genells = zeros(length(genes), 1);
 for k=1:length(genes),
   if mod(k, 10) == 0
     fprintf('Doing gene %d/%d\n', k, length(genes));
   end
   mysamples = zeros(length(seeds)*100, 5);
+  mylls = zeros(length(seeds)*100, 1);
   for l=1:length(seeds),
     fname = sprintf('ode_mcmc_results/%s_samples_%s_seed%d.mat', genes{k}, id, seeds(l));
     res{k,l} = load(fname);
@@ -29,10 +31,12 @@ for k=1:length(genes),
     medians(k, l, :) = median(res{k,l}.samples(101:end, :));
     stds(k, l, :) = std(res{k,l}.samples(101:end, :));
     mysamples((1:100)+(l-1)*100, :) = res{k,l}.samples(101:end, :);
+    mylls((1:100)+(l-1)*100) = res{k,l}.ll(101:end);
   end
   genemedians(k, :) = median(mysamples);
   genestds(k, :) = std(mysamples);
   geneprcts(k, :, :) = prctile(mysamples, MYP)';
+  genells(k) = mean(mylls);
 end
 
 N = size(res{k,l}.samples, 1) - 100;
@@ -47,9 +51,9 @@ for l=1:length(MYP),
   trueprcts(:, :, l) = odeTransformParams(geneprcts(:, :, l));
 end
 fp = fopen(sprintf('results/ctd_delays_%s.txt', id), 'w');
-fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\n');
+fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\n');
 for k=1:length(genes),
-  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)));
+  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k));
 end
 fclose(fp);
 
