@@ -46,15 +46,19 @@ B = squeeze(var(means, [], 2));
 varHatPlus = (N-1)/N * W + 1/N * B;
 Rhat = sqrt(varHatPlus./W);
 
+d = dir(sprintf('ode_mcmc_summaries/ode_mcmc_%s_curves*.mat', id));
+fnames = cellfun(@(x) ['ode_mcmc_summaries/' x], {d.name}, 'UniformOutput', 0);
+r = merge_files(fnames);
+
 truemedians = odeTransformParams(genemedians);
 trueprcts = zeros(size(geneprcts));
 for l=1:length(MYP),
   trueprcts(:, :, l) = odeTransformParams(geneprcts(:, :, l));
 end
 fp = fopen(sprintf('results/ctd_delays_%s.txt', id), 'w');
-fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\tctd_iqr\n');
+fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\tctd_iqr\tctd_resvarfrac\n');
 for k=1:length(genes),
-  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k), diff(trueprcts(k, 4, [4,2])));
+  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k), abs(diff(trueprcts(k, 4, [4,2]))), r.resvariances(k)/r.datavariances(k));
 end
 fclose(fp);
 
