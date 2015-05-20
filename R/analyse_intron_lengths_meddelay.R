@@ -1,6 +1,7 @@
 # FIGURE PARAMETERS
 FONTSIZE=6
 DEVBOUND <- 0.05
+IQRBOUND <- 120
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
@@ -86,7 +87,7 @@ names(exonskips) <- exskips[,1]
 exonskips <- exonskips[names(maxmaxIntrons)]
 
 delays <- cleanup_merge(merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0))
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
@@ -132,7 +133,7 @@ par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 1e4
@@ -201,7 +202,7 @@ LBOUNDS <- c(-1, 10000, 30000)
 TITLES <- c("All genes", "m > 10 kb", "m > 30 kb")
 
 for (k in seq_along(LBOUNDS)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 0.2
@@ -224,7 +225,7 @@ par(mfrow=c(3, 2))
 par(tck=-0.03)
 
 for (DBOUND in c(0.05, 0.1, 0.01)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'meddelay'] < 120) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 mybound <- sprintf('%.2f', DBOUND)
@@ -249,7 +250,7 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'meddelay'] < 120) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
@@ -306,7 +307,7 @@ dev.off()
 write.table(row.names(mydelays), file='analysed_genes.txt', quote=FALSE, row.names=FALSE, col.names=FALSE)
 
 library(plotrix)
-J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND)
+J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & ((delays[,'X75.'] - delays[,'X25.']) < IQRBOUND)
 
 delays.clipped <- delays[J,'meddelay']
 delays.clipped[delays.clipped > 120] <- 121
@@ -338,7 +339,7 @@ axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 dev.off()
 
 
-I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'meddelay'] < 120) #& (delays2[,'corr'] > 0.5)
+I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'meddelay'] < 120) & ((delays2[,'X75.'] - delays2[,'X25.']) < IQRBOUND) #& (delays2[,'corr'] > 0.5)
 mydelays2 <- delays2[I2,]
 
 
