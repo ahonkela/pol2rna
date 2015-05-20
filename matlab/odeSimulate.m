@@ -1,4 +1,4 @@
-function yout = odeSimulate(p, t_p, t_obs, params, doplot),
+function [yout, tout] = odeSimulate(p, t_p, t_obs, params, doplot),
 
 if nargin < 5,
   doplot = 0;
@@ -12,14 +12,14 @@ rawparams = params;
 if doplot,
   [tout, yout] = ode45(@(t, y) delayode(t, y, rawparams, p, t_p), [min(t_obs), max(t_obs)], rawparams{5});
   subplot(2, 1, 1);
-  plot(t_obs-min(t_obs), p, 'rx');
+  plot(t_p-min(t_p), p, 'rx');
   v = axis;
   axis([0, 1300, 0, v(4)])
   subplot(2, 1, 2);
   plot(tout-min(t_obs), yout);
-  hold on
-  plot(t_obs-min(t_obs), m, 'gx');
-  hold off
+  %hold on
+  %plot(t_p-min(t_p), m, 'gx');
+  %hold off
   v = axis;
   axis([0, 1300, 0, v(4)])
 end
