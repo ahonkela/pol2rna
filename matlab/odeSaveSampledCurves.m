@@ -44,11 +44,10 @@ for k=myI,
     mysamples((1:100)+(l-1)*100, :) = res{k,l}.samples(101:end, :);
   end
   yout = zeros(length(t_plot), size(mysamples, 1));
+  mydataVals1 = d.dataVals1(:, geneI) - min(d.dataVals1(:, geneI));
   for n=1:size(mysamples, 1),
     params = num2cell(odeTransformParams(mysamples(n,:)));
-    yout(:, n) = odeSimulate(d.dataVals1(:,geneI), ...
-                             t_tick, t_pred, ...
-                             params, 0);
+    yout(:, n) = odeSimulate(mydataVals1, t_tick, t_pred, params, 0);
   end
   mydataVals2 = d.dataVals2(:, geneI);
   rnascale = max(mydataVals2) / 10;
