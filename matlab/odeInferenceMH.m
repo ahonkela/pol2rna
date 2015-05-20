@@ -211,6 +211,8 @@ for i=runids(myI),
   rnascale = max(dataVals2) / 10;
   dataVals2 = dataVals2 / rnascale;
   rnaVars = rnaVars / (rnascale.^2);
+  dataVals1 = dataVals1 - min(dataVals1);
+
   timevector=[0 5 10 20 40 80 160 320 640 1280]' + timeshift;
 
   temptimes=timevector;
@@ -226,8 +228,6 @@ for i=runids(myI),
     warning('NaN data for gene %s, skipping...\n', gene_name);
     continue;
   end
-
-  dataVals1 = dataVals1 - min(dataVals1);
 
   myindex = find(i==myI);
   for myseedi=1:length(seeds),
