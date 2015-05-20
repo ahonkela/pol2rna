@@ -1,7 +1,13 @@
-% analyse_ode_full
+function odePlotSampled(myI),
+
+id = '2015-05-15';
 
 FONTSIZE=6;
 LINEWIDTH=1.5;
+
+d = dir(sprintf('ode_mcmc_summaries/ode_mcmc_%s_curves*.mat', id));
+fnames = cellfun(@(x) ['ode_mcmc_summaries/' x], {d.name}, 'UniformOutput', 0);
+r = merge_files(fnames);
 
 d = load('ode_data_2015-05-07.mat');
 
@@ -18,37 +24,11 @@ t_ticklabels{2} = '';
 t_ticklabels{3} = '';
 t_ticklabels{4} = '';
 
-curves = cell(1, size(res, 2));
-resvariances = zeros(1, size(res, 2));
-datavariances = zeros(1, size(res, 2));
+load('ode_mcmc_2015-05-15_summary.mat');
 
-for k=1:4,
-  geneI = find(strcmp(res{k,1}.gene_name, d.gene_name));
-  mysamples = zeros(400, 6);
-  for l=1:4,
-    mysamples((1:100)+(l-1)*100, :) = res{k,l}.samples(101:end, :);
-  end
-  yout = zeros(length(t_plot), size(mysamples, 1));
-  for n=1:size(mysamples, 1),
-    params = num2cell(odeTransformParams(mysamples(n,:)));
-    yout(:, n) = odeSimulate(d.dataVals1(:,geneI), ...
-                             t_tick, t_pred, ...
-                             params, 0);
-  end
-  mydataVals2 = d.dataVals2(:, geneI);
-  rnascale = max(mydataVals2) / 10;
-  mydataVals2 = mydataVals2 / rnascale;
+curves = r.curves;
 
-  resvariances(k) = mean(mean((yout(t_tickplot, :) - repmat(mydataVals2, 1, 400)).^2));
-  datavariances(k) = var(mydataVals2);
-  curves{k} = prctile(yout, [2.5, 50, 97.5], 2);
-end
-
-
-
-
-
-for k=1:4,
+for k=myI,
   geneI = find(strcmp(res{k,1}.gene_name, d.gene_name));
   mydataVals2 = d.dataVals2(:, geneI);
   myrnaVars = d.rnaVars(:, geneI);
@@ -71,6 +51,7 @@ for k=1:4,
   plot(t_plot, mycurve(:,2), 'g', 'LineWidth', LINEWIDTH);
   errorbar(t_tickplot, mydataVals2, ...
            2*sqrt(myrnaVars), 'bx')
+  title(d.gene_name{geneI})
   hold off
   axis([0, max(t_plot), minbound, maxbound]);
   set(gca, 'XTick', t_tickplot);
