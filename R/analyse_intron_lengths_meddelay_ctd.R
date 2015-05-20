@@ -1,6 +1,8 @@
 # FIGURE PARAMETERS
 FONTSIZE=6
 DEVBOUND <- 0.05
+##LLBOUND <- -100
+RESVARBOUND <- 0.5
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
@@ -13,9 +15,9 @@ cleanup_merge <- function(tbl) {
 
 delays.pol2 <- read.table('../matlab/results/pol2max_and_meddelays_final.txt', row.names=1, header=TRUE)
 quantiles <- read.table('../matlab/results/hmc_results_to_browser_final.txt', row.names=1, header=TRUE)
-ctds <- read.table('../matlab/results/ctd_medians_2015-05-07.txt', row.names=1, header=TRUE)
+ctds <- read.table('../matlab/results/ctd_delays_2015-05-15.txt', row.names=1, header=TRUE)
 delays.orig0 <- cleanup_merge(merge(delays.pol2, quantiles, by=0))
-stopifnot(all(delays.orig[,'meddelay'] == delays.orig[,'X50.']))
+stopifnot(all(delays.orig0[,'meddelay'] == delays.orig0[,'X50.']))
 delays.orig <- cleanup_merge(merge(delays.orig0, ctds, by=0))
 
 premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-18.txt', row.names=1, header=FALSE)
@@ -88,11 +90,11 @@ names(exonskips) <- exskips[,1]
 exonskips <- exonskips[names(maxmaxIntrons)]
 
 delays <- cleanup_merge(merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0))
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_median'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
-plot_delay_survival <- function(mydelays, key, lenco, delaykey='ctd_median', MAXVAL=0.25, NORM=10) {
+plot_delay_survival <- function(mydelays, key, lenco, delaykey='ctd_50.', MAXVAL=0.25, NORM=10) {
   shortlast <- mydelays[mydelays[key]<lenco,delaykey]
   longlast <- mydelays[mydelays[key]>lenco,delaykey]
 
@@ -134,7 +136,7 @@ par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_median'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 1e4
@@ -157,7 +159,7 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-plot_delay_survival_titled <- function(mydelays, key, lenco, delaykey='ctd_median', MAXVAL=0.25, NORM=10, title="") {
+plot_delay_survival_titled <- function(mydelays, key, lenco, delaykey='ctd_50.', MAXVAL=0.25, NORM=10, title="") {
   shortlast <- mydelays[mydelays[key]<lenco,delaykey]
   longlast <- mydelays[mydelays[key]>lenco,delaykey]
 
@@ -203,7 +205,7 @@ LBOUNDS <- c(-1, 10000, 30000)
 TITLES <- c("All genes", "m > 10 kb", "m > 30 kb")
 
 for (k in seq_along(LBOUNDS)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_median'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 0.2
@@ -226,7 +228,7 @@ par(mfrow=c(3, 2))
 par(tck=-0.03)
 
 for (DBOUND in c(0.05, 0.1, 0.01)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'ctd_median'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 mybound <- sprintf('%.2f', DBOUND)
@@ -251,7 +253,7 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_median'] < 120) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
@@ -310,7 +312,7 @@ write.table(row.names(mydelays), file='analysed_genes.txt', quote=FALSE, row.nam
 library(plotrix)
 J <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND)
 
-delays.clipped <- delays[J,'ctd_median']
+delays.clipped <- delays[J,'ctd_50.']
 delays.clipped[delays.clipped > 120] <- 121
 h.med <- hist(delays.clipped, breaks=c(seq(0,130,by=10)), plot=FALSE)
 h.med$counts[1] <- h.med$counts[1]-1350
@@ -340,7 +342,7 @@ axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 dev.off()
 
 
-I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'ctd_median'] < 120) #& (delays2[,'corr'] > 0.5)
+I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'ctd_50.'] < 120) & (delays2[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays2[,'corr'] > 0.5)
 mydelays2 <- delays2[I2,]
 
 
@@ -396,17 +398,17 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
 
 
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "ctd_median", "premrna_trend", "Mean pre-mRNA end accumulation index")
+plot_halfdiff(mydelays2, "ctd_50.", "premrna_trend", "Mean pre-mRNA end accumulation index")
 
 pdf('premrna_halfdiff_ctd.pdf', width=43/25.4, height=50/25.4)
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "ctd_median", "premrna_trend", "Mean pre-mRNA end accumulation index")
+plot_halfdiff(mydelays2, "ctd_50.", "premrna_trend", "Mean pre-mRNA end accumulation index")
 dev.off()
 
 
 pdf('pol2_halfdiff_ctd.pdf', width=87/25.4, height=70/25.4)
 par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "ctd_median", "pol2_trend", "Mean Pol-II end accumulation index")
+plot_halfdiff(mydelays2, "ctd_50.", "pol2_trend", "Mean Pol-II end accumulation index")
 dev.off()
 
 
@@ -416,7 +418,7 @@ par(ps=FONTSIZE, cex=1)
 par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
 par(tck=-0.015)
-smoothScatter(log(mydelays[,'ctd_median'])/log(10),
+smoothScatter(log(mydelays[,'ctd_50.'])/log(10),
               log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
               axes=FALSE,
               xlab=expression("RNA processing delay" ~ Delta ~ "(min)"),
@@ -426,4 +428,29 @@ axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
 axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
      labels=c(1, 3, 10, 30, 100))
 lines(c(-1, 3), c(-1, 3))
+dev.off()
+
+bounds <- seq(-100, 0, by=10)
+corrs <- rep(0, length(bounds))
+for (k in seq_along(bounds)) {
+  myLLBOUND <- bounds[k]
+  I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'avell'] > myLLBOUND) #& (delays[,'corr'] > 0.5)
+  mydelays <- delays[I,]
+  corrs[k] <- cor((mydelays[,'X50.']), (mydelays[,'ctd_50.']))
+}
+
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+mydelays <- delays[I,]
+
+pdf('ctd_delay_scatter.pdf', 5, 5)
+colfunc <- colorRampPalette(c("red", "green"))
+bounds <- c(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3)
+colors <- colfunc(length(bounds))
+foo <- delays[delays[,'ctd_resvarfrac']<1,c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
+plot(foo[,'X50.'], foo[,'ctd_50.'], type='p', col=colors[1], xlab='GP delay', ylab='CTD delay')
+for (k in seq(2, 6)) {
+  foo <- delays[delays[,'ctd_resvarfrac']<bounds[k],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
+  points(foo[,'X50.'], foo[,'ctd_50.'], col=colors[k])
+}
+legend('bottomright', paste('<', bounds, sep=""), col=colors, pch='o')
 dev.off()
