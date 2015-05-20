@@ -208,6 +208,9 @@ for i=runids(myI),
   dataVals1=pol2_summaryseries(gene_index,:)';
   dataVals2=r.mu(rna_index,:)' ./ normfacts;
   rnaVars=r.v(rna_index,:)' ./ (normfacts.^2);
+  rnascale = max(dataVals2) / 10;
+  dataVals2 = dataVals2 / rnascale;
+  rnaVars = rnaVars / (rnascale.^2);
   timevector=[0 5 10 20 40 80 160 320 640 1280]' + timeshift;
 
   temptimes=timevector;
@@ -238,7 +241,7 @@ for i=runids(myI),
     end
 
     rng(seeds(myseedi));
-    [samples, accepts] = mhInference(@(params) odeLikelihood(dataVals1, dataVals2, rnaVars, timevector, params, 0, 1), 5, 20000, 100);
+    [samples, accepts] = mhInference(@(params) odeLikelihoodNoisy(dataVals1, dataVals2, rnaVars, timevector, params, 0, 1), 6, 20000, 100);
     save(fname, 'gene_name', 'gene_index', 'samples', 'accepts');
   end
   % plot

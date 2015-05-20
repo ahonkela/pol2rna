@@ -1,6 +1,7 @@
 seeds = 11:14;
-id = '2015-05-07';
+id = '2015-05-15';
 MYP = [2.5 25 50 75 97.5];
+NPARAMS = 6;
 
 d = dir('ode_mcmc_results/*.mat');
 genes0 = cell(size(d));
@@ -11,18 +12,18 @@ end
 genes = unique(genes0);
 
 res = cell(length(genes), length(seeds));
-means = zeros(length(genes), length(seeds), 5);
-medians = zeros(length(genes), length(seeds), 5);
-stds = zeros(length(genes), length(seeds), 5);
-genemedians = zeros(length(genes), 5);
-genestds = zeros(length(genes), 5);
-geneprcts = zeros(length(genes), 5, length(MYP));
+means = zeros(length(genes), length(seeds), NPARAMS);
+medians = zeros(length(genes), length(seeds), NPARAMS);
+stds = zeros(length(genes), length(seeds), NPARAMS);
+genemedians = zeros(length(genes), NPARAMS);
+genestds = zeros(length(genes), NPARAMS);
+geneprcts = zeros(length(genes), NPARAMS, length(MYP));
 genells = zeros(length(genes), 1);
 for k=1:length(genes),
   if mod(k, 10) == 0
     fprintf('Doing gene %d/%d\n', k, length(genes));
   end
-  mysamples = zeros(length(seeds)*100, 5);
+  mysamples = zeros(length(seeds)*100, NPARAMS);
   mylls = zeros(length(seeds)*100, 1);
   for l=1:length(seeds),
     fname = sprintf('ode_mcmc_results/%s_samples_%s_seed%d.mat', genes{k}, id, seeds(l));
@@ -51,9 +52,9 @@ for l=1:length(MYP),
   trueprcts(:, :, l) = odeTransformParams(geneprcts(:, :, l));
 end
 fp = fopen(sprintf('results/ctd_delays_%s.txt', id), 'w');
-fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\n');
+fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\tctd_iqr\n');
 for k=1:length(genes),
-  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k));
+  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k), diff(trueprcts(k, 4, [4,2])));
 end
 fclose(fp);
 
