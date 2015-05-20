@@ -17,12 +17,15 @@ DELAYIND = 5;
 DELAYS = [0, 10, 20, 30];
 HALFLIFES = [2 4 8 16 32 64];
 
+for setting=1:4,
+  lshift = 6*(setting-1);
+
 boxmat = zeros(2000, 24, 2);
 
 for k=1:length(DELAYS),
   for l=1:6,
     my_x = 2*(l + 6*(k-1));
-    v = sigmoidabTransform(squeeze(samples{l,k,DATASET}(:, DELAYIND, :)), 'atox', settings{DELAYIND});
+    v = sigmoidabTransform(squeeze(samples{l+lshift,k,DATASET}(:, DELAYIND, :)), 'atox', settings{DELAYIND});
     boxmat(:, my_x/2, 1) = v(:);
   end
 end
@@ -31,7 +34,7 @@ for l=1:6,
   for k=1:length(DELAYS),
     %subplot(6, 4, k+4*(l-1));
     my_x = 2*(k + 4*(l-1));
-    v = 1./sigmoidabTransform(squeeze(samples{l,k,DATASET}(:, DECAYIND, :)), 'atox', settings{DECAYIND});
+    v = 1./sigmoidabTransform(squeeze(samples{l+lshift,k,DATASET}(:, DECAYIND, :)), 'atox', settings{DECAYIND});
     boxmat(:, my_x/2, 2) = v(:);
   end
 end
@@ -58,7 +61,7 @@ xlabel('t_{1/2} (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
 set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
-print('-depsc2',sprintf('plots/synthetic_delays%d.eps', DATASET))
+print('-depsc2',sprintf('plots/synthetic_delays%d_%d.eps', DATASET, setting))
 
 figure(2);
 set(gca, 'FontSize', FONTSIZE)
@@ -80,4 +83,5 @@ xlabel('\Delta (min)')
 set(gcf, 'PaperUnits', 'centimeters')
 set(gcf,'PaperPositionMode','auto')
 set(gcf, 'PaperPosition', [0 0 FIGWIDTH, FIGHEIGHT])
-print('-depsc2',sprintf('plots/synthetic_halflives%d.eps', DATASET))
+print('-depsc2',sprintf('plots/synthetic_halflives%d_%d.eps', DATASET, setting))
+end
