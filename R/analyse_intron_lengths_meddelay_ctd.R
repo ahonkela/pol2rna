@@ -2,7 +2,7 @@
 FONTSIZE=6
 DEVBOUND <- 0.05
 ##LLBOUND <- -100
-RESVARBOUND <- 0.5
+RESVARBOUND <- 0.1
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
@@ -444,13 +444,15 @@ mydelays <- delays[I,]
 
 pdf('ctd_delay_scatter.pdf', 5, 5)
 colfunc <- colorRampPalette(c("red", "green"))
-bounds <- c(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3)
+bounds <- c(0.12, 0.1, 0.05)
 colors <- colfunc(length(bounds))
-foo <- delays[delays[,'ctd_resvarfrac']<1,c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
+foo <- delays[delays[,'ctd_resvarfrac']<bounds[1],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
 plot(foo[,'X50.'], foo[,'ctd_50.'], type='p', col=colors[1], xlab='GP delay', ylab='CTD delay')
-for (k in seq(2, 6)) {
+cat(cor(foo[,'X50.'], foo[,'ctd_50.']), '\n')
+for (k in seq(2, length(bounds))) {
   foo <- delays[delays[,'ctd_resvarfrac']<bounds[k],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
   points(foo[,'X50.'], foo[,'ctd_50.'], col=colors[k])
+  cat(cor(foo[,'X50.'], foo[,'ctd_50.']), '\n')
 }
 legend('bottomright', paste('<', bounds, sep=""), col=colors, pch='o')
 dev.off()
