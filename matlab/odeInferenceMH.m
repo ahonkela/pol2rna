@@ -3,9 +3,14 @@
 tempanswer=1;
 
 timeshift = 300;
+spline_regparam = 0.92; % cross-validation result
 
 if ~exist('seeds', 'var'),
     error('seeds not set.')
+end
+
+if ~exist('use_splines', 'var'),
+  use_splines = 0;
 end
 
 % if ~exist('nodelay', 'var'),
@@ -81,106 +86,6 @@ genes = {'ENSG00000162949',
          'ENSG00000166483',
          'ENSG00000181026',
          'ENSG00000140961'};
-genes = { 'ENSG00000163634',
-'ENSG00000115641',
-'ENSG00000197451',
-'ENSG00000185090',
-'ENSG00000126756',
-'ENSG00000171067',
-'ENSG00000166166',
-'ENSG00000160058',
-'ENSG00000179913',
-'ENSG00000197375',
-'ENSG00000214530',
-'ENSG00000197170',
-'ENSG00000107815',
-'ENSG00000115875',
-'ENSG00000132661',
-'ENSG00000110092',
-'ENSG00000187145',
-'ENSG00000196139',
-'ENSG00000173890',
-'ENSG00000183578',
-'ENSG00000064195',
-'ENSG00000181610',
-'ENSG00000170442',
-'ENSG00000169255',
-'ENSG00000126524',
-'ENSG00000258289',
-'ENSG00000167173',
-'ENSG00000131143',
-'ENSG00000092010',
-'ENSG00000137038',
-'ENSG00000120533',
-'ENSG00000181026',
-'ENSG00000103257',
-'ENSG00000131051',
-'ENSG00000062725',
-'ENSG00000167767',
-'ENSG00000072210',
-'ENSG00000128567',
-'ENSG00000168140',
-'ENSG00000198910',
-'ENSG00000099992',
-'ENSG00000056736',
-'ENSG00000125691',
-'ENSG00000142864',
-'ENSG00000164125',
-'ENSG00000048162',
-'ENSG00000023445',
-'ENSG00000123066',
-'ENSG00000173227',
-'ENSG00000179388',
-'ENSG00000136603',
-'ENSG00000164684',
-'ENSG00000143126',
-'ENSG00000173821',
-'ENSG00000164938',
-'ENSG00000109452',
-'ENSG00000182022',
-'ENSG00000165272',
-'ENSG00000121671',
-'ENSG00000154767',
-'ENSG00000103061',
-'ENSG00000197622',
-'ENSG00000112701',
-'ENSG00000120688',
-'ENSG00000166949',
-'ENSG00000119285',
-'ENSG00000254635',
-'ENSG00000143553',
-'ENSG00000092969',
-'ENSG00000127084',
-'ENSG00000006652',
-'ENSG00000099622',
-'ENSG00000144228',
-'ENSG00000156127',
-'ENSG00000135052',
-'ENSG00000248099',
-'ENSG00000073282',
-'ENSG00000166483',
-'ENSG00000071242',
-'ENSG00000113971',
-'ENSG00000119318',
-'ENSG00000096968',
-'ENSG00000240498',
-'ENSG00000106003',
-'ENSG00000162949',
-'ENSG00000124831',
-'ENSG00000177119',
-'ENSG00000168209',
-'ENSG00000258890',
-'ENSG00000140548',
-'ENSG00000163993',
-'ENSG00000138119',
-'ENSG00000173848',
-'ENSG00000135245',
-'ENSG00000103035',
-'ENSG00000109321',
-'ENSG00000184012',
-'ENSG00000157483',
-'ENSG00000166888',
-'ENSG00000143379' };
 genes = importdata('final_genes.txt');
 
 runids = zeros(size(genes))';
@@ -233,16 +138,27 @@ for i=runids(myI),
   for myseedi=1:length(seeds),
     fprintf('Running gene %d/%d, seed %d/%d: %s\n', myindex, length(myI), myseedi, length(seeds), gene_name);
 
-    fname = sprintf('ode_mcmc_results/%s_samples_%s_seed%d.mat', ...
-                    gene_name, id, seeds(myseedi));
+    fname = sprintf('ode_mcmc_results/%s_samples_%s_spl%d_seed%d.mat', ...
+                    gene_name, id, use_splines, seeds(myseedi));
     if exist(fname, 'file'),
       fprintf('File %s exists, skipping...\n', fname);
       continue;
     end
 
     rng(seeds(myseedi));
-    [samples, accepts] = mhInference(@(params) odeLikelihoodNoisy(dataVals1, dataVals2, rnaVars, timevector, params, 0, 1), 6, 20000, 100);
-    save(fname, 'gene_name', 'gene_index', 'samples', 'accepts');
+
+    if use_splines,
+      fprintf('Using spline fit for Pol-II.\n');
+      pfit.spline = csaps(log(timevector - min(timevector) + 5), ...
+                          dataVals1, spline_regparam);
+      pfit.timeshift = 5;
+      [samples, accepts] = mhInference(@(params) odeLikelihoodSpline(pfit, dataVals2, rnaVars, timevector, params, 0, 1), 6, 20000, 100);
+      save(fname, 'gene_name', 'gene_index', 'samples', 'accepts', 'pfit');
+    else
+      fprintf('Using linear interpolation for Pol-II.\n');
+      [samples, accepts] = mhInference(@(params) odeLikelihoodNoisy(dataVals1, dataVals2, rnaVars, timevector, params, 0, 1), 6, 20000, 100);
+      save(fname, 'gene_name', 'gene_index', 'samples', 'accepts');
+    end
   end
   % plot
   %odeLikelihood(dataVals1, dataVals2, rnaVars, timevector, params, 1)
