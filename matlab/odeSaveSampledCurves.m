@@ -1,6 +1,6 @@
 % analyse_ode_full
 
-ID = '2015-05-15';
+ID = '2015-05-21_spl1';
 
 load(sprintf('ode_mcmc_%s_summary.mat', ID), 'res');
 

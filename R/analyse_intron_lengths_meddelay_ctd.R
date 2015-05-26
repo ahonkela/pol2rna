@@ -2,7 +2,7 @@
 FONTSIZE=6
 DEVBOUND <- 0.05
 ##LLBOUND <- -100
-RESVARBOUND <- 0.1
+RESVARBOUND <- 0.3
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
@@ -15,7 +15,8 @@ cleanup_merge <- function(tbl) {
 
 delays.pol2 <- read.table('../matlab/results/pol2max_and_meddelays_final.txt', row.names=1, header=TRUE)
 quantiles <- read.table('../matlab/results/hmc_results_to_browser_final.txt', row.names=1, header=TRUE)
-ctds <- read.table('../matlab/results/ctd_delays_2015-05-15.txt', row.names=1, header=TRUE)
+ctds <- read.table('../matlab/results/ctd_delays_2015-05-21_spl1.txt', row.names=1, header=TRUE)
+#ctds <- read.table('../matlab/results/ctd_delays_2015-05-15.txt', row.names=1, header=TRUE)
 delays.orig0 <- cleanup_merge(merge(delays.pol2, quantiles, by=0))
 stopifnot(all(delays.orig0[,'meddelay'] == delays.orig0[,'X50.']))
 delays.orig <- cleanup_merge(merge(delays.orig0, ctds, by=0))
@@ -140,7 +141,7 @@ I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DE
 mydelays <- delays[I,]
 
 lenco <- 1e4
-Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, MAXVAL=0.3, NORM=12)
+Nlast <- plot_delay_survival(mydelays, 'maxTrLengths', lenco, MAXVAL=0.8, NORM=12)
 leg2 <- legend(x=c(30, 83.2), y=c(0.18, 0.31),
        legend=c(sprintf("m<%.0f\n(N=%d)", lenco, Nlast['short']),
          sprintf("m>%.0f\n(N=%d)", lenco, Nlast['long']),
@@ -149,7 +150,7 @@ leg2 <- legend(x=c(30, 83.2), y=c(0.18, 0.31),
        x.intersp=0.5, y.intersp=1, seg.len=1)
 
 lenco <- 0.2
-Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco)
+Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco, MAXVAL=0.8)
 leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
        legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
          sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
@@ -444,7 +445,8 @@ mydelays <- delays[I,]
 
 pdf('ctd_delay_scatter.pdf', 5, 5)
 colfunc <- colorRampPalette(c("red", "green"))
-bounds <- c(0.12, 0.1, 0.05)
+#bounds <- c(0.3, 0.25, 0.2, 0.18, 0.16, 0.15, 0.14, 0.13, 0.12, 0.1)
+bounds <- c(0.15, 0.14, 0.13, 0.12, 0.1)
 colors <- colfunc(length(bounds))
 foo <- delays[delays[,'ctd_resvarfrac']<bounds[1],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
 plot(foo[,'X50.'], foo[,'ctd_50.'], type='p', col=colors[1], xlab='GP delay', ylab='CTD delay')

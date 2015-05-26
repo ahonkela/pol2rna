@@ -16,6 +16,7 @@ myfits = cell(K, N);
 pol2fits = cell(N, 1);
 errors = zeros(K, N);
 meanerrors = zeros(length(p_test), length(tshift_test));
+geneerrors = zeros(length(p_test), N);
 for j=1:length(tshift_test),
   timevector = log(d.timevector - 295);
   %timevector = d.timevector - 295;
@@ -30,9 +31,13 @@ for j=1:length(tshift_test),
       end
     end
     meanerrors(l,j) = mean(mean(errors'.^2));
+    geneerrors(l,:) = mean(errors.^2);
   end
 end
 [~, J] = min(meanerrors);
 for n=1:N,
   pol2fits{n} = csaps(timevector, d.dataVals1(:,n), p_test(J));
 end
+
+splinevars = geneerrors(J,:) ./ var(d.dataVals1);
+save('ode_spline_vars.mat', 'splinevars');

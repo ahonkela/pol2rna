@@ -1,5 +1,5 @@
 seeds = 11:14;
-id = '2015-05-15';
+id = '2015-05-21_spl1';
 MYP = [2.5 25 50 75 97.5];
 NPARAMS = 6;
 
@@ -32,7 +32,7 @@ for k=1:length(genes),
     medians(k, l, :) = median(res{k,l}.samples(101:end, :));
     stds(k, l, :) = std(res{k,l}.samples(101:end, :));
     mysamples((1:100)+(l-1)*100, :) = res{k,l}.samples(101:end, :);
-    mylls((1:100)+(l-1)*100) = res{k,l}.ll(101:end);
+    %mylls((1:100)+(l-1)*100) = res{k,l}.ll(101:end);
   end
   genemedians(k, :) = median(mysamples);
   genestds(k, :) = std(mysamples);
@@ -46,9 +46,16 @@ B = squeeze(var(means, [], 2));
 varHatPlus = (N-1)/N * W + 1/N * B;
 Rhat = sqrt(varHatPlus./W);
 
+fname = sprintf('ode_mcmc_%s_summary.mat', id);
+if ~exist(fname, 'file'),
+  save(fname, 'res');
+end
+
 d = dir(sprintf('ode_mcmc_summaries/ode_mcmc_%s_curves*.mat', id));
 fnames = cellfun(@(x) ['ode_mcmc_summaries/' x], {d.name}, 'UniformOutput', 0);
 r = merge_files(fnames);
+
+load('ode_spline_vars.mat', 'splinevars');
 
 truemedians = odeTransformParams(genemedians);
 trueprcts = zeros(size(geneprcts));
@@ -56,9 +63,9 @@ for l=1:length(MYP),
   trueprcts(:, :, l) = odeTransformParams(geneprcts(:, :, l));
 end
 fp = fopen(sprintf('results/ctd_delays_%s.txt', id), 'w');
-fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\tctd_iqr\tctd_resvarfrac\n');
+fprintf(fp, 'gene\tctd_2.5%%\tctd_25%%\tctd_50%%\tctd_75%%\tctd_97.5%%\tavell\tctd_iqr\tctd_resvarfrac\tspline_var\n');
 for k=1:length(genes),
-  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k), abs(diff(trueprcts(k, 4, [4,2]))), r.resvariances(k)/r.datavariances(k));
+  fprintf(fp, '%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n', genes{k}, squeeze(trueprcts(k, 4, :)), genells(k), abs(diff(trueprcts(k, 4, [4,2]))), r.resvariances(k)/r.datavariances(k), splinevars(k));
 end
 fclose(fp);
 
