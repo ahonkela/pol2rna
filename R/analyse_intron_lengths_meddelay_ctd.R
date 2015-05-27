@@ -2,7 +2,8 @@
 FONTSIZE=6
 DEVBOUND <- 0.05
 ##LLBOUND <- -100
-RESVARBOUND <- 0.3
+RESVARBOUND <- 0.2
+POL2VARBOUND <- 0.3
 
 HISTWIDTH=62/25.4
 HISTHEIGHT=45/25.4
@@ -91,7 +92,7 @@ names(exonskips) <- exskips[,1]
 exonskips <- exonskips[names(maxmaxIntrons)]
 
 delays <- cleanup_merge(merge(delays.orig, cbind(maxmaxLastIntrons, maxmaxIntrons, maxTrLengths, lastProportion, maxExon3Lengths, maxExon5Lengths, exonskips), by=0))
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
@@ -137,7 +138,7 @@ par(mgp=c(0.6, 0.1, 0))
 par(mfrow=c(1, 2))
 par(tck=-0.03)
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 1e4
@@ -206,7 +207,7 @@ LBOUNDS <- c(-1, 10000, 30000)
 TITLES <- c("All genes", "m > 10 kb", "m > 30 kb")
 
 for (k in seq_along(LBOUNDS)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'maxTrLengths'] > LBOUNDS[k]) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 lenco <- 0.2
@@ -229,7 +230,7 @@ par(mfrow=c(3, 2))
 par(tck=-0.03)
 
 for (DBOUND in c(0.05, 0.1, 0.01)) {
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 mybound <- sprintf('%.2f', DBOUND)
@@ -254,7 +255,7 @@ leg1 <- legend(x=c(30, 83.2), y=c(0.15, 0.26),
 dev.off()
 
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 
@@ -343,7 +344,7 @@ axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 dev.off()
 
 
-I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'ctd_50.'] < 120) & (delays2[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays2[,'corr'] > 0.5)
+I2 <- (delays2[,'tmax'] < 160) & (delays2[,'tmax'] > 1) & (delays2[,'begdev10'] < DEVBOUND) & (delays2[,'ctd_50.'] < 120) & (delays2[,'ctd_resvarfrac'] < RESVARBOUND) & (delays2[,'spline_var'] < POL2VARBOUND) #& (delays2[,'corr'] > 0.5)
 mydelays2 <- delays2[I2,]
 
 
@@ -440,21 +441,25 @@ for (k in seq_along(bounds)) {
   corrs[k] <- cor((mydelays[,'X50.']), (mydelays[,'ctd_50.']))
 }
 
-I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) #& (delays[,'corr'] > 0.5)
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
 mydelays <- delays[I,]
 
 pdf('ctd_delay_scatter.pdf', 5, 5)
 colfunc <- colorRampPalette(c("red", "green"))
-#bounds <- c(0.3, 0.25, 0.2, 0.18, 0.16, 0.15, 0.14, 0.13, 0.12, 0.1)
-bounds <- c(0.15, 0.14, 0.13, 0.12, 0.1)
+bounds <- c(0.2, 0.18, 0.16, 0.14, 0.12, 0.1)
+#bounds <- c(0.15, 0.14, 0.13, 0.12, 0.1)
 colors <- colfunc(length(bounds))
-foo <- delays[delays[,'ctd_resvarfrac']<bounds[1],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
-plot(foo[,'X50.'], foo[,'ctd_50.'], type='p', col=colors[1], xlab='GP delay', ylab='CTD delay')
+foo <- mydelays[mydelays[,'ctd_resvarfrac']<bounds[1],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
+plot(foo[,'X50.'], foo[,'ctd_50.'], type='p', col=colors[1], xlab='GP delay', ylab='Spline model delay')
 cat(cor(foo[,'X50.'], foo[,'ctd_50.']), '\n')
 for (k in seq(2, length(bounds))) {
-  foo <- delays[delays[,'ctd_resvarfrac']<bounds[k],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
+  foo <- mydelays[mydelays[,'ctd_resvarfrac']<bounds[k],c('X50.', 'ctd_50.', 'ctd_resvarfrac')]
   points(foo[,'X50.'], foo[,'ctd_50.'], col=colors[k])
   cat(cor(foo[,'X50.'], foo[,'ctd_50.']), '\n')
 }
 legend('bottomright', paste('<', bounds, sep=""), col=colors, pch='o')
 dev.off()
+
+I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DEVBOUND) & (delays[,'ctd_50.'] < 120) & (delays[,'ctd_resvarfrac'] < RESVARBOUND) & (delays[,'spline_var'] < POL2VARBOUND) #& (delays[,'corr'] > 0.5)
+mydelays <- delays[I,]
+
