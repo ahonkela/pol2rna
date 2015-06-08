@@ -113,9 +113,9 @@
 function forLegend = bplot(x,varargin)
 %% save the initial hold state of the figure.
 hold_state = ishold;
-if ~hold_state
-    clf;
-end
+%if ~hold_state
+%    clf;
+%end
 %%
 if size(x,1)>1 && size(x,2)>1 % great, you want to plot a bunch.
     if isempty(varargin)
