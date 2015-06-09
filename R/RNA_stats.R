@@ -8,6 +8,11 @@ files2 <- paste(DATAPATH, 'MCF7_uniq2_t',
                   '0080', '0160', '0320', '0640', '1280'),
                 'min_RNA_v68_2012-03.bam.counts', sep='')
 
+files3 <- paste(DATAPATH, 'MCF7_t',
+                c('0000', '0005', '0010', '0020', '0040',
+                  '0080', '0160', '0320', '0640', '1280'),
+                'min_RNA_v68_2012-03.summarycounts', sep='')
+
 finalgenes <- unlist(read.table('../matlab/final_genes.txt'))
 
 annotation <- read.table(annfile)
@@ -28,9 +33,19 @@ for (k in seq_along(files2)) {
   expmat[is.na(expmat[,d]),d] <- 0
 }
 
+alignstats <- c()
+for (k in seq_along(files3)) {
+  t <- read.table(files3[k], header=TRUE)
+  alignstats <- rbind(alignstats, t)
+}
+relativestats <- sweep(as.matrix(alignstats), 1, apply(alignstats, 1, sum), '/')
+apply(relativestats, 2, mean)
 
 mrnas <- apply(expmat[1:39071, 3:12], 1, mean)
 names(mrnas) <- row.names(expmat)[1:39071]
+
+mrnasum <- apply(expmat[1:39071, 3:12], 2, sum)
+premrnasum <- apply(expmat[39072:78142, 3:12], 2, sum)
 
 premrnas <- apply(expmat[39072:78142, 3:12], 1, mean)
 names(premrnas) <- row.names(expmat)[39072:78142]
@@ -59,3 +74,29 @@ hist(log(mrnas[finalgenes],10), seq(-0.5, 7, by=0.5), main='Selected genes', xla
 hist(log(mrnacov[finalgenes],10), seq(-6, 3.5, by=0.5), main='Selected genes', xlab=expression('log'[10]*'(mRNA coverage)'))
 dev.off()
 
+mrnagenes <- annotation[1:39071,1]
+multiexon_genes <- which(annotation[1:39071,2]>1)
+multiexon_genenames <- mrnagenes[annotation[1:39071,2]>1]
+singleexon_genes <- mrnagenes[annotation[1:39071,2]==1]
+multiexon_premrnas <- paste(multiexon_genenames, '_unspliced', sep='')
+
+mrnasum2 <- apply(expmat[multiexon_genes, 3:12], 2, sum)
+premrnasum2 <- apply(expmat[paste(multiexon_genenames, '_unspliced', sep=''), 3:12], 2, sum)
+
+avelength.mrna <- mean(annotation[1:39071,3])
+cat('Average mRNA length', avelength.mrna, '\n')
+avelength.premrna <- mean(annotation[39072:78142,3])
+cat('Average pre-mRNA length', avelength.premrna, '\n')
+aveinvlength.mrna <- mean(1/annotation[multiexon_genes,3])
+cat('Average mRNA inv length', aveinvlength.mrna, '\n')
+aveinvlength.premrna <- mean(1/annotation[multiexon_premrnas,3])
+cat('Average pre-mRNA inv length', aveinvlength.premrna, '\n')
+averatio.premrna <- mean(premrnasum / (mrnasum + premrnasum))
+alignmentmeans <- apply(relativestats, 2, mean)
+alignmentmeans['pre.mRNA'] + alignmentmeans['both']*aveinvlength.premrna/(aveinvlength.premrna+aveinvlength.mrna)
+
+bitseqstats <- cbind(mrnasum / (mrnasum + premrnasum), premrnasum / (mrnasum + premrnasum))
+colnames(bitseqstats) <- c('mRNA', 'pre.mRNA')
+bitseqstats2 <- cbind(mrnasum2 / (mrnasum2 + premrnasum2), premrnasum2 / (mrnasum2 + premrnasum2))
+bitseqstats2 <- cbind(bitseqstats2, relativestats[,'pre.mRNA'] + relativestats[,'both']*aveinvlength.premrna/(aveinvlength.premrna+aveinvlength.mrna))
+colnames(bitseqstats2) <- c('mRNA', 'pre.mRNA', 'pre.mRNA.pred')
