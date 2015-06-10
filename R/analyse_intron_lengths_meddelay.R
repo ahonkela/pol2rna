@@ -19,9 +19,11 @@ stopifnot(all(delays.orig[,'meddelay'] == delays.orig[,'X50.']))
 
 premrna.fits0 <- read.table('../python/premrna_halfdiff_2014-06-18.txt', row.names=1, header=FALSE)
 names(premrna.fits0) <- 'premrna_trend'
-pol2.fits <- read.table('../python/pol2_halfdiff_2014-06-11.txt', row.names=1, header=FALSE)
+pol2.fits <- read.table('../python/pol2_halfdiff_2015-06-10.txt', row.names=1, header=FALSE)
 names(pol2.fits) <- 'pol2_trend'
-premrna.fits <- cleanup_merge(merge(premrna.fits0, pol2.fits, by=0))
+pol2.5pct <- read.table('../python/pol2_last5pct_2015-06-10.txt', row.names=1, header=FALSE)
+premrna.fits1 <- cleanup_merge(merge(premrna.fits0, pol2.fits, by=0))
+premrna.fits <- cleanup_merge(merge(premrna.fits1, pol2.5pct, by=0))
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 ##delays.orig <- delays.pol2
 delays2 <- cleanup_merge(merge(delays.orig, premrna.fits, by=0))
@@ -425,4 +427,21 @@ axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
 axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
      labels=c(1, 3, 10, 30, 100))
 lines(c(-1, 3), c(-1, 3))
+dev.off()
+
+
+pdf('pol2_last5pct.pdf', width=150/25.4, height=50/25.4)
+par(mfrow=c(1, 3))
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(tck=-0.015)
+for (cutoff in c(10, 20, 30)) {
+  plot(apply(mydelays2[mydelays2[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue')
+  lines(apply(mydelays2[mydelays2[,'meddelay'] < cutoff, 14:23], 2, mean), col='red')
+  legend('topleft',
+         legend=c(expression(Delta > t), expression(Delta < t)), # 'p-value'),
+         col=c('blue', 'red'), lty=1, x.intersp=0.5, y.intersp=0.5,
+         seg.len=1, inset=0.01)
+}
 dev.off()
