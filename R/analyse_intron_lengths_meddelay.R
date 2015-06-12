@@ -437,7 +437,7 @@ par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
 par(tck=-0.015)
 for (cutoff in c(10, 20, 30)) {
-  plot(apply(mydelays2[mydelays2[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue')
+  plot(apply(mydelays2[mydelays2[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue', ylim=c(0.047, 0.061))
   lines(apply(mydelays2[mydelays2[,'meddelay'] < cutoff, 14:23], 2, mean), col='red')
   legend('topleft',
          legend=c(expression(Delta > t), expression(Delta < t)), # 'p-value'),
