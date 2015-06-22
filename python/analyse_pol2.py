@@ -33,11 +33,14 @@ def rebin(x, nbins):
                 v[k,] += (bounds[k+1] - np.floor(bounds[k+1])) * x[np.floor(bounds[k+1]),]
     return v
 
-def splitratio(x, k):
-    return (np.sum(x[0:k,], 0) / (np.sum(x, 0) + 1e-10))
+def splitratio(x, k1, k2=None):
+    if k2 is not None:
+        return (np.sum(x[0:k1,], 0) / (np.sum(x[0:k2,], 0) + 1e-100))
+    else:
+        return (np.sum(x[0:k1,], 0) / (np.sum(x, 0) + 1e-100))
 
-def summarise_last_nth(d, n):
-    return {k: splitratio(rebin(v, n), 1)
+def summarise_last_nth(d, n, n2=None):
+    return {k: splitratio(rebin(v, n), 1, n2)
             for k, v in d.items() if v.shape[0] > 1}
 
 def save_summaries(fits2, fname):
@@ -64,7 +67,11 @@ def analyse_pol2(pol2data):
     save_fits2(pol2halves2, 'pol2_halfdiff_2015-06-10.txt')
     return pol2halves, pol2halves2
 
-def analyse_last5pct(pol2data):
+def analyse_last5pct(dd):
     # pol2data = load_data()
     d = summarise_last_nth(dd, 20)
     save_summaries(d, 'pol2_last5pct_2015-06-10.txt')
+    d = summarise_last_nth(dd, 20, 10)
+    save_summaries(d, 'pol2_last5pct_b_2015-06-10.txt')
+    d = summarise_last_nth(dd, 20, 2)
+    save_summaries(d, 'pol2_last5pct_c_2015-06-10.txt')
