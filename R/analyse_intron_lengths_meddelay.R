@@ -455,38 +455,20 @@ for (cutoff in c(10, 20, 30)) {
 dev.off()
 
 pdf('pol2_last5pct_b.pdf', width=150/25.4, height=50/25.4)
-par(mfrow=c(1, 3))
+par(mfrow=c(1, 2))
 par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mar=c(1.0, 0.8, 0.8, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
 par(tck=-0.015)
-for (cutoff in c(10, 20, 30)) {
-  pvals <- rep(0, 10)
-  for (i in seq(10)) {
-    pvals[i] <- wilcox.test(mydelays3[mydelays3[,'meddelay'] < cutoff, 13+i], mydelays3[mydelays3[,'meddelay'] > cutoff, 13+i])$p.value
-  }
-  plot(apply(mydelays3[mydelays3[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue', ylim=c(0.115, 0.131))
-  lines(apply(mydelays3[mydelays3[,'meddelay'] < cutoff, 14:23], 2, mean), col='red')
-  cat(pvals)
-  legend('topleft',
-         legend=c(expression(Delta > t), expression(Delta < t)), # 'p-value'),
-         col=c('blue', 'red'), lty=1, x.intersp=0.5, y.intersp=0.5,
-         seg.len=1, inset=0.01)
-}
-dev.off()
-
-pdf('pol2_last5pct_c.pdf', width=150/25.4, height=50/25.4)
-par(mfrow=c(1, 3))
-par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
-par(mgp=c(0.6, 0.1, 0))
-par(tck=-0.015)
-for (cutoff in c(10, 20, 30)) {
-  plot(apply(mydelays4[mydelays4[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue')
-  lines(apply(mydelays4[mydelays4[,'meddelay'] < cutoff, 14:23], 2, mean), col='red')
-  legend('topleft',
-         legend=c(expression(Delta > t), expression(Delta < t)), # 'p-value'),
-         col=c('blue', 'red'), lty=1, x.intersp=0.5, y.intersp=0.5,
-         seg.len=1, inset=0.01)
+for (cutoff in c(20, 30)) {
+  myvals = list('ND early'=c(mydelays3[mydelays3[,'meddelay'] < cutoff, 14:18], recursive=TRUE),
+    'D early'=c(mydelays3[mydelays3[,'meddelay'] > cutoff, 14:18], recursive=TRUE),
+    'ND late'=c(mydelays3[mydelays3[,'meddelay'] < cutoff, 19:23], recursive=TRUE),
+    'D late'=c(mydelays3[mydelays3[,'meddelay'] > cutoff, 19:23], recursive=TRUE))
+  pval <- wilcox.test(myvals[[3]], myvals[[4]])$p.value
+  boxplot(myvals, outline=FALSE, notch=TRUE, at=c(1, 2, 3.5, 4.5), border=c('red', 'blue'), ylab='pol-II end accumulation', ylim=c(0.01, 0.25), main=paste(cutoff, 'min cutoff'))
+  lines(c(3.5, 3.5, 3.7), c(0.233, 0.245, 0.245))
+  lines(c(4.5, 4.5, 4.3), c(0.233, 0.245, 0.245))
+  text(4.0, 0.222, pos=3, substitute(p<10^-r, list(r=floor(-log(pval, 10)))))
 }
 dev.off()
