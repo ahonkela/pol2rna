@@ -390,8 +390,8 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
   mtext(ylab, side=2, line=0.5)
   axis(4, seq(MINVAL, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1), mgp=c(-0.6, -0.2, 0))
   mtext(expression(-log[10](p-value)), side=4, line=0.3)
-  if (response == "pol2_trend") {
-    legend('right',
+  if (substr(response, 1, 4) == "pol2") {
+    legend('topright',
            legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
            col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
            seg.len=1, inset=0.01)
@@ -438,20 +438,10 @@ lines(c(-1, 3), c(-1, 3))
 dev.off()
 
 
-pdf('pol2_last5pct.pdf', width=150/25.4, height=50/25.4)
-par(mfrow=c(1, 3))
-par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
-par(mgp=c(0.6, 0.1, 0))
-par(tck=-0.015)
-for (cutoff in c(10, 20, 30)) {
-  plot(apply(mydelays2[mydelays2[,'meddelay'] > cutoff, 14:23], 2, mean), type='l', xlab='time point', ylab='pol-II in the last 5% of the gene', main=sprintf('t=%d min', cutoff), col='blue', ylim=c(0.047, 0.061))
-  lines(apply(mydelays2[mydelays2[,'meddelay'] < cutoff, 14:23], 2, mean), col='red')
-  legend('topleft',
-         legend=c(expression(Delta > t), expression(Delta < t)), # 'p-value'),
-         col=c('blue', 'red'), lty=1, x.intersp=0.5, y.intersp=0.5,
-         seg.len=1, inset=0.01)
-}
+pdf('pol2_last5pct.pdf', width=87/25.4, height=70/25.4)
+par(mfrow=c(1, 1))
+mydelays3[,'pol2_trend2'] <- apply(mydelays3[,19:21], 1, mean) - apply(mydelays3[,16:18], 1, mean)
+plot_halfdiff(mydelays3, "meddelay", "pol2_trend2", "Mean Pol-II end accumulation index")
 dev.off()
 
 pdf('pol2_last5pct_b.pdf', width=150/25.4, height=50/25.4)
