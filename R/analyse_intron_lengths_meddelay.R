@@ -390,17 +390,12 @@ plot_halfdiff <- function(mydelays2, key, response, ylab) {
   mtext(ylab, side=2, line=0.5)
   axis(4, seq(MINVAL, MAXVAL, len=(1+NORM)), seq(0, NORM, by=1), mgp=c(-0.6, -0.2, 0))
   mtext(expression(-log[10](p-value)), side=4, line=0.3)
-  if (substr(response, 1, 4) == "pol2") {
-    legend('topright',
-           legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
-           col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
-           seg.len=1, inset=0.01)
-  } else {
-    legend('topleft',
-           legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
-           col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
-           seg.len=1, inset=0.01)
-  }
+  legendpos <- switch(response, pol2_trend2='topright', pol2_trend='right',
+                      'topleft')
+  legend(legendpos,
+         legend=c(expression(Delta > t), expression(Delta < t), 'p-value'),
+         col=c('blue', 'red', 'black'), lty=1, x.intersp=0.5, y.intersp=0.5,
+         seg.len=1, inset=0.01)
 }
 
 
@@ -413,9 +408,11 @@ plot_halfdiff(mydelays2, "meddelay", "premrna_trend", "Mean pre-mRNA end accumul
 dev.off()
 
 
-pdf('pol2_halfdiff.pdf', width=87/25.4, height=70/25.4)
-par(mfrow=c(1, 1))
-plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index")
+pdf('pol2_halfdiff.pdf', width=87/25.4, height=50/25.4)
+par(mfrow=c(1, 2))
+plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index (last 50%)")
+mydelays3[,'pol2_trend2'] <- apply(mydelays3[,19:21], 1, mean) - apply(mydelays3[,16:18], 1, mean)
+plot_halfdiff(mydelays3, "meddelay", "pol2_trend2", "Mean Pol-II end accumulation index (last 5%)")
 dev.off()
 
 
