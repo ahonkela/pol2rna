@@ -60,6 +60,20 @@ def load_data():
             d[genes[k]] = np.hstack(pol2bins[k,:])
     return d
 
+
+def load_groseq_data():
+    bindata = scipy.io.loadmat(POL2DATAPATH + 'allprof.mat')
+    genes = ['ENSG%011d' % x for x in bindata['finalgenes'][:,0]]
+    grobins = bindata['allprof']
+    geneinfo = bindata['finalgenes']
+    d = dict()
+    for k in range(len(genes)):
+        if geneinfo[k,3] == 1:  ## check strand
+            d[genes[k]] = np.hstack(np.abs(grobins[k,:,1]))
+        else:
+            d[genes[k]] = np.hstack(np.abs(grobins[k,:,0]))
+    return d
+
 def analyse_pol2(pol2data):
     # pol2data = load_data()
     pol2halves = summarise_halves(pol2data)
