@@ -69,9 +69,11 @@ def load_groseq_data():
     d = dict()
     for k in range(len(genes)):
         if geneinfo[k,3] == 1:  ## check strand
-            d[genes[k]] = np.hstack(np.abs(grobins[k,:,1]))
+            if np.sum(np.sum(np.abs(grobins[k,:,1]))) > 0:
+                d[genes[k]] = np.hstack(np.abs(grobins[k,:,1]))
         else:
-            d[genes[k]] = np.hstack(np.abs(grobins[k,:,0]))
+            if np.sum(np.sum(np.abs(grobins[k,:,0]))) > 0:
+                d[genes[k]] = np.hstack(np.abs(grobins[k,:,0]))
     return d
 
 def analyse_pol2(pol2data):

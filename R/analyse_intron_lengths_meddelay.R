@@ -466,6 +466,9 @@ for (cutoff in c(20, 30)) {
 }
 dev.off()
 
+pdf('groseq_last5pct.pdf', width=55/25.4, height=45/25.4)
 par(mfrow=c(1, 1))
-mydelays5[,'groseq_trend'] <- apply(mydelays5[,16:17], 1, mean) - apply(mydelays5[,14:15], 1, mean)
-plot_halfdiff(mydelays5, "meddelay", "groseq_trend", "Mean Pol-II end accumulation index")
+##mydelays5[,'groseq_trend'] <- apply(mydelays5[,16:17], 1, mean) - apply(mydelays5[,14:15], 1, mean)
+mydelays5[,'groseq_trend'] <- mydelays5[,17] - apply(mydelays5[,14:16], 1, mean)
+plot_halfdiff(mydelays5, "meddelay", "groseq_trend", "Mean GRO-seq end accumulation index")
+dev.off()
