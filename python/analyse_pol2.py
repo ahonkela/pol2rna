@@ -89,3 +89,9 @@ def analyse_last5pct(dd):
     save_summaries(d, 'pol2_last5pct_b_2015-06-10.txt')
     d = summarise_last_nth(dd, 20, 2)
     save_summaries(d, 'pol2_last5pct_c_2015-06-10.txt')
+
+
+def analyse_last5pct_groseq(dg):
+    # dg = load_groseq_data()
+    d = summarise_last_nth(dg, 20, 10)
+    save_summaries(d, 'groseq_last5pct_2015-06-26.txt')

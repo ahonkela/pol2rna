@@ -24,15 +24,18 @@ names(pol2.fits) <- 'pol2_trend'
 pol2.5pct <- read.table('../python/pol2_last5pct_2015-06-10.txt', row.names=1, header=FALSE)
 pol2.5pct.b <- read.table('../python/pol2_last5pct_b_2015-06-10.txt', row.names=1, header=FALSE)
 pol2.5pct.c <- read.table('../python/pol2_last5pct_c_2015-06-10.txt', row.names=1, header=FALSE)
+groseq.5pct <- read.table('../python/groseq_last5pct_2015-06-26.txt', row.names=1, header=FALSE)
 premrna.fits1 <- cleanup_merge(merge(premrna.fits0, pol2.fits, by=0))
 premrna.fits <- cleanup_merge(merge(premrna.fits1, pol2.5pct, by=0))
 premrna.fits.b <- cleanup_merge(merge(premrna.fits1, pol2.5pct.b, by=0))
 premrna.fits.c <- cleanup_merge(merge(premrna.fits1, pol2.5pct.c, by=0))
+premrna.fits.gro <- cleanup_merge(merge(premrna.fits1, groseq.5pct, by=0))
 ##delays <- read.table('pol2max_and_delays_2013-03-11.txt', row.names=1, header=TRUE)
 ##delays.orig <- delays.pol2
 delays2 <- cleanup_merge(merge(delays.orig, premrna.fits, by=0))
 delays3 <- cleanup_merge(merge(delays.orig, premrna.fits.b, by=0))
 delays4 <- cleanup_merge(merge(delays.orig, premrna.fits.c, by=0))
+delays5 <- cleanup_merge(merge(delays.orig, premrna.fits.gro, by=0))
 ##delays.orig <- delays2
 
 t <- readLines('intron_lengths.txt.lengths2')
@@ -352,6 +355,9 @@ mydelays2 <- delays2[I2,]
 mydelays3 <- delays3[I2,]
 mydelays4 <- delays4[I2,]
 
+I5 <- (delays5[,'tmax'] < 160) & (delays5[,'tmax'] > 1) & (delays5[,'begdev10'] < DEVBOUND) & (delays5[,'meddelay'] < 120) & ((delays5[,'X75.'] - delays5[,'X25.']) < IQRBOUND) #& (delays5[,'corr'] > 0.5)
+mydelays5 <- delays5[I5,]
+
 
 plot_halfdiff <- function(mydelays2, key, response, ylab) {
   par(ps=FONTSIZE, cex=1)
@@ -459,3 +465,7 @@ for (cutoff in c(20, 30)) {
   text(4.0, 0.222, pos=3, substitute(p<10^-r, list(r=floor(-log(pval, 10)))))
 }
 dev.off()
+
+par(mfrow=c(1, 1))
+mydelays5[,'groseq_trend'] <- apply(mydelays5[,16:17], 1, mean) - apply(mydelays5[,14:15], 1, mean)
+plot_halfdiff(mydelays5, "meddelay", "groseq_trend", "Mean Pol-II end accumulation index")
