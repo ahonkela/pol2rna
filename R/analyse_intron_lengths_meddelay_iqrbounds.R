@@ -207,7 +207,7 @@ for (IQRBOUND in c(120, 90, 60)) {
                  x.intersp=0.5, y.intersp=1, seg.len=1)
 
   lenco <- 0.2
-  Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco, title=sprintf("IQR < %.0f min", IQRBOUND))
+  Nlast <- plot_delay_survival(mydelays, 'lastProportion', lenco, title=sprintf("IQR < %.0f min (N=%d)", IQRBOUND, dim(mydelays)[1]))
   leg1 <- legend(x=c(45, 83.2), y=c(0.17, 0.26),
                  legend=c(sprintf("f<%.2f\n(N=%d)", lenco, Nlast['short']),
                    sprintf("f>%.2f\n(N=%d)", lenco, Nlast['long']),
