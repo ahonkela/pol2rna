@@ -1,10 +1,7 @@
 # FIGURE PARAMETERS
 FONTSIZE=6
 DEVBOUND <- 0.05
-IQRBOUND <- 120
-
-HISTWIDTH=62/25.4
-HISTHEIGHT=45/25.4
+IQRBOUND <- 400
 
 cleanup_merge <- function(tbl) {
   row.names(tbl) <- tbl[,'Row.names']
@@ -334,11 +331,11 @@ axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
 axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 
-pdf('delay_histogram_med.pdf', width=HISTWIDTH, height=HISTHEIGHT)
+pdf('delay_analysis.pdf', width=87/25.4, height=44/25.4)
 par(ps=FONTSIZE, cex=1)
 par(mar=c(1.5, 1.2, 0, 0)+0.4)
 par(mgp=c(1, 0.4, 0))
-par(mfrow=c(1, 1))
+par(mfrow=c(1, 2))
 plot(h.med, axes=FALSE, main="", xlab="Delay (min)", ylab="# of genes")
 axis(1, at=c(seq(0, 110, by=40), 125), labels=c(seq(0, 110, by=40), ">120"))
 axis.break(2,120,style="zigzag")
@@ -347,6 +344,20 @@ axis(2, at=c(0, 50, 100, 150, 200), labels=c(0, 50, 100, 1500, 1550))
 ## axis(1, at=seq(0, 120, by=40), labels=seq(0, 120, by=40))
 ## axis.break(2,60,style="zigzag")
 ## axis(2, at=c(0, 25, 50, 75, 100), labels=c(0, 25, 50, 75+1575, 100+1575))
+par(ps=FONTSIZE, cex=1)
+par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
+par(mgp=c(0.6, 0.1, 0))
+par(tck=-0.015)
+smoothScatter(log(mydelays[,'meddelay'])/log(10),
+              log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
+              axes=FALSE,
+              xlab=expression("RNA processing delay" ~ Delta ~ "(min)"),
+              ylab="Transcriptional delay (min)")
+axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
+     labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
+axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
+     labels=c(1, 3, 10, 30, 100))
+lines(c(-1, 3), c(-1, 3))
 dev.off()
 
 
@@ -419,25 +430,6 @@ par(mfrow=c(1, 2))
 plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index (last 50%)")
 mydelays3[,'pol2_trend2'] <- apply(mydelays3[,19:21], 1, mean) - apply(mydelays3[,16:18], 1, mean)
 plot_halfdiff(mydelays3, "meddelay", "pol2_trend2", "Mean Pol-II end accumulation index (last 5%)")
-dev.off()
-
-
-pdf('delay_comparison.pdf', width=50/25.4, height=50/25.4)
-par(mfrow=c(1, 1))
-par(ps=FONTSIZE, cex=1)
-par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
-par(mgp=c(0.6, 0.1, 0))
-par(tck=-0.015)
-smoothScatter(log(mydelays[,'meddelay'])/log(10),
-              log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
-              axes=FALSE,
-              xlab=expression("RNA processing delay" ~ Delta ~ "(min)"),
-              ylab="Transcriptional delay (min)")
-axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
-     labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
-axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
-     labels=c(1, 3, 10, 30, 100))
-lines(c(-1, 3), c(-1, 3))
 dev.off()
 
 
