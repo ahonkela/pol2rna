@@ -262,11 +262,11 @@ I <- (delays[,'tmax'] < 160) & (delays[,'tmax'] > 1) & (delays[,'begdev10'] < DE
 mydelays <- delays[I,]
 
 
-pdf('delay_survival_more.pdf', width=87/25.4, height=50/25.4)
+pdf('delay_survival_more.pdf', width=87/25.4, height=100/25.4)
 par(ps=FONTSIZE, cex=1)
 par(mar=c(1.0, 0.8, 0, 0.8)+0.4)
 par(mgp=c(0.6, 0.1, 0))
-par(mfrow=c(1, 2))
+par(mfrow=c(2, 2))
 par(tck=-0.03)
 
 mvals <- c(30000, 50000)
@@ -351,7 +351,7 @@ par(tck=-0.015)
 smoothScatter(log(mydelays[,'meddelay'])/log(10),
               log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
               axes=FALSE,
-              xlab=expression("RNA processing delay" ~ Delta ~ "(min)"),
+              xlab=expression("RNA production delay" ~ Delta ~ "(min)"),
               ylab="Transcriptional delay (min)")
 axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
      labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
@@ -425,12 +425,20 @@ plot_halfdiff(mydelays2, "meddelay", "premrna_trend", "Mean pre-mRNA end accumul
 dev.off()
 
 
-pdf('pol2_halfdiff.pdf', width=87/25.4, height=50/25.4)
-par(mfrow=c(1, 2))
+pdf('pol2_halfdiff.pdf', width=87/25.4, height=100/25.4)
+par(mfrow=c(2, 2))
 plot_halfdiff(mydelays2, "meddelay", "pol2_trend", "Mean Pol-II end accumulation index (last 50%)")
 mydelays3[,'pol2_trend2'] <- apply(mydelays3[,19:21], 1, mean) - apply(mydelays3[,16:18], 1, mean)
 plot_halfdiff(mydelays3, "meddelay", "pol2_trend2", "Mean Pol-II end accumulation index (last 5%)")
+mydelays5[,'groseq_trend'] <- mydelays5[,17] - apply(mydelays5[,14:16], 1, mean)
+plot_halfdiff(mydelays5, "meddelay", "groseq_trend", "Mean GRO-seq end accumulation index")
 dev.off()
+
+##pdf('groseq_last5pct.pdf', width=55/25.4, height=45/25.4)
+##par(mfrow=c(1, 1))
+##mydelays5[,'groseq_trend'] <- apply(mydelays5[,16:17], 1, mean) - apply(mydelays5[,14:15], 1, mean)
+##dev.off()
+
 
 
 pdf('pol2_last5pct.pdf', width=87/25.4, height=70/25.4)
@@ -456,11 +464,4 @@ for (cutoff in c(20, 30)) {
   lines(c(4.5, 4.5, 4.3), c(0.233, 0.245, 0.245))
   text(4.0, 0.222, pos=3, substitute(p<10^-r, list(r=floor(-log(pval, 10)))))
 }
-dev.off()
-
-pdf('groseq_last5pct.pdf', width=55/25.4, height=45/25.4)
-par(mfrow=c(1, 1))
-##mydelays5[,'groseq_trend'] <- apply(mydelays5[,16:17], 1, mean) - apply(mydelays5[,14:15], 1, mean)
-mydelays5[,'groseq_trend'] <- mydelays5[,17] - apply(mydelays5[,14:16], 1, mean)
-plot_halfdiff(mydelays5, "meddelay", "groseq_trend", "Mean GRO-seq end accumulation index")
 dev.off()
