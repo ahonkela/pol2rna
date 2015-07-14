@@ -352,7 +352,7 @@ smoothScatter(log(mydelays[,'meddelay'])/log(10),
               log(mydelays[,'maxTrLengths']/2.1/1000)/log(10),
               axes=FALSE,
               xlab=expression("RNA production delay" ~ Delta ~ "(min)"),
-              ylab="Transcriptional delay (min)")
+              ylab="Elongation time (min)")
 axis(1, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
      labels=c(1, 3, 10, 30, 100), mgp=c(-0.6, -0.2, 0))
 axis(2, at=c(0, log(3)/log(10), 1, log(30)/log(10), 2),
