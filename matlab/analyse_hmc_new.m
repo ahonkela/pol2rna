@@ -134,10 +134,10 @@ begdevs(A) = begdev10b(B);
 
 delaypcts = sigmoidabTransform(squeeze(prcts(:,5,:)), 'atox', [0, 299]);
 fp = fopen(['results/hmc_results_to_browser_' id '.txt'], 'w');
-fprintf(fp, 'gene 2.5%% 25%% 50%% 75%% 97.5%% begdev\n');
+fprintf(fp, 'gene 2.5%% 25%% 50%% 75%% 97.5%% begdev IQR\n');
 for k=1:length(genes),
   if ~all(delaypcts(k,:) == 149.5),
-    fprintf(fp, '%s %f %f %f %f %f %f\n', genes{k}, delaypcts(k,:), begdevs(k));
+    fprintf(fp, '%s %f %f %f %f %f %f %f\n', genes{k}, delaypcts(k,:), begdevs(k), delaypcts(k,4)-delaypcts(k,2));
   end
 end
 fclose(fp);
