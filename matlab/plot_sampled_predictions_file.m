@@ -28,7 +28,7 @@ aliases = aliases.aliases;
 switch format,
   case 'png',
     PNG_SIZE = [640 480];
-    DPI = 72;
+    DPI = 150;
     plotfile = [plotdir gene filestem '.png'];
   case 'eps',
     plotfile = [plotdir gene filestem '.eps'];
